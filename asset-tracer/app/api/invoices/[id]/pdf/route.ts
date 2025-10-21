@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient } from '@/lib/supabase/server';
 import { getInvoiceById } from '@/lib/db';
 import { renderToStream } from '@react-pdf/renderer';
 import { InvoiceTemplate } from '@/lib/pdf';
+import { createElement } from 'react';
 
 /**
  * Helper function to get organization ID from user session
@@ -67,7 +68,7 @@ export async function GET(
     }
 
     // Generate PDF
-    const stream = await renderToStream(<InvoiceTemplate invoice={invoice} />);
+    const stream = await renderToStream(createElement(InvoiceTemplate, { invoice }));
 
     // Convert stream to buffer
     const chunks: Uint8Array[] = [];
