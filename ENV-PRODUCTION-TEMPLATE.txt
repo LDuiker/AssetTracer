@@ -1,0 +1,101 @@
+# =====================================================
+# PRODUCTION ENVIRONMENT VARIABLES
+# =====================================================
+# ⚠️ Copy this to asset-tracer/.env.production
+# ⚠️ DO NOT COMMIT .env.production TO GIT ⚠️
+# =====================================================
+
+# =====================================================
+# SUPABASE - PRODUCTION PROJECT
+# =====================================================
+# Get these from: https://supabase.com/dashboard/project/YOUR_PROJECT/settings/api
+
+NEXT_PUBLIC_SUPABASE_URL=https://your-production-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-production-anon-key-here
+
+# Service Role Key (for admin operations like user deletion)
+# ⚠️ KEEP THIS SECRET - Never expose to client
+SUPABASE_SERVICE_ROLE_KEY=your-production-service-role-key-here
+
+# =====================================================
+# POLAR.SH - LIVE BILLING (NOT SANDBOX!)
+# =====================================================
+# Get these from: https://polar.sh/settings
+# ⚠️ Use LIVE keys, not sandbox keys!
+
+POLAR_API_KEY=polar_sk_live_YOUR_LIVE_KEY_HERE
+NEXT_PUBLIC_POLAR_SANDBOX=false
+
+# Your Polar Organization ID (found in Polar dashboard)
+NEXT_PUBLIC_POLAR_ORGANIZATION_ID=your-polar-org-id
+
+# Polar Product/Price IDs (get from Polar dashboard → Products)
+NEXT_PUBLIC_POLAR_PRO_PRICE_ID=your-live-pro-price-id
+NEXT_PUBLIC_POLAR_BUSINESS_PRICE_ID=your-live-business-price-id
+
+# =====================================================
+# RESEND - EMAIL SERVICE
+# =====================================================
+# Get API key from: https://resend.com/api-keys
+# Domain must be verified in Resend dashboard
+
+RESEND_API_KEY=re_YOUR_PRODUCTION_API_KEY_HERE
+EMAIL_FROM=noreply@yourdomain.com
+
+# ⚠️ Important: 
+# - Must use a verified domain (not @gmail.com or @resend.dev)
+# - Add SPF/DKIM records to your domain DNS
+
+# =====================================================
+# WEBHOOK SECRETS
+# =====================================================
+
+# Polar Webhook Secret (from Polar dashboard → Webhooks)
+POLAR_WEBHOOK_SECRET=your-polar-webhook-secret-here
+
+# DPO Webhook Secret (if using DPO Group for payments)
+DPO_WEBHOOK_SECRET=your-dpo-webhook-secret-production
+
+# =====================================================
+# CRON JOB SECURITY
+# =====================================================
+# Generate a secure random string for cron endpoints
+# Example: openssl rand -base64 32
+
+CRON_SECRET=your-production-cron-secret-here
+
+# ⚠️ This protects your cron endpoints from unauthorized access
+# Add this to Vercel Cron configuration
+
+# =====================================================
+# ENVIRONMENT IDENTIFIER
+# =====================================================
+NEXT_PUBLIC_ENV=production
+
+# =====================================================
+# OPTIONAL: ANALYTICS & MONITORING
+# =====================================================
+# Uncomment if using analytics services
+
+# NEXT_PUBLIC_GA_TRACKING_ID=G-XXXXXXXXXX
+# SENTRY_DSN=https://your-sentry-dsn
+# NEXT_PUBLIC_POSTHOG_KEY=your-posthog-key
+
+# =====================================================
+# DEPLOYMENT CHECKLIST
+# =====================================================
+# Before deploying to Vercel:
+#
+# 1. ✅ Replace ALL placeholder values above
+# 2. ✅ Verify Supabase project is production (not local/staging)
+# 3. ✅ Confirm Polar keys are LIVE (not sandbox)
+# 4. ✅ Verify email domain in Resend
+# 5. ✅ Generate strong CRON_SECRET
+# 6. ✅ Set up Polar webhook (point to production URL)
+# 7. ✅ Run all database migrations in production Supabase
+# 8. ✅ Test email sending
+# 9. ✅ Test subscription creation
+# 10. ✅ Monitor error logs after deployment
+#
+# =====================================================
+
