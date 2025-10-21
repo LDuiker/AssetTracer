@@ -1,0 +1,7 @@
+# Vercel Deployment Trigger
+
+This file is used to trigger new Vercel deployments.
+
+Last deployment trigger: 2025-10-21T17:40:00Z
+Reason: Force rebuild with JSX fix (commit c9c4491)
+
