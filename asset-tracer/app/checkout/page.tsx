@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function CheckoutPage() {
+function CheckoutForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -211,6 +211,31 @@ export default function CheckoutPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-light-bg flex items-center justify-center p-4">
+        <Card className="w-full max-w-2xl">
+          <CardHeader className="space-y-4 text-center">
+            <div className="flex justify-center">
+              <div className="h-16 w-16 bg-primary-blue rounded-lg flex items-center justify-center">
+                <Package className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold">Checkout</CardTitle>
+            <CardDescription>Processing your subscription...</CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary-blue" />
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <CheckoutForm />
+    </Suspense>
   );
 }
 
