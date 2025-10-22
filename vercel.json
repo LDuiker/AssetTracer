@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd asset-tracer && npm run build",
+  "devCommand": "cd asset-tracer && npm run dev",
+  "installCommand": "cd asset-tracer && npm install",
+  "outputDirectory": "asset-tracer/.next"
+}
+
