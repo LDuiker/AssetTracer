@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, XCircle, Loader2, Receipt, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,7 @@ interface PaymentVerification {
   status?: string;
 }
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -331,6 +331,28 @@ export default function PaymentSuccessPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-2xl w-full">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              Processing Payment...
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary-blue" />
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
 

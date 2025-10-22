@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { User, Building2, Bell, Shield, Globe, Save, Loader2, Upload, X, Image as ImageIcon, CreditCard, Check, Zap, Users, Crown, AlertTriangle } from 'lucide-react';
@@ -43,7 +43,7 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('profile');
   const [isSaving, setIsSaving] = useState(false);
@@ -1348,6 +1348,20 @@ export default function SettingsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto p-6 max-w-6xl">
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary-blue" />
+        </div>
+      </div>
+    }>
+      <SettingsPageContent />
+    </Suspense>
   );
 }
 
