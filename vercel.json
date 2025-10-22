@@ -1,6 +1,6 @@
 {
-  "installCommand": "cd asset-tracer && npm install",
-  "buildCommand": "cd asset-tracer && npm run build",
-  "outputDirectory": "asset-tracer/.next"
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": ".next"
 }
 
