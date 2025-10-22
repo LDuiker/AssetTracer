@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Mail, AlertCircle, CheckCircle } from 'lucide-react';
+import { Loader2, Mail, AlertCircle } from 'lucide-react';
 
-export default function AcceptInvitePage() {
+function AcceptInviteForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'error' | 'invalid' | 'ready'>('loading');
@@ -111,6 +111,26 @@ export default function AcceptInvitePage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function AcceptInvitePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-light-bg flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Accept Invitation</CardTitle>
+            <CardDescription>Loading invitation details...</CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary-blue" />
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <AcceptInviteForm />
+    </Suspense>
   );
 }
 
