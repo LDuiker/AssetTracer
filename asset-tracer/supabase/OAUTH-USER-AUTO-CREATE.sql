@@ -84,6 +84,18 @@ GRANT USAGE ON SCHEMA public TO authenticated, anon;
 GRANT ALL ON users TO authenticated;
 GRANT ALL ON organizations TO authenticated;
 
+-- Enable RLS but allow the trigger function to bypass it
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
+
+-- Grant permissions to postgres role (needed for trigger function)
+GRANT ALL ON users TO postgres;
+GRANT ALL ON organizations TO postgres;
+
+-- Allow service_role to manage these tables (for triggers)
+GRANT ALL ON users TO service_role;
+GRANT ALL ON organizations TO service_role;
+
 -- =====================================================
 -- VERIFICATION QUERY
 -- =====================================================
