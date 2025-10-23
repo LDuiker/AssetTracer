@@ -118,15 +118,12 @@ BEGIN
   END IF;
 
   -- Create organization
-  INSERT INTO organizations (name, settings)
+  INSERT INTO organizations (name, default_currency, timezone, date_format)
   VALUES (
     user_full_name || '''s Organization',
-    jsonb_build_object(
-      'currency', 'USD',
-      'timezone', 'UTC',
-      'dateFormat', 'MM/DD/YYYY',
-      'fiscalYearStart', '01-01'
-    )
+    'USD',
+    'UTC',
+    'MM/DD/YYYY'
   )
   RETURNING id INTO new_org_id;
 
@@ -213,15 +210,12 @@ BEGIN
   END IF;
 
   -- Create organization
-  INSERT INTO organizations (name, settings)
+  INSERT INTO organizations (name, default_currency, timezone, date_format)
   VALUES (
     user_full_name || '''s Organization',
-    jsonb_build_object(
-      'currency', 'USD',
-      'timezone', 'UTC',
-      'dateFormat', 'MM/DD/YYYY',
-      'fiscalYearStart', '01-01'
-    )
+    'USD',
+    'UTC',
+    'MM/DD/YYYY'
   )
   RETURNING id INTO new_org_id;
 
