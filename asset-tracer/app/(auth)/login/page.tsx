@@ -30,6 +30,9 @@ function LoginForm() {
         provider: 'google',
         options: {
           redirectTo: callbackUrl,
+          queryParams: {
+            prompt: 'select_account', // Force account selection every time
+          },
         },
       });
 
