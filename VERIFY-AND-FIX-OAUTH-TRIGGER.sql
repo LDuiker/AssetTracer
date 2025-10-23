@@ -55,13 +55,10 @@ LIMIT 5;
 SELECT 
   u.id,
   u.email,
-  u.full_name,
-  u.role,
+  u.name,
   u.organization_id,
-  u.subscription_tier,
   u.created_at,
-  o.name as org_name,
-  o.slug as org_slug
+  o.name as org_name
 FROM users u
 LEFT JOIN organizations o ON u.organization_id = o.id
 ORDER BY u.created_at DESC
