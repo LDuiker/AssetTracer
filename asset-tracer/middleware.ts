@@ -46,6 +46,9 @@ export async function middleware(request: NextRequest) {
   const publicRoutes = [
     '/api/webhooks', // Webhooks from external services (DPO, etc.)
     '/api/auth',     // Auth callback endpoints
+    '/auth/callback', // OAuth callback route
+    '/accept-invite', // Team invitation acceptance
+    '/checkout',     // Checkout page (needs to check auth internally)
   ]
 
   // Check if the current path is a public route
