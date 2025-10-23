@@ -50,30 +50,20 @@ BEGIN
   )
   RETURNING id INTO new_org_id;
 
-  -- Create the user record
+  -- Create the user record (only base columns - role added by ADD-TEAM-MANAGEMENT.sql)
   INSERT INTO users (
     id,
     email,
-    full_name,
-    role,
+    name,
     organization_id,
-    avatar_url,
-    subscription_tier,
-    subscription_status,
-    created_at,
-    updated_at
+    phone
   )
   VALUES (
     NEW.id,
     user_email,
     user_full_name,
-    'owner',
     new_org_id,
-    NEW.raw_user_meta_data->>'avatar_url',
-    'free',
-    'active',
-    NOW(),
-    NOW()
+    NEW.raw_user_meta_data->>'phone'
   );
 
   -- Log the new user creation

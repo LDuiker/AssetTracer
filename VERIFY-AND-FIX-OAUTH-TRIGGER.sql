@@ -127,16 +127,13 @@ BEGIN
   )
   RETURNING id INTO new_org_id;
 
-  -- Create user
+  -- Create user (only base columns - role/subscription added by migrations)
   INSERT INTO users (
-    id, email, full_name, role, organization_id,
-    avatar_url, subscription_tier, subscription_status,
-    created_at, updated_at
+    id, email, name, organization_id, phone
   )
   VALUES (
-    NEW.id, user_email, user_full_name, 'owner', new_org_id,
-    NEW.raw_user_meta_data->>'avatar_url', 'free', 'active',
-    NOW(), NOW()
+    NEW.id, user_email, user_full_name, new_org_id,
+    NEW.raw_user_meta_data->>'phone'
   );
 
   RAISE NOTICE 'Created new user: % with organization: %', NEW.id, new_org_id;
@@ -219,15 +216,12 @@ BEGIN
   )
   RETURNING id INTO new_org_id;
 
-  -- Create user profile
+  -- Create user profile (only base columns - role added by migration)
   INSERT INTO users (
-    id, email, full_name, role, organization_id,
-    subscription_tier, subscription_status,
-    created_at, updated_at
+    id, email, name, organization_id
   )
   VALUES (
-    auth_user_id, user_email, user_full_name, 'owner', new_org_id,
-    'free', 'active', NOW(), NOW()
+    auth_user_id, user_email, user_full_name, new_org_id
   );
 
   RAISE NOTICE '✅ Created profile for user: % (%) with org: %', user_email, auth_user_id, new_org_id;
