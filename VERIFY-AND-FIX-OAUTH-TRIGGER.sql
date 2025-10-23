@@ -118,10 +118,9 @@ BEGIN
   END IF;
 
   -- Create organization
-  INSERT INTO organizations (name, slug, settings)
+  INSERT INTO organizations (name, settings)
   VALUES (
     user_full_name || '''s Organization',
-    lower(regexp_replace(user_full_name, '[^a-zA-Z0-9]', '-', 'g')) || '-' || substr(NEW.id::text, 1, 8),
     jsonb_build_object(
       'currency', 'USD',
       'timezone', 'UTC',
@@ -214,10 +213,9 @@ BEGIN
   END IF;
 
   -- Create organization
-  INSERT INTO organizations (name, slug, settings)
+  INSERT INTO organizations (name, settings)
   VALUES (
     user_full_name || '''s Organization',
-    lower(regexp_replace(user_full_name, '[^a-zA-Z0-9]', '-', 'g')) || '-' || substr(auth_user_id::text, 1, 8),
     jsonb_build_object(
       'currency', 'USD',
       'timezone', 'UTC',
