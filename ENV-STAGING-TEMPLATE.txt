@@ -1,0 +1,112 @@
+# =====================================================
+# STAGING ENVIRONMENT VARIABLES TEMPLATE
+# =====================================================
+# Copy this file to: asset-tracer/.env.staging
+# Then fill in your actual staging values
+# =====================================================
+
+# =====================================================
+# SUPABASE CONFIGURATION (Staging Project)
+# =====================================================
+# Your staging Supabase project: https://supabase.com/dashboard/project/ougntjrrskfsuognjmcw
+# Get these from: Settings → API
+NEXT_PUBLIC_SUPABASE_URL=https://ougntjrrskfsuognjmcw.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91Z250anJyc2tmc3VvZ25qbWN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3MjE4MzAsImV4cCI6MjA1MzI5NzgzMH0.c2VnVl0xKZqNlCdDmxYN3dMfS3JLxKbCCWyJ5kQglRM
+
+# Service Role Key (for admin operations like delete user)
+# ⚠️ KEEP THIS SECRET - Never expose to client
+# Get from: Supabase Dashboard → Settings → API → service_role key
+SUPABASE_SERVICE_ROLE_KEY=YOUR_STAGING_SERVICE_ROLE_KEY_HERE
+
+# =====================================================
+# RESEND EMAIL SERVICE
+# =====================================================
+# Option 1: Use the same Resend account with test mode
+# Option 2: Create a separate Resend account for staging
+# Get your API key from: https://resend.com/api-keys
+RESEND_API_KEY=re_YOUR_STAGING_RESEND_KEY_HERE
+
+# =====================================================
+# POLAR SUBSCRIPTION SERVICE (Sandbox)
+# =====================================================
+# ⚠️ IMPORTANT: Use SANDBOX for staging, not production!
+# Sandbox Dashboard: https://sandbox.polar.sh/dashboard
+# Get API key from: https://sandbox.polar.sh/settings
+POLAR_API_KEY=polar_oat_YOUR_STAGING_SANDBOX_KEY_HERE
+
+# Price IDs from Polar Sandbox Dashboard
+# Create test products in: https://sandbox.polar.sh/dashboard/products
+POLAR_PRO_PRICE_ID=YOUR_STAGING_PRO_PRICE_ID
+POLAR_BUSINESS_PRICE_ID=YOUR_STAGING_BUSINESS_PRICE_ID
+
+# =====================================================
+# CRON JOB AUTHENTICATION
+# =====================================================
+# Secret key to protect cron endpoints from unauthorized access
+# Generate with PowerShell: .\generate-cron-secret.ps1
+# Or with OpenSSL: openssl rand -base64 32
+CRON_SECRET=YOUR_STAGING_CRON_SECRET_HERE
+
+# =====================================================
+# APPLICATION CONFIGURATION
+# =====================================================
+# Base URL for your staging application
+# Options:
+#   - Vercel preview: https://asset-tracer-git-staging-yourname.vercel.app
+#   - Custom domain: https://staging.asset-tracer.com
+#   - Local testing: http://localhost:3000
+NEXT_PUBLIC_APP_URL=https://asset-tracer-staging.vercel.app
+
+# Environment identifier
+NODE_ENV=staging
+
+# =====================================================
+# OPTIONAL: ANALYTICS & MONITORING
+# =====================================================
+# Add your staging analytics keys here if needed
+# NEXT_PUBLIC_GA_ID=
+# NEXT_PUBLIC_POSTHOG_KEY=
+# SENTRY_DSN=
+# SENTRY_ENVIRONMENT=staging
+
+# =====================================================
+# SETUP INSTRUCTIONS
+# =====================================================
+# 1. Copy this file to: asset-tracer/.env.staging
+# 2. Fill in all the YOUR_*_HERE placeholders with actual values
+# 3. Get Supabase service role key from staging project dashboard
+# 4. Generate CRON_SECRET using the provided script
+# 5. Use Polar SANDBOX for staging (not production API)
+# 6. Update NEXT_PUBLIC_APP_URL with your staging domain
+# 7. Never commit .env.staging to git (.gitignore protects it)
+# =====================================================
+
+# =====================================================
+# STAGING VS PRODUCTION DIFFERENCES
+# =====================================================
+# STAGING:
+#   - Uses Polar SANDBOX (test payments, no real money)
+#   - Uses separate Supabase project (ougntjrrskfsuognjmcw)
+#   - Can use Resend test mode or separate account
+#   - Domain: staging.asset-tracer.com or Vercel preview URL
+#   - Test data, safe to reset/delete
+#
+# PRODUCTION:
+#   - Uses Polar LIVE (real payments)
+#   - Uses production Supabase project
+#   - Uses production Resend account
+#   - Domain: www.asset-tracer.com
+#   - Real user data, must be protected
+# =====================================================
+
+# =====================================================
+# VERCEL DEPLOYMENT
+# =====================================================
+# To deploy staging to Vercel:
+# 1. Create a new environment in Vercel Dashboard: "Staging"
+# 2. Copy all variables from this file to Vercel → Settings → Environment Variables
+# 3. Set all variables to "Staging" environment
+# 4. Deploy from "staging" branch (if you have one)
+# 5. Or use Vercel preview deployments for testing
+# =====================================================
+
