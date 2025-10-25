@@ -4,7 +4,7 @@ import { Search, Plus, Filter, Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrencyAmount } from '@/lib/utils/currency';
+import { useCurrency } from '@/lib/context/CurrencyContext';
 import type { Expense } from '@/types';
 import {
   Select,
@@ -55,6 +55,8 @@ export function ExpenseListPanel({
   categoryFilter,
   onCategoryFilterChange,
 }: ExpenseListPanelProps) {
+  const { formatCurrency } = useCurrency();
+
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
       {/* Header */}
@@ -132,7 +134,7 @@ export function ExpenseListPanel({
                   </div>
                   <div className="text-right ml-2">
                     <div className="font-semibold text-gray-900 dark:text-white">
-                      {formatCurrencyAmount(expense.amount, expense.currency || 'USD')}
+                      {formatCurrency(expense.amount)}
                     </div>
                   </div>
                 </div>

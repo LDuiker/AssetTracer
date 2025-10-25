@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
-import { formatCurrencyAmount } from '@/lib/utils/currency';
+import { useCurrency } from '@/lib/context/CurrencyContext';
 import type { Expense } from '@/types';
 
 interface ExpenseViewPanelProps {
@@ -57,7 +57,7 @@ export function ExpenseViewPanel({
   onEdit,
   onDelete,
 }: ExpenseViewPanelProps) {
-  const formatCurrency = (amount: number) => formatCurrencyAmount(amount, expense.currency || 'USD');
+  const { formatCurrency } = useCurrency();
 
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
