@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Edit, Download, Trash2, Building2, Calendar, FileText, DollarSign, Tag, Link2 } from 'lucide-react';
+import { ArrowLeft, Edit, Download, Trash2, Building2, Calendar, FileText, Tag, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -128,8 +128,7 @@ export function ExpenseViewPanel({
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                   Amount
                 </p>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <DollarSign className="h-8 w-8 text-gray-400" />
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
                   {formatCurrency(expense.amount)}
                 </div>
               </div>
