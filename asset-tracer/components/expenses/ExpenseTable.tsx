@@ -26,6 +26,7 @@ import { useCurrency } from '@/lib/context/CurrencyContext';
 interface ExpenseTableProps {
   expenses: Expense[];
   isLoading?: boolean;
+  onView?: (expense: Expense) => void;
   onEdit: (expense: Expense) => void;
   onDelete: (expense: Expense) => void;
 }
@@ -50,6 +51,7 @@ const statusColors: Record<string, string> = {
 export function ExpenseTable({
   expenses,
   isLoading,
+  onView,
   onEdit,
   onDelete,
 }: ExpenseTableProps) {
@@ -107,7 +109,11 @@ export function ExpenseTable({
           </TableHeader>
           <TableBody>
             {expenses.map((expense) => (
-              <TableRow key={expense.id}>
+              <TableRow 
+                key={expense.id}
+                className={onView ? "cursor-pointer hover:bg-gray-50" : ""}
+                onClick={() => onView?.(expense)}
+              >
                 <TableCell className="font-medium">
                   {formatDate(expense.expense_date)}
                 </TableCell>
@@ -147,7 +153,7 @@ export function ExpenseTable({
                 <TableCell className="text-right font-semibold">
                   {formatCurrency(expense.amount)}
                 </TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon">
@@ -157,6 +163,12 @@ export function ExpenseTable({
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
+                      {onView && (
+                        <DropdownMenuItem onClick={() => onView(expense)}>
+                          <FileText className="mr-2 h-4 w-4" />
+                          View Details
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={() => onEdit(expense)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit

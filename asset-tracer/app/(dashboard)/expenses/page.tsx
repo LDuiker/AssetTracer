@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ExpenseTable, ExpenseDialog } from '@/components/expenses';
+import { ExpenseTable, ExpenseDialog, ExpenseListPanel, ExpenseViewPanel } from '@/components/expenses';
 import { useCurrency } from '@/lib/context/CurrencyContext';
 import { toast } from 'sonner';
 import type { Expense, CreateExpenseInput } from '@/types';
@@ -36,6 +36,7 @@ export default function ExpensesPage() {
   const [endDate, setEndDate] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'view'>('list');
 
   // Fetch expenses
   const { data: expenses = [], error, mutate, isLoading } = useSWR<Expense[]>(
@@ -103,19 +104,34 @@ export default function ExpensesPage() {
   };
 
   // Handle edit expense
-  const handleEdit = (expense: Expense) => {
-    setSelectedExpense(expense);
+  const handleEdit = (expense?: Expense) => {
+    setSelectedExpense(expense || selectedExpense);
     setDialogOpen(true);
   };
 
+  // Handle view expense
+  const handleView = (expense: Expense) => {
+    setSelectedExpense(expense);
+    setViewMode('view');
+  };
+
+  // Handle back to list
+  const handleBackToList = () => {
+    setSelectedExpense(null);
+    setViewMode('list');
+  };
+
   // Handle delete expense
-  const handleDelete = async (expense: Expense) => {
-    if (!confirm(`Are you sure you want to delete this expense?\n\n"${expense.description}"`)) {
+  const handleDelete = async (expense?: Expense) => {
+    const expenseToDelete = expense || selectedExpense;
+    if (!expenseToDelete) return;
+
+    if (!confirm(`Are you sure you want to delete this expense?\n\n"${expenseToDelete.description}"`)) {
       return;
     }
 
     try {
-      const response = await fetch(`/api/expenses/${expense.id}`, {
+      const response = await fetch(`/api/expenses/${expenseToDelete.id}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -127,9 +143,15 @@ export default function ExpensesPage() {
 
       // Optimistically update the UI
       await mutate(
-        expenses.filter((e) => e.id !== expense.id),
+        expenses.filter((e) => e.id !== expenseToDelete.id),
         false
       );
+
+      // If we're in view mode and deleted the current expense, go back to list
+      if (viewMode === 'view' && selectedExpense?.id === expenseToDelete.id) {
+        setSelectedExpense(null);
+        setViewMode('list');
+      }
 
       toast.success('Expense deleted successfully');
 
@@ -173,9 +195,12 @@ export default function ExpensesPage() {
           expenses.map((e) => (e.id === savedExpense.id ? savedExpense : e)),
           false
         );
+        setSelectedExpense(savedExpense);
         toast.success('Expense updated successfully');
       } else {
         await mutate([savedExpense, ...expenses], false);
+        setSelectedExpense(savedExpense);
+        setViewMode('view');
         toast.success('Expense created successfully');
       }
 
@@ -223,164 +248,207 @@ export default function ExpensesPage() {
     );
   }
 
+  // Full Page List View
+  if (viewMode === 'list') {
+    return (
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Expenses</h1>
+            <p className="text-muted-foreground mt-1">
+              Track and manage your business expenses
+            </p>
+          </div>
+          <Button onClick={handleCreate} size="lg">
+            <Plus className="mr-2 h-4 w-4" />
+            Create Expense
+          </Button>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg border p-4 space-y-4">
+          {/* Search and Category Filter */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search expenses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="maintenance">Maintenance</SelectItem>
+                <SelectItem value="repair">Repair</SelectItem>
+                <SelectItem value="supplies">Supplies</SelectItem>
+                <SelectItem value="utilities">Utilities</SelectItem>
+                <SelectItem value="insurance">Insurance</SelectItem>
+                <SelectItem value="fuel">Fuel</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={assetFilter} onValueChange={setAssetFilter}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Asset" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Assets</SelectItem>
+                <SelectItem value="unlinked">No Asset</SelectItem>
+                {uniqueAssets.map((asset) => (
+                  <SelectItem key={asset.id} value={asset.id}>
+                    {asset.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Date Range Filter */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="date"
+                placeholder="Start date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <div className="relative flex-1">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="date"
+                placeholder="End date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                onClick={clearFilters}
+                className="w-full md:w-auto"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Clear Filters
+              </Button>
+            )}
+          </div>
+
+          {/* Results Summary */}
+          <div className="flex flex-wrap items-center gap-3 pt-2 border-t">
+            <span className="text-sm text-gray-600">
+              Showing {filteredExpenses.length} of {expenses.length} expenses
+            </span>
+            <span className="text-sm font-semibold text-gray-900">
+              Total: {formatCurrency(totalExpenses)}
+            </span>
+            {searchQuery && (
+              <Badge variant="secondary" className="gap-1">
+                Search: {searchQuery}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => setSearchQuery('')}
+                />
+              </Badge>
+            )}
+            {categoryFilter !== 'all' && (
+              <Badge variant="secondary" className="gap-1">
+                Category: {categoryFilter}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => setCategoryFilter('all')}
+                />
+              </Badge>
+            )}
+            {assetFilter !== 'all' && (
+              <Badge variant="secondary" className="gap-1">
+                {assetFilter === 'unlinked' ? 'No Asset' : 'Asset Filter'}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => setAssetFilter('all')}
+                />
+              </Badge>
+            )}
+            {(startDate || endDate) && (
+              <Badge variant="secondary" className="gap-1">
+                Date Range
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                  }}
+                />
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Expenses Table */}
+        <ExpenseTable
+          expenses={filteredExpenses}
+          isLoading={isLoading}
+          onView={handleView}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+
+        {/* Expense Dialog */}
+        <ExpenseDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          expense={selectedExpense}
+          onSave={handleSave}
+        />
+      </div>
+    );
+  }
+
+  // Split Panel View
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Expenses</h1>
-          <p className="text-muted-foreground mt-1">
-            Track and manage your business expenses
-          </p>
-        </div>
-        <Button onClick={handleCreate} size="lg">
-          <Plus className="mr-2 h-4 w-4" />
-          Create Expense
-        </Button>
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+      {/* Left Panel - Expense List */}
+      <div className="w-96 flex-shrink-0">
+        <ExpenseListPanel
+          expenses={filteredExpenses}
+          selectedExpense={selectedExpense}
+          onSelect={handleView}
+          onCreate={handleCreate}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          categoryFilter={categoryFilter}
+          onCategoryFilterChange={setCategoryFilter}
+        />
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg border p-4 space-y-4">
-        {/* Search and Category Filter */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search expenses..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="maintenance">Maintenance</SelectItem>
-              <SelectItem value="repair">Repair</SelectItem>
-              <SelectItem value="supplies">Supplies</SelectItem>
-              <SelectItem value="utilities">Utilities</SelectItem>
-              <SelectItem value="insurance">Insurance</SelectItem>
-              <SelectItem value="fuel">Fuel</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={assetFilter} onValueChange={setAssetFilter}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="Asset" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Assets</SelectItem>
-              <SelectItem value="unlinked">No Asset</SelectItem>
-              {uniqueAssets.map((asset) => (
-                <SelectItem key={asset.id} value={asset.id}>
-                  {asset.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Date Range Filter */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              type="date"
-              placeholder="Start date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          <div className="relative flex-1">
-            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              type="date"
-              placeholder="End date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          {hasActiveFilters && (
-            <Button
-              variant="outline"
-              onClick={clearFilters}
-              className="w-full md:w-auto"
-            >
-              <X className="mr-2 h-4 w-4" />
-              Clear Filters
-            </Button>
-          )}
-        </div>
-
-        {/* Results Summary */}
-        <div className="flex flex-wrap items-center gap-3 pt-2 border-t">
-          <span className="text-sm text-gray-600">
-            Showing {filteredExpenses.length} of {expenses.length} expenses
-          </span>
-          <span className="text-sm font-semibold text-gray-900">
-            Total: {formatCurrency(totalExpenses)}
-          </span>
-          {searchQuery && (
-            <Badge variant="secondary" className="gap-1">
-              Search: {searchQuery}
-              <X
-                className="h-3 w-3 cursor-pointer"
-                onClick={() => setSearchQuery('')}
-              />
-            </Badge>
-          )}
-          {categoryFilter !== 'all' && (
-            <Badge variant="secondary" className="gap-1">
-              Category: {categoryFilter}
-              <X
-                className="h-3 w-3 cursor-pointer"
-                onClick={() => setCategoryFilter('all')}
-              />
-            </Badge>
-          )}
-          {assetFilter !== 'all' && (
-            <Badge variant="secondary" className="gap-1">
-              {assetFilter === 'unlinked' ? 'No Asset' : 'Asset Filter'}
-              <X
-                className="h-3 w-3 cursor-pointer"
-                onClick={() => setAssetFilter('all')}
-              />
-            </Badge>
-          )}
-          {(startDate || endDate) && (
-            <Badge variant="secondary" className="gap-1">
-              Date Range
-              <X
-                className="h-3 w-3 cursor-pointer"
-                onClick={() => {
-                  setStartDate('');
-                  setEndDate('');
-                }}
-              />
-            </Badge>
-          )}
-        </div>
+      {/* Right Panel - View */}
+      <div className="flex-1">
+        {viewMode === 'view' && selectedExpense && (
+          <ExpenseViewPanel
+            expense={selectedExpense}
+            onBack={handleBackToList}
+            onEdit={() => handleEdit(selectedExpense)}
+            onDelete={() => handleDelete(selectedExpense)}
+          />
+        )}
       </div>
 
-      {/* Expenses Table */}
-      <ExpenseTable
-        expenses={filteredExpenses}
-        isLoading={isLoading}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
-
-      {/* Expense Dialog */}
+      {/* Expense Dialog for Edit */}
       <ExpenseDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
@@ -390,4 +458,3 @@ export default function ExpensesPage() {
     </div>
   );
 }
-
