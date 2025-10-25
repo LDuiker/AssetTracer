@@ -259,7 +259,7 @@ export function AssetForm({ initialData, onSubmit, onCancel, isCloning = false }
                 <FormLabel>Purchase Cost *</FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
                       {currencySymbol}
                     </span>
                     <Input
@@ -267,7 +267,7 @@ export function AssetForm({ initialData, onSubmit, onCancel, isCloning = false }
                       step="0.01"
                       min="0"
                       placeholder="0.00"
-                      className="pl-7"
+                      className="pl-14"
                       {...field}
                     />
                   </div>
@@ -286,7 +286,7 @@ export function AssetForm({ initialData, onSubmit, onCancel, isCloning = false }
                 <FormLabel>Current Value *</FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
                       {currencySymbol}
                     </span>
                     <Input
@@ -294,7 +294,7 @@ export function AssetForm({ initialData, onSubmit, onCancel, isCloning = false }
                       step="0.01"
                       min="0"
                       placeholder="0.00"
-                      className="pl-7"
+                      className="pl-14"
                       {...field}
                     />
                   </div>

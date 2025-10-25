@@ -27,6 +27,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
 import { useOrganization } from '@/lib/context/OrganizationContext';
+import { useCurrency } from '@/lib/context/CurrencyContext';
 import type { Expense, CreateExpenseInput, Asset } from '@/types';
 
 const expenseFormSchema = z.object({
@@ -74,6 +75,10 @@ const fetcher = async (url: string) => {
 
 export function ExpenseForm({ expense, onSubmit, onCancel }: ExpenseFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { getCurrencySymbol } = useCurrency();
+
+  // Get currency symbol for display
+  const currencySymbol = getCurrencySymbol();
 
   // Fetch organization data for default currency
   const { data: orgData } = useSWR('/api/organization/settings', fetcher);
@@ -185,7 +190,18 @@ export function ExpenseForm({ expense, onSubmit, onCancel }: ExpenseFormProps) {
               <FormItem>
                 <FormLabel>Amount</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
+                      {currencySymbol}
+                    </span>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      placeholder="0.00" 
+                      className="pl-14"
+                      {...field} 
+                    />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
