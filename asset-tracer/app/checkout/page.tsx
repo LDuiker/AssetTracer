@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Loader2, AlertCircle } from 'lucide-react';
+import { Package, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 function CheckoutForm() {
@@ -113,21 +113,37 @@ function CheckoutForm() {
   return (
     <div className="min-h-screen bg-light-bg flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-4 text-center">
+        <CardHeader className="space-y-4">
+          {/* Back Button */}
+          <div className="flex items-center justify-start">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/settings?tab=billing')}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Billing
+            </Button>
+          </div>
+
+          {/* Icon and Title - Centered */}
           <div className="flex justify-center">
             <div className="h-16 w-16 bg-primary-blue rounded-lg flex items-center justify-center">
               <Package className="h-8 w-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">
-            {error ? 'Checkout Error' : 'Preparing Your Checkout'}
-          </CardTitle>
-          <CardDescription>
-            {error 
-              ? 'Something went wrong while setting up your checkout'
-              : `Redirecting you to checkout for the ${plan === 'pro' ? 'Pro' : 'Business'} plan...`
-            }
-          </CardDescription>
+          <div className="text-center">
+            <CardTitle className="text-2xl font-bold">
+              {error ? 'Checkout Error' : 'Preparing Your Checkout'}
+            </CardTitle>
+            <CardDescription>
+              {error 
+                ? 'Something went wrong while setting up your checkout'
+                : `Redirecting you to checkout for the ${plan === 'pro' ? 'Pro' : 'Business'} plan...`
+              }
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {isProcessing ? (
