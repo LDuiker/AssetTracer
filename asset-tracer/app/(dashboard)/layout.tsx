@@ -9,6 +9,7 @@ import { OrganizationProvider } from '@/lib/context/OrganizationContext';
 import { CurrencyProvider } from '@/lib/context/CurrencyContext';
 import { SubscriptionProvider } from '@/lib/context/SubscriptionContext';
 import { swrConfig } from '@/lib/swr-config';
+import { NoIndexMeta } from '@/components/NoIndexMeta';
 
 export default function DashboardLayout({
   children,
@@ -46,7 +47,9 @@ export default function DashboardLayout({
       <OrganizationProvider>
         <SubscriptionProvider>
           <CurrencyProvider>
-            <div className="flex h-screen bg-light-bg overflow-hidden" suppressHydrationWarning>
+            <>
+              <NoIndexMeta />
+              <div className="flex h-screen bg-light-bg overflow-hidden" suppressHydrationWarning>
         {/* Desktop Sidebar - Hidden on mobile */}
         <Sidebar />
 
@@ -197,7 +200,8 @@ export default function DashboardLayout({
               {children}
             </DashboardWrapper>
           </main>
-            </div>
+              </div>
+            </>
           </CurrencyProvider>
         </SubscriptionProvider>
       </OrganizationProvider>
