@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { User, Building2, Bell, Shield, Globe, Save, Loader2, Upload, X, Image as ImageIcon, CreditCard, Check, Zap, Users, Crown, AlertTriangle } from 'lucide-react';
+import { User, Building2, Bell, Shield, Globe, Save, Loader2, Upload, X, Image as ImageIcon, CreditCard, Check, Zap, Users, Crown, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -45,6 +45,7 @@ const fetcher = async (url: string) => {
 
 function SettingsPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('profile');
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -515,6 +516,17 @@ function SettingsPageContent() {
 
   return (
     <div className="space-y-6">
+      {/* Back Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => router.push('/dashboard')}
+        className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Dashboard
+      </Button>
+
       {/* Header */}
     <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
