@@ -8,6 +8,14 @@ import { NextResponse, type NextRequest } from 'next/server'
  * - Allows public access to landing page and API webhooks
  */
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // SEO routes - must be accessible without any auth checks (skip all processing)
+  const seoRoutes = ['/sitemap.xml', '/robots.txt']
+  if (seoRoutes.includes(pathname)) {
+    return NextResponse.next()
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -39,8 +47,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { session },
   } = await supabase.auth.getSession()
-
-  const { pathname } = request.nextUrl
 
   // Define public routes (no authentication required)
   const publicRoutes = [
@@ -101,10 +107,11 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - sitemap.xml and robots.txt (SEO files)
      * - public folder
      * - api/webhooks (public webhooks)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sitemap\\.xml|robots\\.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
 

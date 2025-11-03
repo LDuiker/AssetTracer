@@ -62,7 +62,7 @@ export default function robots(): MetadataRoute.Robots {
           '/_next',
           '/_next/*',
           '/*.json',
-          '/*.xml', // Except sitemap.xml which is allowed
+          // Note: sitemap.xml is explicitly allowed via allow: '/' above
         ],
       },
     ],
