@@ -189,7 +189,7 @@ function formatDate(dateString: string) {
   });
 }
 
-function InvoicePreview({ organization, template = 'classic' }: TemplatePreviewProps) {
+export function InvoicePreview({ organization, template = 'classic' }: TemplatePreviewProps) {
   // Calculate average tax rate from items (or use org default)
   const defaultTaxRate = organization.default_tax_rate || 10;
   const calculatedTaxRate = baseInvoice.items && baseInvoice.items.length > 0
@@ -592,7 +592,7 @@ function InvoicePreview({ organization, template = 'classic' }: TemplatePreviewP
   );
 }
 
-function QuotationPreview({ organization, template = 'classic' }: TemplatePreviewProps) {
+export function QuotationPreview({ organization, template = 'classic' }: TemplatePreviewProps) {
   // Update quotation with organization settings
   const quotation = {
     ...baseQuotation,

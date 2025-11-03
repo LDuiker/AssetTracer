@@ -36,6 +36,7 @@ import { useCurrency } from '@/lib/context/CurrencyContext';
 import { BillingSection } from '@/components/settings/BillingSection';
 import { TeamSection } from '@/components/settings/TeamSection';
 import { TemplatePreview } from '@/components/settings/TemplatePreview';
+import { TemplateSelector } from '@/components/settings/TemplateSelector';
 import { toast } from 'sonner';
 
 const fetcher = async (url: string) => {
@@ -1123,75 +1124,39 @@ function SettingsPageContent() {
                   </p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="invoice-template">Invoice Template</Label>
-                    <Select
-                      value={organizationSettings.invoiceTemplate}
-                      onValueChange={(value) =>
-                        setOrganizationSettings({
-                          ...organizationSettings,
-                          invoiceTemplate: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger id="invoice-template">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="classic">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">Classic</span>
-                            <span className="text-xs text-gray-500">- Professional & Traditional</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="compact">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">Compact</span>
-                            <span className="text-xs text-gray-500">- Modern & Minimalist</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-gray-500">
-                      Choose your preferred invoice design style
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="quotation-template">Quotation Template</Label>
-                    <Select
-                      value={organizationSettings.quotationTemplate}
-                      onValueChange={(value) =>
-                        setOrganizationSettings({
-                          ...organizationSettings,
-                          quotationTemplate: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger id="quotation-template">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="classic">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">Classic</span>
-                            <span className="text-xs text-gray-500">- Professional & Traditional</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="compact">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">Compact</span>
-                            <span className="text-xs text-gray-500">- Modern & Minimalist</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-gray-500">
-                      Choose your preferred quotation design style
-                    </p>
-                  </div>
-                </div>
+                <TemplateSelector
+                  invoiceTemplate={organizationSettings.invoiceTemplate as 'classic' | 'compact'}
+                  quotationTemplate={organizationSettings.quotationTemplate as 'classic' | 'compact'}
+                  onInvoiceSelect={(template) =>
+                    setOrganizationSettings({
+                      ...organizationSettings,
+                      invoiceTemplate: template,
+                    })
+                  }
+                  onQuotationSelect={(template) =>
+                    setOrganizationSettings({
+                      ...organizationSettings,
+                      quotationTemplate: template,
+                    })
+                  }
+                  organization={{
+                    name: organizationSettings.name,
+                    company_email: organizationSettings.companyEmail,
+                    company_phone: organizationSettings.companyPhone,
+                    company_address: organizationSettings.companyAddress,
+                    company_city: organizationSettings.companyCity,
+                    company_state: organizationSettings.companyState,
+                    company_postal_code: organizationSettings.companyPostalCode,
+                    company_country: organizationSettings.companyCountry,
+                    company_website: organizationSettings.companyWebsite,
+                    company_logo_url: organizationSettings.companyLogoUrl,
+                    default_notes: organizationSettings.defaultNotes,
+                    invoice_terms: organizationSettings.invoiceTerms,
+                    quotation_terms: organizationSettings.quotationTerms,
+                    default_currency: organizationSettings.currency,
+                    default_tax_rate: parseFloat(organizationSettings.taxRate) || 0,
+                  }}
+                />
               </div>
 
               <Separator />
