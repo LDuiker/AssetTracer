@@ -1,0 +1,36 @@
+Subject: Please Manually Verify Domain - asset-tracer.com
+
+Hi Resend Support,
+
+I need help with domain verification for: asset-tracer.com
+
+SITUATION:
+- Added DNS records 24+ hours ago
+- Clicked "Verify" button yesterday
+- Still showing "Looking for DNS records..." for 24+ hours
+- DNS records are confirmed correct via multiple tools
+
+DNS VERIFICATION (Confirmed Working):
+✅ SPF Record: v=spf1 include:resend.com ~all
+✅ DKIM Record: Configured at resend._domainkey.asset-tracer.com
+✅ MX Record: feedback-smtp.us-east-1.amazonses.com
+
+VERIFIED WITH:
+- nslookup (local DNS)
+- dnschecker.org (global propagation)
+- mxtoolbox.com (SPF validator)
+- All show records are correct and propagated
+
+API TEST RESULT:
+When attempting to send via API, I receive:
+"The asset-tracer.com domain is not verified."
+
+REQUEST:
+Can you please manually verify my domain? The DNS records are 100% correct and have been propagated globally for over 24 hours.
+
+Domain: asset-tracer.com
+Account email: mrlduiker@gmail.com
+API Key ID: (ends with ...QUDS)
+
+Thank you for your help!
+
