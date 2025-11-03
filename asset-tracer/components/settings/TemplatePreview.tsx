@@ -25,6 +25,8 @@ interface OrganizationData {
   quotation_terms?: string;
   default_currency?: string;
   default_tax_rate?: number;
+  invoice_template?: 'classic' | 'compact';
+  quotation_template?: 'classic' | 'compact';
 }
 
 interface TemplatePreviewProps {
@@ -644,6 +646,10 @@ export function TemplatePreview({ organization }: TemplatePreviewProps) {
   const [showPreview, setShowPreview] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activeTab, setActiveTab] = useState<'invoice' | 'quotation'>('invoice');
+  
+  // Get selected templates
+  const invoiceTemplate = organization.invoice_template || 'classic';
+  const quotationTemplate = organization.quotation_template || 'classic';
 
   if (!showPreview) {
     return (
@@ -690,6 +696,10 @@ export function TemplatePreview({ organization }: TemplatePreviewProps) {
             <CardDescription className="mt-1">
               This preview matches your actual PDF templates. Changes to organization settings update automatically.
             </CardDescription>
+            <div className="mt-2 flex items-center gap-4 text-sm">
+              <span className="text-gray-600">Invoice: <span className="font-semibold capitalize">{invoiceTemplate}</span></span>
+              <span className="text-gray-600">Quotation: <span className="font-semibold capitalize">{quotationTemplate}</span></span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button 

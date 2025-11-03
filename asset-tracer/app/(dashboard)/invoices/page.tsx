@@ -336,13 +336,20 @@ export default function InvoicesPage() {
       const orgResult = orgResponse.ok ? await orgResponse.json() : null;
       const orgData = orgResult?.organization || null;
       
+      // Get selected template
+      const selectedTemplate = orgData?.invoice_template || 'classic';
+      
       // Dynamically import PDF libraries (client-side only)
       const { pdf } = await import('@react-pdf/renderer');
-      const { InvoicePDF } = await import('@/lib/pdf/invoice-pdf');
+      const { getInvoiceTemplate } = await import('@/lib/pdf/templates');
+      
+      // Get the appropriate template component
+      const template = getInvoiceTemplate(selectedTemplate as 'classic' | 'compact');
+      const InvoiceComponent = template.component;
       
       // Generate PDF with organization data
       const blob = await pdf(
-        <InvoicePDF 
+        <InvoiceComponent 
           invoice={fullInvoice} 
           organization={orgData}
         />

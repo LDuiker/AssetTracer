@@ -179,6 +179,8 @@ function SettingsPageContent() {
     defaultNotes: '',
     invoiceTerms: '',
     quotationTerms: '',
+    invoiceTemplate: 'classic',
+    quotationTemplate: 'classic',
   });
 
   // Update organization settings when data loads
@@ -202,6 +204,8 @@ function SettingsPageContent() {
         defaultNotes: orgData.organization.default_notes || '',
         invoiceTerms: orgData.organization.invoice_terms || 'Payment due within 30 days. Late payments may incur additional charges.',
         quotationTerms: orgData.organization.quotation_terms || 'This quotation is valid for 30 days from the date of issue. Prices are subject to change after this period.',
+        invoiceTemplate: orgData.organization.invoice_template || 'classic',
+        quotationTemplate: orgData.organization.quotation_template || 'classic',
       });
     }
   }, [orgData]);
@@ -306,6 +310,8 @@ function SettingsPageContent() {
           default_notes: organizationSettings.defaultNotes,
           invoice_terms: organizationSettings.invoiceTerms,
           quotation_terms: organizationSettings.quotationTerms,
+          invoice_template: organizationSettings.invoiceTemplate,
+          quotation_template: organizationSettings.quotationTemplate,
         }),
       });
 
@@ -1106,6 +1112,90 @@ function SettingsPageContent() {
 
               <Separator />
 
+              {/* Template Selection Section */}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Document Templates
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Choose the visual style for your invoices and quotations
+                  </p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="invoice-template">Invoice Template</Label>
+                    <Select
+                      value={organizationSettings.invoiceTemplate}
+                      onValueChange={(value) =>
+                        setOrganizationSettings({
+                          ...organizationSettings,
+                          invoiceTemplate: value,
+                        })
+                      }
+                    >
+                      <SelectTrigger id="invoice-template">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="classic">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">Classic</span>
+                            <span className="text-xs text-gray-500">- Professional & Traditional</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="compact">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">Compact</span>
+                            <span className="text-xs text-gray-500">- Modern & Minimalist</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500">
+                      Choose your preferred invoice design style
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="quotation-template">Quotation Template</Label>
+                    <Select
+                      value={organizationSettings.quotationTemplate}
+                      onValueChange={(value) =>
+                        setOrganizationSettings({
+                          ...organizationSettings,
+                          quotationTemplate: value,
+                        })
+                      }
+                    >
+                      <SelectTrigger id="quotation-template">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="classic">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">Classic</span>
+                            <span className="text-xs text-gray-500">- Professional & Traditional</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="compact">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">Compact</span>
+                            <span className="text-xs text-gray-500">- Modern & Minimalist</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500">
+                      Choose your preferred quotation design style
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
               {/* Template Preview Section */}
               <TemplatePreview 
                 organization={{
@@ -1124,6 +1214,8 @@ function SettingsPageContent() {
                   quotation_terms: organizationSettings.quotationTerms,
                   default_currency: organizationSettings.currency,
                   default_tax_rate: parseFloat(organizationSettings.taxRate) || 0,
+                  invoice_template: organizationSettings.invoiceTemplate as 'classic' | 'compact',
+                  quotation_template: organizationSettings.quotationTemplate as 'classic' | 'compact',
                 }}
               />
 

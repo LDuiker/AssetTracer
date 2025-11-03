@@ -309,13 +309,20 @@ export default function QuotationsPage() {
       const orgResult = orgResponse.ok ? await orgResponse.json() : null;
       const orgData = orgResult?.organization || null;
       
+      // Get selected template
+      const selectedTemplate = orgData?.quotation_template || 'classic';
+      
       // Dynamically import PDF libraries (client-side only)
       const { pdf } = await import('@react-pdf/renderer');
-      const { QuotationPDF } = await import('@/lib/pdf/quotation-pdf');
+      const { getQuotationTemplate } = await import('@/lib/pdf/templates');
+      
+      // Get the appropriate template component
+      const template = getQuotationTemplate(selectedTemplate as 'classic' | 'compact');
+      const QuotationComponent = template.component;
       
       // Generate PDF with organization data
       const blob = await pdf(
-        <QuotationPDF 
+        <QuotationComponent 
           quotation={fullQuotation} 
           organization={orgData}
         />
