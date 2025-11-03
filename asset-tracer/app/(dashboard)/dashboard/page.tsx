@@ -297,6 +297,75 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* Performance Summary Cards - Available to all tiers */}
+      {!isLoading && report && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Best Performing Month */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-blue-600" />
+                Best Performing Month
+              </CardTitle>
+              <CardDescription>
+                The month with the highest net profit
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {summary.best_month ? (
+                <>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {format(new Date(summary.best_month.month + '-01'), 'MMMM yyyy')}
+                  </p>
+                  <p className="text-lg font-semibold text-green-600 dark:text-green-400 mt-2">
+                    {formatCurrency(summary.best_month.net_profit)} profit
+                  </p>
+                </>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400">No data available</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Average Monthly Performance */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-purple-600" />
+                Average Monthly Performance
+              </CardTitle>
+              <CardDescription>
+                Average financial metrics per month
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>Avg. Revenue:</span>
+                <span className="font-semibold text-green-600 dark:text-green-400">
+                  {formatCurrency(summary.avg_monthly_revenue || 0)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>Avg. Expenses:</span>
+                <span className="font-semibold text-red-600 dark:text-red-400">
+                  {formatCurrency(summary.avg_monthly_expenses || 0)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>Avg. Profit:</span>
+                <span className={`font-semibold ${
+                  (summary.avg_monthly_profit || 0) >= 0 
+                    ? 'text-blue-600 dark:text-blue-400' 
+                    : 'text-red-600 dark:text-red-400'
+                }`}>
+                  {formatCurrency(summary.avg_monthly_profit || 0)}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Charts - Only shown if allowed, otherwise show upgrade prompts */}
       {isLoading ? (
         <Card>
