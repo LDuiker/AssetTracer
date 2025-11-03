@@ -23,6 +23,8 @@ const updateOrganizationSchema = z.object({
   default_notes: z.string().optional(),
   invoice_terms: z.string().optional(),
   quotation_terms: z.string().optional(),
+  invoice_template: z.enum(['classic', 'compact']).optional(),
+  quotation_template: z.enum(['classic', 'compact']).optional(),
 });
 
 /**
@@ -103,6 +105,8 @@ export async function GET() {
         default_notes: organization.default_notes || '',
         invoice_terms: organization.invoice_terms || 'Payment due within 30 days. Late payments may incur additional charges.',
         quotation_terms: organization.quotation_terms || 'This quotation is valid for 30 days from the date of issue. Prices are subject to change after this period.',
+        invoice_template: organization.invoice_template || 'classic',
+        quotation_template: organization.quotation_template || 'classic',
         created_at: organization.created_at,
         updated_at: organization.updated_at,
         // Subscription fields
@@ -225,6 +229,12 @@ export async function PATCH(request: NextRequest) {
     }
     if (updateData.quotation_terms !== undefined) {
       updatePayload.quotation_terms = updateData.quotation_terms;
+    }
+    if (updateData.invoice_template !== undefined) {
+      updatePayload.invoice_template = updateData.invoice_template;
+    }
+    if (updateData.quotation_template !== undefined) {
+      updatePayload.quotation_template = updateData.quotation_template;
     }
 
     console.log('Updating organization:', organizationId, 'with:', updatePayload);
