@@ -392,6 +392,15 @@ export const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({
           </View>
         </View>
 
+        {/* Subject */}
+        {invoice.subject && (
+          <View style={{ marginBottom: 20, marginTop: 20, paddingTop: 15, borderTop: '1px solid #E5E7EB' }}>
+            <Text style={{ fontSize: 12, fontFamily: 'Helvetica-Bold', color: '#333333' }}>
+              Subject: {invoice.subject}
+            </Text>
+          </View>
+        )}
+
         {/* Line Items Table */}
         <View style={styles.table}>
           {/* Table Header */}
