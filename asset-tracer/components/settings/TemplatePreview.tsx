@@ -285,45 +285,45 @@ function InvoicePreview({ organization }: TemplatePreviewProps) {
         </div>
       </div>
 
-      {/* Invoice Details & Client Info - Side by Side like PDF */}
-      <div className="grid grid-cols-2 gap-6 mb-4">
-        <div>
-          <p className="text-xs font-bold text-gray-900 mb-2" style={{ fontSize: '12pt', fontWeight: 'bold', color: '#333', marginBottom: '8px' }}>
-            Invoice Information
-          </p>
-          <div className="space-y-1">
-            <div className="flex justify-between">
-              <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Issue Date:</span>
-              <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{formatDate(invoice.issue_date)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Due Date:</span>
-              <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{formatDate(invoice.due_date)}</span>
-            </div>
+      {/* Invoice Details - Stacked vertically like PDF */}
+      <div className="mb-4" style={{ marginBottom: '15px' }}>
+        <p className="text-xs font-bold text-gray-900 mb-2" style={{ fontSize: '12pt', fontWeight: 'bold', color: '#333', marginBottom: '8px' }}>
+          Invoice Information
+        </p>
+        <div className="space-y-1">
+          <div className="flex justify-between mb-1" style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: '5px' }}>
+            <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Issue Date:</span>
+            <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{formatDate(invoice.issue_date)}</span>
+          </div>
+          <div className="flex justify-between mb-1" style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: '5px' }}>
+            <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Due Date:</span>
+            <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{formatDate(invoice.due_date)}</span>
           </div>
         </div>
-        <div>
-          <p className="text-xs font-bold text-gray-900 mb-2" style={{ fontSize: '12pt', fontWeight: 'bold', color: '#333', marginBottom: '8px' }}>
-            Client Information
-          </p>
-          <div className="space-y-1">
-            <div className="flex justify-between">
-              <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Name:</span>
-              <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{invoice.client?.name || 'N/A'}</span>
-            </div>
-            {invoice.client?.company && (
-              <div className="flex justify-between">
-                <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Company:</span>
-                <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{invoice.client.company}</span>
-              </div>
-            )}
-            {invoice.client?.email && (
-              <div className="flex justify-between">
-                <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Email:</span>
-                <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{invoice.client.email}</span>
-              </div>
-            )}
+      </div>
+
+      {/* Client Details - Stacked vertically like PDF */}
+      <div className="mb-4" style={{ marginBottom: '15px' }}>
+        <p className="text-xs font-bold text-gray-900 mb-2" style={{ fontSize: '12pt', fontWeight: 'bold', color: '#333', marginBottom: '8px' }}>
+          Client Information
+        </p>
+        <div className="space-y-1">
+          <div className="flex justify-between mb-1" style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: '5px' }}>
+            <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Name:</span>
+            <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{invoice.client?.name || 'N/A'}</span>
           </div>
+          {invoice.client?.company && (
+            <div className="flex justify-between mb-1" style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: '5px' }}>
+              <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Company:</span>
+              <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{invoice.client.company}</span>
+            </div>
+          )}
+          {invoice.client?.email && (
+            <div className="flex justify-between mb-1" style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: '5px' }}>
+              <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Email:</span>
+              <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{invoice.client.email}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -507,45 +507,45 @@ function QuotationPreview({ organization }: TemplatePreviewProps) {
         </div>
       </div>
 
-      {/* Quotation Details & Client Info - Side by Side like PDF */}
-      <div className="grid grid-cols-2 gap-6 mb-4">
-        <div>
-          <p className="text-xs font-bold text-gray-900 mb-2" style={{ fontSize: '12pt', fontWeight: 'bold', color: '#333', marginBottom: '8px' }}>
-            Quotation Information
-          </p>
-          <div className="space-y-1">
-            <div className="flex justify-between">
-              <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Issue Date:</span>
-              <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{formatDate(quotation.issue_date)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Valid Until:</span>
-              <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{formatDate(quotation.valid_until)}</span>
-            </div>
+      {/* Quotation Details - Stacked vertically like PDF */}
+      <div className="mb-4" style={{ marginBottom: '15px' }}>
+        <p className="text-xs font-bold text-gray-900 mb-2" style={{ fontSize: '12pt', fontWeight: 'bold', color: '#333', marginBottom: '8px' }}>
+          Quotation Information
+        </p>
+        <div className="space-y-1">
+          <div className="flex justify-between mb-1" style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: '5px' }}>
+            <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Issue Date:</span>
+            <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{formatDate(quotation.issue_date)}</span>
+          </div>
+          <div className="flex justify-between mb-1" style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: '5px' }}>
+            <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Valid Until:</span>
+            <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{formatDate(quotation.valid_until)}</span>
           </div>
         </div>
-        <div>
-          <p className="text-xs font-bold text-gray-900 mb-2" style={{ fontSize: '12pt', fontWeight: 'bold', color: '#333', marginBottom: '8px' }}>
-            Client Information
-          </p>
-          <div className="space-y-1">
-            <div className="flex justify-between">
-              <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Name:</span>
-              <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{quotation.client?.name || 'N/A'}</span>
-            </div>
-            {quotation.client?.company && (
-              <div className="flex justify-between">
-                <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Company:</span>
-                <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{quotation.client.company}</span>
-              </div>
-            )}
-            {quotation.client?.email && (
-              <div className="flex justify-between">
-                <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Email:</span>
-                <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{quotation.client.email}</span>
-              </div>
-            )}
+      </div>
+
+      {/* Client Details - Stacked vertically like PDF */}
+      <div className="mb-4" style={{ marginBottom: '15px' }}>
+        <p className="text-xs font-bold text-gray-900 mb-2" style={{ fontSize: '12pt', fontWeight: 'bold', color: '#333', marginBottom: '8px' }}>
+          Client Information
+        </p>
+        <div className="space-y-1">
+          <div className="flex justify-between mb-1" style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: '5px' }}>
+            <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Name:</span>
+            <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{quotation.client?.name || 'N/A'}</span>
           </div>
+          {quotation.client?.company && (
+            <div className="flex justify-between mb-1" style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: '5px' }}>
+              <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Company:</span>
+              <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{quotation.client.company}</span>
+            </div>
+          )}
+          {quotation.client?.email && (
+            <div className="flex justify-between mb-1" style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: '5px' }}>
+              <span className="text-xs font-bold text-gray-700" style={{ fontSize: '10pt', fontWeight: 'bold', width: '40%' }}>Email:</span>
+              <span className="text-xs text-gray-600" style={{ fontSize: '10pt', width: '60%' }}>{quotation.client.email}</span>
+            </div>
+          )}
         </div>
       </div>
 
