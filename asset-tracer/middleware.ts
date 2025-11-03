@@ -50,11 +50,13 @@ export async function middleware(request: NextRequest) {
 
   // Define public routes (no authentication required)
   const publicRoutes = [
-    '/api/webhooks', // Webhooks from external services (DPO, etc.)
+    '/api/webhooks', // Webhooks from external services (Polar.sh, etc.)
     '/api/auth',     // Auth callback endpoints
     '/auth/callback', // OAuth callback route
     '/accept-invite', // Team invitation acceptance
     '/checkout',     // Checkout page (needs to check auth internally)
+    '/privacy',      // Privacy Policy page
+    '/blog',         // Blog pages
   ]
 
   // Check if the current path is a public route
