@@ -35,6 +35,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useCurrency } from '@/lib/context/CurrencyContext';
 import { BillingSection } from '@/components/settings/BillingSection';
 import { TeamSection } from '@/components/settings/TeamSection';
+import { TemplatePreview } from '@/components/settings/TemplatePreview';
 import { toast } from 'sonner';
 
 const fetcher = async (url: string) => {
@@ -1102,6 +1103,29 @@ function SettingsPageContent() {
                   </p>
                 </div>
               </div>
+
+              <Separator />
+
+              {/* Template Preview Section */}
+              <TemplatePreview 
+                organization={{
+                  name: organizationSettings.name,
+                  company_email: organizationSettings.companyEmail,
+                  company_phone: organizationSettings.companyPhone,
+                  company_address: organizationSettings.companyAddress,
+                  company_city: organizationSettings.companyCity,
+                  company_state: organizationSettings.companyState,
+                  company_postal_code: organizationSettings.companyPostalCode,
+                  company_country: organizationSettings.companyCountry,
+                  company_website: organizationSettings.companyWebsite,
+                  company_logo_url: organizationSettings.companyLogoUrl,
+                  default_notes: organizationSettings.defaultNotes,
+                  invoice_terms: organizationSettings.invoiceTerms,
+                  quotation_terms: organizationSettings.quotationTerms,
+                  default_currency: organizationSettings.currency,
+                  default_tax_rate: parseFloat(organizationSettings.taxRate) || 0,
+                }}
+              />
 
               <Separator />
 
