@@ -289,15 +289,6 @@ export default function TermsPage() {
                 We reserve the right to modify, suspend, or discontinue the Service (or any part thereof) at any time, with or without notice, for any reason, including to perform maintenance, deploy updates, or due to technical issues.
               </p>
 
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 mt-6">
-                9.2. Service Level Agreement (SLA)
-              </h3>
-              <p className="text-gray-700 dark:text-gray-300">
-                For paid subscribers, we aim to maintain 99.5% uptime for the Service, excluding scheduled maintenance. If we fail to meet this uptime commitment, you may be eligible for service credits as described in our SLA, available at{' '}
-                <Link href="/sla" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  www.assettracer.com/sla
-                </Link>.
-              </p>
             </section>
 
             <section className="mb-8">
