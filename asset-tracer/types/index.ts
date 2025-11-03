@@ -7,4 +7,5 @@ export * from './asset';
 export * from './invoice';
 export * from './financial';
 export * from './report';
+export * from './user';
 

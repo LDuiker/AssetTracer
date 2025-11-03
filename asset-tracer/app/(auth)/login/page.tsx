@@ -7,14 +7,35 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { LegalAgreementCheckboxes } from '@/components/auth/LegalAgreementCheckboxes';
+import { SignupLegalNote } from '@/components/auth/SignupLegalNote';
 
 function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
+  const [error, setError] = useState<string | undefined>(undefined);
   const searchParams = useSearchParams();
 
   const handleGoogleSignIn = async () => {
+    // Validate terms acceptance
+    if (!termsAccepted) {
+      setError('You must accept the Terms of Service and Privacy Policy to continue.');
+      return;
+    }
+
     try {
       setIsLoading(true);
+      setError(undefined);
+      
+      // Store consent data in localStorage before OAuth redirect
+      // This will be retrieved in the callback route
+      localStorage.setItem('signup_consent', JSON.stringify({
+        termsAccepted,
+        marketingConsent,
+        timestamp: new Date().toISOString(),
+      }));
+
       const supabase = createClient();
       
       // Preserve plan parameter for direct checkout after login
@@ -26,7 +47,7 @@ function LoginForm() {
         callbackUrl += `?plan=${plan}`;
       }
       
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: callbackUrl,
@@ -36,15 +57,15 @@ function LoginForm() {
         },
       });
 
-      if (error) {
-        console.error('Error signing in with Google:', error.message);
-        alert('Failed to sign in. Please try again.');
+      if (oauthError) {
+        console.error('Error signing in with Google:', oauthError.message);
+        setError('Failed to sign in. Please try again.');
         setIsLoading(false);
       }
       // If successful, user will be redirected to Google
     } catch (error) {
       console.error('Unexpected error during sign-in:', error);
-      alert('An unexpected error occurred. Please try again.');
+      setError('An unexpected error occurred. Please try again.');
       setIsLoading(false);
     }
   };
@@ -63,12 +84,24 @@ function LoginForm() {
             Sign in or create a new account with Google
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          {/* Legal Agreement Checkboxes */}
+          <div className="bg-gray-50 dark:bg-slate-900 rounded-lg p-4 border border-gray-200 dark:border-slate-700">
+            <LegalAgreementCheckboxes
+              termsAccepted={termsAccepted}
+              marketingConsent={marketingConsent}
+              onTermsChange={setTermsAccepted}
+              onMarketingChange={setMarketingConsent}
+              error={error}
+            />
+          </div>
+
+          {/* Sign In Button */}
           <Button 
             className="w-full bg-primary-blue hover:bg-blue-700" 
             size="lg"
             onClick={handleGoogleSignIn}
-            disabled={isLoading}
+            disabled={isLoading || !termsAccepted}
           >
             {isLoading ? (
               <>
@@ -99,6 +132,11 @@ function LoginForm() {
               </>
             )}
           </Button>
+
+          {/* Legal Note */}
+          <SignupLegalNote />
+
+          {/* Footer Links */}
           <div className="text-center space-y-2">
             <p className="text-xs text-gray-500">
               First time here? Your account will be created automatically when you sign in with Google.
@@ -136,4 +174,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-
