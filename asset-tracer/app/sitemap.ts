@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next';
+import { getAllPosts } from '@/lib/blog-posts';
 
 /**
  * Sitemap for AssetTracer
@@ -69,14 +70,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     
-    // Blog posts (add dynamically when you have blog posts)
-    // Example:
-    // {
-    //   url: `${baseUrl}/blog/asset-management-guide`,
-    //   lastModified: new Date('2025-01-15'),
-    //   changeFrequency: 'monthly',
-    //   priority: 0.7,
-    // },
+    // Blog posts (dynamic)
+    ...getAllPosts().map((post) => ({
+      url: `${baseUrl}/blog/${post.slug}`,
+      lastModified: new Date(post.date),
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    })),
   ];
 }
 

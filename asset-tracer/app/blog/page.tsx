@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowLeft, Calendar, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { getAllPosts } from '@/lib/blog-posts';
 
 export const metadata: Metadata = {
   title: 'Blog - Asset Tracer',
@@ -14,28 +15,8 @@ export const metadata: Metadata = {
   },
 };
 
-// Placeholder blog posts structure - can be expanded later
-// TODO: Replace with dynamic blog posts from CMS or markdown files
-const blogPosts: Array<{
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  readTime: string;
-  category: string;
-}> = [
-  // Placeholder - will be populated with actual blog posts later
-  // {
-  //   id: 'getting-started-with-asset-management',
-  //   title: 'Getting Started with Asset Management',
-  //   description: 'Learn the fundamentals of tracking and managing your business assets effectively.',
-  //   date: '2025-01-15',
-  //   readTime: '5 min read',
-  //   category: 'Guide',
-  // },
-];
-
 export default function BlogPage() {
+  const blogPosts = getAllPosts();
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Header */}
@@ -77,7 +58,7 @@ export default function BlogPage() {
                   </div>
                   <CardTitle className="text-xl mb-2">
                     <Link 
-                      href={`/blog/${post.id}`}
+                      href={`/blog/${post.slug}`}
                       className="hover:text-[#2563EB] transition-colors"
                     >
                       {post.title}
@@ -93,7 +74,7 @@ export default function BlogPage() {
                       <Clock className="h-4 w-4 mr-1" />
                       {post.readTime}
                     </div>
-                    <Link href={`/blog/${post.id}`}>
+                    <Link href={`/blog/${post.slug}`}>
                       <Button variant="ghost" size="sm">
                         Read more →
                       </Button>
