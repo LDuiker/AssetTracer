@@ -79,7 +79,10 @@ export default function ReportsPage() {
       csvRows.push(`Total Expenses,${report.summary.period_total_expenses}`);
       csvRows.push(`Net Profit,${report.summary.period_net_profit}`);
       csvRows.push(`Profit Margin,${report.summary.profit_margin_percentage}%`);
-      csvRows.push(`Revenue Growth,${report.summary.revenue_growth_percentage}%`);
+      // Growth metrics are premium features
+      if (limits.hasGrowthMetrics) {
+        csvRows.push(`Revenue Growth,${report.summary.revenue_growth_percentage}%`);
+      }
       csvRows.push('');
 
       // Monthly P&L
@@ -94,12 +97,23 @@ export default function ReportsPage() {
 
       // Asset Financials
       csvRows.push('ASSET FINANCIALS');
-      csvRows.push('Asset Name,Category,Total Spent,Total Revenue,Net Profit,ROI %');
-      report.asset_financials.forEach((asset) => {
-        csvRows.push(
-          `"${asset.asset_name}",${asset.category || 'N/A'},${asset.total_spent},${asset.total_revenue},${asset.net_profit},${asset.roi_percentage}`
-        );
-      });
+      // ROI data is a premium feature - only include if user has ROI tracking
+      if (limits.hasROITracking) {
+        csvRows.push('Asset Name,Category,Total Spent,Total Revenue,Net Profit,ROI %');
+        report.asset_financials.forEach((asset) => {
+          csvRows.push(
+            `"${asset.asset_name}",${asset.category || 'N/A'},${asset.total_spent},${asset.total_revenue},${asset.net_profit},${asset.roi_percentage}`
+          );
+        });
+      } else {
+        // Free tier: only show basic asset info (no revenue/ROI data)
+        csvRows.push('Asset Name,Category,Total Spent');
+        report.asset_financials.forEach((asset) => {
+          csvRows.push(
+            `"${asset.asset_name}",${asset.category || 'N/A'},${asset.total_spent}`
+          );
+        });
+      }
 
       // Create blob and download
       const csvContent = csvRows.join('\n');
@@ -363,7 +377,7 @@ export default function ReportsPage() {
               <CardTitle>Assets Overview</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className={`grid grid-cols-2 gap-4 ${limits.hasROITracking ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Assets</p>
                   <p className="text-2xl font-bold">{report.summary.total_assets_count}</p>
@@ -376,10 +390,12 @@ export default function ReportsPage() {
                   <p className="text-sm text-muted-foreground">Purchase Cost</p>
                   <p className="text-2xl font-bold">{formatCurrency(report.summary.total_assets_purchase_cost)}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Assets Revenue</p>
-                  <p className="text-2xl font-bold">{formatCurrency(report.summary.total_assets_revenue)}</p>
-                </div>
+                {limits.hasROITracking && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Assets Revenue</p>
+                    <p className="text-2xl font-bold">{formatCurrency(report.summary.total_assets_revenue)}</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
