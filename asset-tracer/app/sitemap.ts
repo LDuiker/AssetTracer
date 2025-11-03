@@ -61,7 +61,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     //   priority: 0.3,
     // },
     
-    // Blog posts (add dynamically when you have a blog)
+    // Blog page
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    
+    // Blog posts (add dynamically when you have blog posts)
     // Example:
     // {
     //   url: `${baseUrl}/blog/asset-management-guide`,
