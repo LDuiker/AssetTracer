@@ -123,33 +123,35 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
         const { data: orgData, error: orgError } = response;
 
         if (orgError) {
-          console.warn('Could not fetch organization details:', orgError);
-          // Still set organizationId even if we can't fetch full details
+          console.error('❌ Could not fetch organization details:', orgError);
+          setError(`Failed to fetch organization: ${orgError.message}`);
+          // Don't set organization if we can't fetch it - this will cause contexts to fail properly
+          return;
         } else if (orgData) {
-          console.log('🔍 OrganizationContext - Fetched org data:', {
+          console.log('✅ OrganizationContext - Fetched org data:', {
             id: orgData.id,
             name: orgData.name,
-            subscription_tier: orgData.subscription_tier,
+            subscription_tier: orgData.subscription_tier || 'free',
             polar_customer_id: orgData.polar_customer_id,
           });
-          setOrganization(orgData);
+          
+          // Ensure subscription_tier is set (default to 'free' if missing)
+          const organizationWithDefaults = {
+            ...orgData,
+            subscription_tier: orgData.subscription_tier || 'free',
+          };
+          
+          setOrganization(organizationWithDefaults);
+        } else {
+          console.error('❌ Organization data is null or undefined');
+          setError('Organization data not found');
+          return;
         }
       } else {
-        // Fallback to user metadata
-        const fallbackOrgId = session.user.user_metadata?.organization_id;
-        if (fallbackOrgId) {
-          setOrganizationId(fallbackOrgId);
-          
-          // Set a basic organization object
-          setOrganization({
-            id: fallbackOrgId,
-            name: 'Your Organization',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-        } else {
-          setError('User is not associated with an organization.');
-        }
+        // Fallback to user metadata - but this should rarely happen
+        // If user doesn't have organization_id, there's a data integrity issue
+        console.error('⚠️ User profile missing organization_id - this should not happen!');
+        setError('User is not associated with an organization.');
       }
     } catch (err: any) {
       console.error('Error fetching organization:', err);

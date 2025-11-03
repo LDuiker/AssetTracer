@@ -1,6 +1,5 @@
 'use client';
 
-import { useSaveConsent } from '@/hooks/useSaveConsent';
 import { useSubscription } from '@/lib/context/SubscriptionContext';
 import useSWR from 'swr';
 import { useState, useMemo } from 'react';
@@ -55,9 +54,6 @@ const formatPercentage = (value: number) => {
 };
 
 export default function DashboardPage() {
-  // Save consent data if needed (runs automatically)
-  useSaveConsent();
-
   // Get subscription tier and limits
   const { limits, redirectToUpgrade } = useSubscription();
 
