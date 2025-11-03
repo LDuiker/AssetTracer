@@ -1,0 +1,40 @@
+═══════════════════════════════════════════════════════════════
+  WHERE TO UPDATE GOOGLE OAUTH BRANDING
+═══════════════════════════════════════════════════════════════
+
+❌ NOT IN SUPABASE!
+✅ IN GOOGLE CLOUD CONSOLE!
+
+═══════════════════════════════════════════════════════════════
+  STEPS TO FOLLOW
+═══════════════════════════════════════════════════════════════
+
+1. Open: https://console.cloud.google.com/
+
+2. Find your project with OAuth credentials
+   (Not in Supabase! In Google!)
+
+3. Left sidebar → "APIs & Services"
+
+4. Click "OAuth consent screen"
+
+5. Update:
+   - App name: AssetTracer
+   - Email: YOUR EMAIL
+   - Home page: https://www.asset-tracer.com
+
+6. Click "SAVE"
+
+═══════════════════════════════════════════════════════════════
+  IT'S IN GOOGLE, NOT SUPABASE!
+═══════════════════════════════════════════════════════════════
+
+The branding shows on Google's OAuth page, so you update it
+in Google Cloud Console, NOT in Supabase!
+
+═══════════════════════════════════════════════════════════════
+  STILL CAN'T FIND IT?
+═══════════════════════════════════════════════════════════════
+
+Tell me and I'll help you locate your Google Cloud project!
+
