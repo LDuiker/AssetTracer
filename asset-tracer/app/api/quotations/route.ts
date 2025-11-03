@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       
-      const { data: monthlyQuotations, error: countError } = await supabase
+      const { count, error: countError } = await supabase
         .from('quotations')
         .select('id', { count: 'exact', head: true })
         .eq('organization_id', userData.organization_id)
@@ -164,9 +164,10 @@ export async function POST(request: NextRequest) {
         console.error('Error counting monthly quotations:', countError);
       }
 
-      const currentMonthCount = monthlyQuotations?.length || 0;
+      const currentMonthCount = count || 0;
       const maxAllowed = 5;
 
+      // Block if already at or above limit (should block before creating the 6th one)
       if (currentMonthCount >= maxAllowed) {
         return NextResponse.json(
           { 
