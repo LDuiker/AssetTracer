@@ -1,6 +1,7 @@
 'use client';
 
 import { useSubscription } from '@/lib/context/SubscriptionContext';
+import { useCurrency } from '@/lib/context/CurrencyContext';
 import useSWR from 'swr';
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
@@ -38,22 +39,15 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
-// Format currency
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
 // Format percentage
 const formatPercentage = (value: number) => {
   return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
 };
 
 export default function DashboardPage() {
+  // Get currency formatting from context (uses global currency setting)
+  const { formatCurrency } = useCurrency();
+
   // Get subscription tier and limits
   const { limits, redirectToUpgrade } = useSubscription();
 
