@@ -31,6 +31,7 @@ interface OrganizationData {
 
 interface TemplatePreviewProps {
   organization: OrganizationData;
+  template?: 'classic' | 'compact';
 }
 
 // Sample invoice data for preview
@@ -188,7 +189,7 @@ function formatDate(dateString: string) {
   });
 }
 
-function InvoicePreview({ organization }: TemplatePreviewProps) {
+function InvoicePreview({ organization, template = 'classic' }: TemplatePreviewProps) {
   // Calculate average tax rate from items (or use org default)
   const defaultTaxRate = organization.default_tax_rate || 10;
   const calculatedTaxRate = baseInvoice.items && baseInvoice.items.length > 0
@@ -237,6 +238,176 @@ function InvoicePreview({ organization }: TemplatePreviewProps) {
     ? Math.round((invoice.items.reduce((sum, item) => sum + item.tax_rate, 0) / invoice.items.length) * 10) / 10
     : calculatedTaxRate;
 
+  // Render based on template type
+  if (template === 'compact') {
+    return (
+      <div className="bg-white shadow-sm border border-gray-200 rounded-lg" style={{ maxWidth: '210mm', minHeight: '297mm', margin: '0 auto', padding: '30px', fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '9pt', backgroundColor: '#ffffff' }}>
+        {/* Compact Header */}
+        <div className="border-b-[3px] border-[#1e293b] pb-4 mb-6">
+          <div className="flex justify-between items-center">
+            <div className="flex-[2]">
+              {organization.company_logo_url ? (
+                <img 
+                  src={organization.company_logo_url} 
+                  alt="Company Logo" 
+                  className="mb-2 object-contain"
+                  style={{ width: '120px', height: '40px', maxHeight: '40px' }}
+                />
+              ) : (
+                <h1 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontSize: '22pt', fontWeight: 'bold', color: '#1e293b' }}>
+                  {organization.name || 'Your Company'}
+                </h1>
+              )}
+              {organization.company_email && (
+                <p className="text-xs mb-0.5" style={{ fontSize: '8pt', color: '#64748b', marginBottom: '2px' }}>
+                  ✉ {organization.company_email}
+                </p>
+              )}
+              {organization.company_phone && (
+                <p className="text-xs mb-0.5" style={{ fontSize: '8pt', color: '#64748b', marginBottom: '2px' }}>
+                  📞 {organization.company_phone}
+                </p>
+              )}
+              {formatAddress().map((line, index) => (
+                <p key={index} className="text-xs mb-0.5" style={{ fontSize: '8pt', color: '#64748b', marginBottom: '2px' }}>
+                  {line}
+                </p>
+              ))}
+              {organization.company_website && (
+                <p className="text-xs mb-0.5" style={{ fontSize: '8pt', color: '#64748b', marginBottom: '2px' }}>
+                  🌐 {organization.company_website}
+                </p>
+              )}
+            </div>
+            <div className="flex-1 text-right">
+              <p className="text-3xl font-bold text-gray-900 uppercase tracking-wide" style={{ fontSize: '28pt', fontWeight: 'bold', color: '#1e293b', textTransform: 'uppercase', letterSpacing: '2px' }}>
+                INVOICE
+              </p>
+              <p className="text-xs mt-1" style={{ fontSize: '11pt', color: '#64748b', marginTop: '4px' }}>
+                #{invoice.invoice_number}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Info Grid */}
+        <div className="grid grid-cols-2 gap-4 mb-5">
+          <div>
+            <p className="text-[7pt] uppercase tracking-wide mb-1" style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', fontWeight: 'bold' }}>
+              Issue Date
+            </p>
+            <p className="text-xs mb-2" style={{ fontSize: '9pt', color: '#1e293b', marginBottom: '8px' }}>{formatDate(invoice.issue_date)}</p>
+            <p className="text-[7pt] uppercase tracking-wide mb-1" style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', fontWeight: 'bold' }}>
+              Due Date
+            </p>
+            <p className="text-xs" style={{ fontSize: '9pt', color: '#1e293b' }}>{formatDate(invoice.due_date)}</p>
+          </div>
+          <div>
+            <p className="text-[7pt] uppercase tracking-wide mb-1" style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', fontWeight: 'bold' }}>
+              Status
+            </p>
+            <p className="text-xs mb-2" style={{ fontSize: '9pt', color: '#1e293b', marginBottom: '8px' }}>
+              📤 SENT
+            </p>
+          </div>
+        </div>
+
+        {/* Bill To Box */}
+        <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded p-3 mb-5">
+          <p className="text-xs font-bold text-gray-900 mb-1" style={{ fontSize: '11pt', fontWeight: 'bold', color: '#1e293b', marginBottom: '4px' }}>
+            Bill To
+          </p>
+          <p className="text-xs mb-1" style={{ fontSize: '8pt', color: '#475569', marginBottom: '2px' }}>{invoice.client?.name || 'N/A'}</p>
+          {invoice.client?.company && (
+            <p className="text-xs mb-1" style={{ fontSize: '8pt', color: '#475569', marginBottom: '2px' }}>{invoice.client.company}</p>
+          )}
+          {invoice.client?.email && (
+            <p className="text-xs" style={{ fontSize: '8pt', color: '#475569' }}>{invoice.client.email}</p>
+          )}
+        </div>
+
+        {/* Subject Box */}
+        {invoice.subject && (
+          <div className="bg-[#0f172a] p-3 rounded mb-5">
+            <p className="text-xs font-bold text-white uppercase tracking-wide" style={{ fontSize: '11pt', fontWeight: 'bold', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              {invoice.subject}
+            </p>
+          </div>
+        )}
+
+        {/* Items Table */}
+        <div className="mb-5">
+          <div className="grid grid-cols-4 bg-[#1e293b] p-3 font-bold text-xs text-white uppercase tracking-wide" style={{ backgroundColor: '#1e293b', padding: '10px 8px' }}>
+            <div>Description</div>
+            <div className="text-center">Qty</div>
+            <div className="text-right">Unit Price</div>
+            <div className="text-right">Total</div>
+          </div>
+          {invoice.items?.map((item, index) => {
+            const itemTotal = item.quantity * item.unit_price;
+            return (
+              <div 
+                key={index} 
+                className={`grid grid-cols-4 p-3 text-xs border-b border-[#e2e8f0] ${
+                  index % 2 === 0 ? 'bg-white' : 'bg-[#f8fafc]'
+                }`}
+                style={{ padding: '10px 8px', borderBottomWidth: '1px', borderBottomColor: '#e2e8f0' }}
+              >
+                <div className="text-gray-900">{item.description}</div>
+                <div className="text-center text-gray-600">{item.quantity}</div>
+                <div className="text-right text-gray-600">{formatCurrency(item.unit_price, invoice.currency)}</div>
+                <div className="text-right font-bold text-gray-900">{formatCurrency(itemTotal, invoice.currency)}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Totals */}
+        <div className="flex justify-end mb-5">
+          <div className="w-64 space-y-1 border-t-2 border-[#1e293b] pt-3">
+            <div className="flex justify-between">
+              <span className="text-xs font-bold" style={{ fontSize: '9pt', color: '#64748b', fontWeight: 'bold' }}>Subtotal:</span>
+              <span className="text-xs font-bold" style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 'bold' }}>{formatCurrency(subtotal, invoice.currency)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-xs font-bold" style={{ fontSize: '9pt', color: '#64748b', fontWeight: 'bold' }}>Tax:</span>
+              <span className="text-xs font-bold" style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 'bold' }}>{formatCurrency(taxTotal, invoice.currency)}</span>
+            </div>
+            <div className="flex justify-between mt-2 pt-3 border-t border-[#cbd5e1]">
+              <span className="text-sm font-bold uppercase" style={{ fontSize: '12pt', color: '#1e293b', fontWeight: 'bold', textTransform: 'uppercase' }}>Total Due</span>
+              <span className="text-sm font-bold" style={{ fontSize: '14pt', color: '#1e293b', fontWeight: 'bold' }}>{formatCurrency(total, invoice.currency)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Notes */}
+        {invoice.notes && (
+          <div className="bg-[#f8fafc] border-l-[3px] border-[#1e293b] p-3 mb-4" style={{ backgroundColor: '#f8fafc', borderLeftWidth: '3px', borderLeftColor: '#1e293b', padding: '12px', marginBottom: '15px' }}>
+            <p className="text-xs font-bold uppercase mb-1" style={{ fontSize: '9pt', fontWeight: 'bold', color: '#1e293b', marginBottom: '6px', textTransform: 'uppercase' }}>Notes</p>
+            <p className="text-xs leading-relaxed" style={{ fontSize: '8pt', color: '#475569', lineHeight: 1.5 }}>{invoice.notes}</p>
+          </div>
+        )}
+
+        {/* Terms */}
+        {invoice.terms && (
+          <div className="bg-[#fef3c7] border-l-[3px] border-[#f59e0b] p-3 mb-4" style={{ backgroundColor: '#fef3c7', borderLeftWidth: '3px', borderLeftColor: '#f59e0b', padding: '12px', marginBottom: '15px' }}>
+            <p className="text-xs font-bold uppercase mb-1" style={{ fontSize: '9pt', fontWeight: 'bold', color: '#92400e', marginBottom: '6px', textTransform: 'uppercase' }}>Terms & Conditions</p>
+            <p className="text-xs leading-relaxed" style={{ fontSize: '8pt', color: '#78350f', lineHeight: 1.5 }}>{invoice.terms}</p>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="mt-8 pt-4 border-t border-[#e2e8f0] flex justify-between" style={{ marginTop: '30px', paddingTop: '15px', borderTopWidth: '1px', borderTopColor: '#e2e8f0' }}>
+          <p className="text-[7pt]" style={{ fontSize: '7pt', color: '#94a3b8' }}>
+            Generated on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
+          </p>
+          <p className="text-[7pt]" style={{ fontSize: '7pt', color: '#94a3b8' }}>Thank you for your business!</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Classic template rendering
   return (
     <div className="bg-white shadow-sm border border-gray-200 rounded-lg" style={{ maxWidth: '210mm', minHeight: '297mm', margin: '0 auto', padding: '40px', fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '10pt' }}>
       {/* Company Header - Matching PDF Template */}
@@ -421,7 +592,7 @@ function InvoicePreview({ organization }: TemplatePreviewProps) {
   );
 }
 
-function QuotationPreview({ organization }: TemplatePreviewProps) {
+function QuotationPreview({ organization, template = 'classic' }: TemplatePreviewProps) {
   // Update quotation with organization settings
   const quotation = {
     ...baseQuotation,
@@ -440,8 +611,8 @@ function QuotationPreview({ organization }: TemplatePreviewProps) {
   const subtotal = quotation.items?.reduce((sum, item) => sum + item.amount, 0) || 0;
   const taxTotal = quotation.items?.reduce((sum, item) => sum + item.tax_amount, 0) || 0;
   const total = subtotal + taxTotal;
-
-  // Format address (matching PDF template format)
+  
+  // Format address
   const formatAddress = () => {
     const parts: string[] = [];
     if (organization.company_address) parts.push(organization.company_address);
@@ -458,7 +629,176 @@ function QuotationPreview({ organization }: TemplatePreviewProps) {
     
     return parts;
   };
+  
+  // Compact template rendering
+  if (template === 'compact') {
+    return (
+      <div className="bg-white shadow-sm border border-gray-200 rounded-lg" style={{ maxWidth: '210mm', minHeight: '297mm', margin: '0 auto', padding: '30px', fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '9pt', backgroundColor: '#ffffff' }}>
+        {/* Compact Header */}
+        <div className="border-b-[3px] border-[#1e293b] pb-4 mb-6">
+          <div className="flex justify-between items-center">
+            <div className="flex-[2]">
+              {organization.company_logo_url ? (
+                <img 
+                  src={organization.company_logo_url} 
+                  alt="Company Logo" 
+                  className="mb-2 object-contain"
+                  style={{ width: '120px', height: '40px', maxHeight: '40px' }}
+                />
+              ) : (
+                <h1 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontSize: '22pt', fontWeight: 'bold', color: '#1e293b' }}>
+                  {organization.name || 'Your Company'}
+                </h1>
+              )}
+              {organization.company_email && (
+                <p className="text-xs mb-0.5" style={{ fontSize: '8pt', color: '#64748b', marginBottom: '2px' }}>
+                  ✉ {organization.company_email}
+                </p>
+              )}
+              {organization.company_phone && (
+                <p className="text-xs mb-0.5" style={{ fontSize: '8pt', color: '#64748b', marginBottom: '2px' }}>
+                  📞 {organization.company_phone}
+                </p>
+              )}
+              {formatAddress().map((line, index) => (
+                <p key={index} className="text-xs mb-0.5" style={{ fontSize: '8pt', color: '#64748b', marginBottom: '2px' }}>
+                  {line}
+                </p>
+              ))}
+              {organization.company_website && (
+                <p className="text-xs mb-0.5" style={{ fontSize: '8pt', color: '#64748b', marginBottom: '2px' }}>
+                  🌐 {organization.company_website}
+                </p>
+              )}
+            </div>
+            <div className="flex-1 text-right">
+              <p className="text-3xl font-bold text-gray-900 uppercase tracking-wide" style={{ fontSize: '28pt', fontWeight: 'bold', color: '#1e293b', textTransform: 'uppercase', letterSpacing: '2px' }}>
+                QUOTATION
+              </p>
+              <p className="text-xs mt-1" style={{ fontSize: '11pt', color: '#64748b', marginTop: '4px' }}>
+                #{quotation.quotation_number}
+              </p>
+            </div>
+          </div>
+        </div>
 
+        {/* Info Grid */}
+        <div className="grid grid-cols-2 gap-4 mb-5">
+          <div>
+            <p className="text-[7pt] uppercase tracking-wide mb-1" style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', fontWeight: 'bold' }}>
+              Issue Date
+            </p>
+            <p className="text-xs mb-2" style={{ fontSize: '9pt', color: '#1e293b', marginBottom: '8px' }}>{formatDate(quotation.issue_date)}</p>
+            <p className="text-[7pt] uppercase tracking-wide mb-1" style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', fontWeight: 'bold' }}>
+              Valid Until
+            </p>
+            <p className="text-xs" style={{ fontSize: '9pt', color: '#1e293b' }}>{formatDate(quotation.valid_until)}</p>
+          </div>
+          <div>
+            <p className="text-[7pt] uppercase tracking-wide mb-1" style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', fontWeight: 'bold' }}>
+              Status
+            </p>
+            <p className="text-xs mb-2" style={{ fontSize: '9pt', color: '#1e293b', marginBottom: '8px' }}>
+              📝 DRAFT
+            </p>
+          </div>
+        </div>
+
+        {/* Bill To Box */}
+        <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded p-3 mb-5">
+          <p className="text-xs font-bold text-gray-900 mb-1" style={{ fontSize: '11pt', fontWeight: 'bold', color: '#1e293b', marginBottom: '4px' }}>
+            Bill To
+          </p>
+          <p className="text-xs mb-1" style={{ fontSize: '8pt', color: '#475569', marginBottom: '2px' }}>{quotation.client?.name || 'N/A'}</p>
+          {quotation.client?.company && (
+            <p className="text-xs mb-1" style={{ fontSize: '8pt', color: '#475569', marginBottom: '2px' }}>{quotation.client.company}</p>
+          )}
+          {quotation.client?.email && (
+            <p className="text-xs" style={{ fontSize: '8pt', color: '#475569' }}>{quotation.client.email}</p>
+          )}
+        </div>
+
+        {/* Subject Box */}
+        {quotation.subject && (
+          <div className="bg-[#0f172a] p-3 rounded mb-5">
+            <p className="text-xs font-bold text-white uppercase tracking-wide" style={{ fontSize: '11pt', fontWeight: 'bold', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              {quotation.subject}
+            </p>
+          </div>
+        )}
+
+        {/* Items Table */}
+        <div className="mb-5">
+          <div className="grid grid-cols-5 bg-[#1e293b] p-3 font-bold text-xs text-white uppercase tracking-wide" style={{ backgroundColor: '#1e293b', padding: '10px 8px' }}>
+            <div>Description</div>
+            <div className="text-center">Qty</div>
+            <div className="text-right">Unit Price</div>
+            <div className="text-center">Tax %</div>
+            <div className="text-right">Total</div>
+          </div>
+          {quotation.items?.map((item, index) => (
+            <div 
+              key={index} 
+              className={`grid grid-cols-5 p-3 text-xs border-b border-[#e2e8f0] ${
+                index % 2 === 0 ? 'bg-white' : 'bg-[#f8fafc]'
+              }`}
+              style={{ padding: '10px 8px', borderBottomWidth: '1px', borderBottomColor: '#e2e8f0' }}
+            >
+              <div className="text-gray-900">{item.description}</div>
+              <div className="text-center text-gray-600">{item.quantity}</div>
+              <div className="text-right text-gray-600">{formatCurrency(item.unit_price, quotation.currency)}</div>
+              <div className="text-center text-gray-600">{item.tax_rate}%</div>
+              <div className="text-right font-bold text-gray-900">{formatCurrency(item.total, quotation.currency)}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Totals */}
+        <div className="flex justify-end mb-5">
+          <div className="w-64 space-y-1 border-t-2 border-[#1e293b] pt-3">
+            <div className="flex justify-between">
+              <span className="text-xs font-bold" style={{ fontSize: '9pt', color: '#64748b', fontWeight: 'bold' }}>Subtotal:</span>
+              <span className="text-xs font-bold" style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 'bold' }}>{formatCurrency(subtotal, quotation.currency)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-xs font-bold" style={{ fontSize: '9pt', color: '#64748b', fontWeight: 'bold' }}>Tax:</span>
+              <span className="text-xs font-bold" style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 'bold' }}>{formatCurrency(taxTotal, quotation.currency)}</span>
+            </div>
+            <div className="flex justify-between mt-2 pt-3 border-t border-[#cbd5e1]">
+              <span className="text-sm font-bold uppercase" style={{ fontSize: '12pt', color: '#1e293b', fontWeight: 'bold', textTransform: 'uppercase' }}>Total</span>
+              <span className="text-sm font-bold" style={{ fontSize: '14pt', color: '#1e293b', fontWeight: 'bold' }}>{formatCurrency(total, quotation.currency)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Notes */}
+        {quotation.notes && (
+          <div className="bg-[#f8fafc] border-l-[3px] border-[#1e293b] p-3 mb-4" style={{ backgroundColor: '#f8fafc', borderLeftWidth: '3px', borderLeftColor: '#1e293b', padding: '12px', marginBottom: '15px' }}>
+            <p className="text-xs font-bold uppercase mb-1" style={{ fontSize: '9pt', fontWeight: 'bold', color: '#1e293b', marginBottom: '6px', textTransform: 'uppercase' }}>Notes</p>
+            <p className="text-xs leading-relaxed" style={{ fontSize: '8pt', color: '#475569', lineHeight: 1.5 }}>{quotation.notes}</p>
+          </div>
+        )}
+
+        {/* Terms */}
+        {quotation.terms && (
+          <div className="bg-[#fef3c7] border-l-[3px] border-[#f59e0b] p-3 mb-4" style={{ backgroundColor: '#fef3c7', borderLeftWidth: '3px', borderLeftColor: '#f59e0b', padding: '12px', marginBottom: '15px' }}>
+            <p className="text-xs font-bold uppercase mb-1" style={{ fontSize: '9pt', fontWeight: 'bold', color: '#92400e', marginBottom: '6px', textTransform: 'uppercase' }}>Terms & Conditions</p>
+            <p className="text-xs leading-relaxed" style={{ fontSize: '8pt', color: '#78350f', lineHeight: 1.5 }}>{quotation.terms}</p>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="mt-8 pt-4 border-t border-[#e2e8f0] flex justify-between" style={{ marginTop: '30px', paddingTop: '15px', borderTopWidth: '1px', borderTopColor: '#e2e8f0' }}>
+          <p className="text-[7pt]" style={{ fontSize: '7pt', color: '#94a3b8' }}>
+            Generated on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
+          </p>
+          <p className="text-[7pt]" style={{ fontSize: '7pt', color: '#94a3b8' }}>Thank you for your business!</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Classic template rendering
   return (
     <div className="bg-white shadow-sm border border-gray-200 rounded-lg" style={{ maxWidth: '210mm', minHeight: '297mm', margin: '0 auto', padding: '40px', fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '10pt' }}>
       {/* Company Header - Matching PDF Template */}
@@ -751,7 +1091,7 @@ export function TemplatePreview({ organization }: TemplatePreviewProps) {
               } : {}}
             >
               <div className="inline-block min-w-full">
-                <InvoicePreview organization={organization} />
+                <InvoicePreview organization={organization} template={invoiceTemplate} />
               </div>
             </div>
           </TabsContent>
@@ -773,7 +1113,7 @@ export function TemplatePreview({ organization }: TemplatePreviewProps) {
               } : {}}
             >
               <div className="inline-block min-w-full">
-                <QuotationPreview organization={organization} />
+                <QuotationPreview organization={organization} template={quotationTemplate} />
               </div>
             </div>
           </TabsContent>
