@@ -7,14 +7,26 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { SignupLegalNote } from '@/components/auth/SignupLegalNote';
+import { MarketingConsentCheckbox } from '@/components/auth/MarketingConsentCheckbox';
 
 function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const searchParams = useSearchParams();
 
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
+      
+      // Store consent data in localStorage before OAuth redirect
+      // Terms are automatically accepted by continuing (as stated in disclaimer)
+      localStorage.setItem('signup_consent', JSON.stringify({
+        termsAccepted: true, // Automatically accepted by continuing
+        marketingConsent,
+        timestamp: new Date().toISOString(),
+      }));
+
       const supabase = createClient();
       
       // Preserve plan parameter for direct checkout after login
@@ -26,7 +38,7 @@ function LoginForm() {
         callbackUrl += `?plan=${plan}`;
       }
       
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: callbackUrl,
@@ -36,8 +48,8 @@ function LoginForm() {
         },
       });
 
-      if (error) {
-        console.error('Error signing in with Google:', error.message);
+      if (oauthError) {
+        console.error('Error signing in with Google:', oauthError.message);
         alert('Failed to sign in. Please try again.');
         setIsLoading(false);
       }
@@ -63,7 +75,8 @@ function LoginForm() {
             Sign in or create a new account with Google
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          {/* Sign In Button */}
           <Button 
             className="w-full bg-primary-blue hover:bg-blue-700" 
             size="lg"
@@ -99,6 +112,19 @@ function LoginForm() {
               </>
             )}
           </Button>
+
+          {/* Legal Note */}
+          <SignupLegalNote />
+
+          {/* Marketing Consent Checkbox */}
+          <div className="flex justify-center">
+            <MarketingConsentCheckbox
+              marketingConsent={marketingConsent}
+              onMarketingChange={setMarketingConsent}
+            />
+          </div>
+
+          {/* Footer Links */}
           <div className="text-center space-y-2">
             <p className="text-xs text-gray-500">
               First time here? Your account will be created automatically when you sign in with Google.
@@ -136,4 +162,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-

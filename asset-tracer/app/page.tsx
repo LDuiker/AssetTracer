@@ -899,12 +899,12 @@ function LandingPageContent() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
                     Terms
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
                     Privacy
                   </Link>
                 </li>
