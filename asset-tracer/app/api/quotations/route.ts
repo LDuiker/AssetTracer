@@ -118,6 +118,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Log user email for debugging
+    console.log(`[Quotation Creation] User: ${user.email}, User ID: ${user.id}`);
+
     // Get user's organization
     const { data: userData, error: orgError } = await supabase
       .from('users')
@@ -176,7 +179,7 @@ export async function POST(request: NextRequest) {
       const currentMonthCount = count ?? 0;
       const maxAllowed = 5;
 
-      console.log(`[Quotation Limit Check] Organization: ${userData.organization_id}, Subscription tier: ${subscriptionTier}, Current count: ${currentMonthCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayOfMonth.toISOString()}`);
+      console.log(`[Quotation Limit Check] User: ${user.email}, Organization: ${userData.organization_id}, Subscription tier: ${subscriptionTier}, Current count: ${currentMonthCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayOfMonth.toISOString()}, Current time (UTC): ${new Date().toISOString()}`);
 
       // Block if current count is already at or above the limit
       // If currentMonthCount is 5, we already have 5 quotations, so block the 6th
