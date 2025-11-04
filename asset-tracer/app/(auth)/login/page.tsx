@@ -19,6 +19,15 @@ function LoginForm() {
     try {
       setIsLoading(true);
       
+      const supabase = createClient();
+      
+      // First, sign out any existing session to force fresh login
+      // This ensures Google will show account picker instead of auto-selecting
+      await supabase.auth.signOut();
+      
+      // Small delay to ensure signout completes
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Store consent data in localStorage before OAuth redirect
       // Terms are automatically accepted by continuing (as stated in disclaimer)
       localStorage.setItem('signup_consent', JSON.stringify({
@@ -26,8 +35,6 @@ function LoginForm() {
         marketingConsent,
         timestamp: new Date().toISOString(),
       }));
-
-      const supabase = createClient();
       
       // Preserve plan parameter for direct checkout after login
       const plan = searchParams.get('plan');
@@ -44,6 +51,7 @@ function LoginForm() {
           redirectTo: callbackUrl,
           queryParams: {
             prompt: 'select_account', // Force account selection every time
+            access_type: 'offline', // Ensure fresh token
           },
         },
       });
