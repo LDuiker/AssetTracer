@@ -158,11 +158,19 @@ export async function POST(request: NextRequest) {
       const now = new Date();
       const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
       
-      const { count, error: countError } = await supabase
+      const { count, error: countError, data } = await supabase
         .from('quotations')
         .select('id', { count: 'exact', head: true })
         .eq('organization_id', userData.organization_id)
         .gte('created_at', firstDayOfMonth.toISOString());
+
+      // Log the raw response for debugging
+      console.log(`[Quotation Count Query] Raw response:`, {
+        count,
+        data,
+        error: countError,
+        firstDayOfMonth: firstDayOfMonth.toISOString(),
+      });
 
       if (countError) {
         console.error('Error counting monthly quotations:', countError);
@@ -177,6 +185,21 @@ export async function POST(request: NextRequest) {
       }
 
       const currentMonthCount = count ?? 0;
+      
+      // Additional verification: also fetch the actual quotations to verify count
+      const { data: actualQuotations, error: fetchError } = await supabase
+        .from('quotations')
+        .select('id, created_at')
+        .eq('organization_id', userData.organization_id)
+        .gte('created_at', firstDayOfMonth.toISOString());
+      
+      console.log(`[Quotation Count Verification] Count from query: ${count}, Actual quotations found: ${actualQuotations?.length || 0}`, {
+        quotationIds: actualQuotations?.map(q => q.id),
+        quotationDates: actualQuotations?.map(q => q.created_at),
+      });
+      
+      // Use the actual count if there's a discrepancy
+      const verifiedCount = actualQuotations?.length ?? count ?? 0;
       const maxAllowed = 5;
 
       console.log(`[Quotation Limit Check] User: ${user.email}, Organization: ${userData.organization_id}, Subscription tier: ${subscriptionTier}, Current count: ${currentMonthCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayOfMonth.toISOString()}, Current time (UTC): ${new Date().toISOString()}`);
