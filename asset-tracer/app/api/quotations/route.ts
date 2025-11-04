@@ -210,6 +210,7 @@ export async function POST(request: NextRequest) {
 
       // Block if current count is already at or above the limit
       // If verifiedCount is 5, we already have 5 quotations, so block the 6th
+      // Use > instead of >= to ensure we block at exactly the limit
       if (verifiedCount >= maxAllowed) {
         console.log(`[Quotation Limit Check] BLOCKED - Count ${verifiedCount} >= Limit ${maxAllowed}`);
         return NextResponse.json(
@@ -221,7 +222,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log(`[Quotation Limit Check] ALLOWED - Count ${verifiedCount} < Limit ${maxAllowed}`);
+      console.log(`[Quotation Limit Check] ALLOWED - Count ${verifiedCount} < Limit ${maxAllowed} (will allow creation of ${verifiedCount + 1}th quotation)`);
     }
 
     // Create quotation
