@@ -84,7 +84,34 @@ export default function DashboardPage() {
     fetcher
   );
 
+  // Process monthly chart data (only if charts are allowed)
+  // Must be called before any early returns (React hooks rules)
+  const monthlyChartData = useMemo(() => {
+    if (contextsLoading || !limits?.hasMonthlyCharts || !report?.monthly_pl) return [];
+    return report.monthly_pl.map((month: any) => ({
+      month: format(new Date(month.month + '-01'), "MMM 'yy"),
+      revenue: month.revenue || 0,
+      expenses: month.expenses || 0,
+    }));
+  }, [report, limits?.hasMonthlyCharts, contextsLoading]);
+
+  // Process top 5 assets (only if charts are allowed)
+  // Must be called before any early returns (React hooks rules)
+  const top5Assets = useMemo(() => {
+    if (contextsLoading || !limits?.hasTopPerformersChart || !report?.asset_financials) return [];
+    return [...report.asset_financials]
+      .sort((a: any, b: any) => (b.profit_loss || 0) - (a.profit_loss || 0))
+      .slice(0, 5)
+      .map((asset: any) => ({
+        name: asset.asset_name?.length > 15 
+          ? asset.asset_name.substring(0, 15) + '...' 
+          : asset.asset_name || 'Unknown',
+        profit: asset.profit_loss || 0,
+      }));
+  }, [report, limits?.hasTopPerformersChart, contextsLoading]);
+
   // Show loading state if contexts are still loading
+  // Must be AFTER all hooks are called (React hooks rules)
   if (contextsLoading) {
     return (
       <div className="space-y-6">
@@ -100,30 +127,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  // Process monthly chart data (only if charts are allowed)
-  const monthlyChartData = useMemo(() => {
-    if (!limits?.hasMonthlyCharts || !report?.monthly_pl) return [];
-    return report.monthly_pl.map((month: any) => ({
-      month: format(new Date(month.month + '-01'), "MMM 'yy"),
-      revenue: month.revenue || 0,
-      expenses: month.expenses || 0,
-    }));
-  }, [report, limits.hasMonthlyCharts]);
-
-  // Process top 5 assets (only if charts are allowed)
-  const top5Assets = useMemo(() => {
-    if (!limits?.hasTopPerformersChart || !report?.asset_financials) return [];
-    return [...report.asset_financials]
-      .sort((a: any, b: any) => (b.profit_loss || 0) - (a.profit_loss || 0))
-      .slice(0, 5)
-      .map((asset: any) => ({
-        name: asset.asset_name?.length > 15 
-          ? asset.asset_name.substring(0, 15) + '...' 
-          : asset.asset_name || 'Unknown',
-        profit: asset.profit_loss || 0,
-      }));
-  }, [report, limits.hasTopPerformersChart]);
 
   const handleApplyFilter = () => {
     if (limits?.hasDateRangeFilter) {
