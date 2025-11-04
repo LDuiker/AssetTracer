@@ -12,7 +12,7 @@ interface SubscriptionBadgeProps {
 }
 
 export function SubscriptionBadge({ feature, showUpgrade = false }: SubscriptionBadgeProps) {
-  const { tier, limits } = useSubscription();
+  const { tier, limits, redirectToUpgrade } = useSubscription();
 
   if (tier === 'free' && showUpgrade) {
     return (
@@ -26,11 +26,15 @@ export function SubscriptionBadge({ feature, showUpgrade = false }: Subscription
               <div>
                 <p className="font-semibold text-gray-900">Free Plan</p>
                 <p className="text-sm text-gray-600">
-                  {feature ? `Limited ${feature}` : 'Basic features included'}
+                  {feature ? `You've reached the limit for ${feature}. Upgrade to Pro for unlimited access.` : 'Basic features included'}
                 </p>
               </div>
             </div>
-            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+            <Button 
+              size="sm" 
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              onClick={redirectToUpgrade}
+            >
               <Zap className="mr-2 h-4 w-4" />
               Upgrade to Pro
             </Button>

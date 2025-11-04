@@ -42,6 +42,7 @@ import { ExpenseDialog } from '@/components/expenses';
 import { AssetDialog } from '@/components/assets';
 import { toast } from 'sonner';
 import { useCurrency } from '@/lib/context/CurrencyContext';
+import { useSubscription } from '@/lib/context/SubscriptionContext';
 import type { Asset, Expense, CreateAssetInput } from '@/types';
 
 const fetcher = async (url: string) => {
@@ -83,6 +84,7 @@ export default function AssetDetailPage() {
   const router = useRouter();
   const assetId = params?.id as string;
   const { formatCurrency: formatCurrencyGlobal } = useCurrency();
+  const { limits, redirectToUpgrade } = useSubscription();
 
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
@@ -496,7 +498,7 @@ export default function AssetDetailPage() {
         {/* Financials Tab */}
         <TabsContent value="financials" className="space-y-6">
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${limits.hasROITracking ? 'lg:grid-cols-4' : 'lg:grid-cols-2'}`}>
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600">
@@ -513,104 +515,152 @@ export default function AssetDetailPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
-                  Total Revenue
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  {formatCurrency(financials.totalRevenue)}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  From transactions
-                </p>
-              </CardContent>
-            </Card>
+            {limits.hasROITracking ? (
+              <>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600">
+                      Total Revenue
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(financials.totalRevenue)}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      From transactions
+                    </p>
+                  </CardContent>
+                </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
-                  Profit / Loss
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${
-                  financials.profitLoss >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {formatCurrency(financials.profitLoss)}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Revenue - Spend
-                </p>
-              </CardContent>
-            </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600">
+                      Profit / Loss
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className={`text-2xl font-bold ${
+                      financials.profitLoss >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {formatCurrency(financials.profitLoss)}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Revenue - Spend
+                    </p>
+                  </CardContent>
+                </Card>
 
-            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-1">
-                  <TrendingUp className="h-4 w-4" />
-                  ROI
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className={`text-3xl font-bold ${
-                  financials.roiPercentage >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {financials.roiPercentage.toFixed(2)}%
-                </div>
-                <p className="text-xs text-gray-600 mt-1 font-medium">
-                  Return on Investment
-                </p>
-              </CardContent>
-            </Card>
+                <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-1">
+                      <TrendingUp className="h-4 w-4" />
+                      ROI
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className={`text-3xl font-bold ${
+                      financials.roiPercentage >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {financials.roiPercentage.toFixed(2)}%
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1 font-medium">
+                      Return on Investment
+                    </p>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card className="border-blue-200 bg-gradient-to-br from-blue-50/50 to-indigo-50/50">
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <div className="p-4 bg-blue-100 rounded-full inline-block mb-4">
+                      <TrendingUp className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      ROI Tracking & Financial Analysis
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Track revenue, profit/loss, and return on investment for this asset
+                    </p>
+                    <Button onClick={redirectToUpgrade} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Upgrade to Pro
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Chart */}
-          {financials.timeSeriesData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Spend vs Revenue Over Time</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={financials.timeSeriesData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="month" 
-                      style={{ fontSize: '12px' }}
-                    />
-                    <YAxis 
-                      style={{ fontSize: '12px' }}
-                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                    />
-                    <Tooltip 
-                      formatter={(value: any) => {
-                        const numValue = typeof value === 'number' ? value : parseFloat(value);
-                        return isNaN(numValue) ? value : formatCurrency(numValue);
-                      }}
-                      contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="spend"
-                      stroke="#ef4444"
-                      strokeWidth={2}
-                      name="Spend"
-                      dot={{ r: 4 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="revenue"
-                      stroke="#10b981"
-                      strokeWidth={2}
-                      name="Revenue"
-                      dot={{ r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+          {limits.hasROITracking ? (
+            financials.timeSeriesData.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Spend vs Revenue Over Time</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={financials.timeSeriesData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="month" 
+                        style={{ fontSize: '12px' }}
+                      />
+                      <YAxis 
+                        style={{ fontSize: '12px' }}
+                        tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                      />
+                      <Tooltip 
+                        formatter={(value: any) => {
+                          const numValue = typeof value === 'number' ? value : parseFloat(value);
+                          return isNaN(numValue) ? value : formatCurrency(numValue);
+                        }}
+                        contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="spend"
+                        stroke="#ef4444"
+                        strokeWidth={2}
+                        name="Spend"
+                        dot={{ r: 4 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        name="Revenue"
+                        dot={{ r: 4 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )
+          ) : (
+            <Card className="border-blue-200 bg-gradient-to-br from-blue-50/50 to-indigo-50/50">
+              <CardContent className="pt-6">
+                <div className="h-96 flex items-center justify-center">
+                  <div className="text-center max-w-md">
+                    <div className="p-4 bg-blue-100 rounded-full inline-block mb-4">
+                      <TrendingUp className="h-12 w-12 text-blue-600" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      Spend vs Revenue Analytics
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Visualize your asset's spending and revenue trends over time with interactive charts. Track profitability and ROI performance.
+                    </p>
+                    <Button onClick={redirectToUpgrade} size="lg" className="bg-blue-600 hover:bg-blue-700">
+                      <TrendingUp className="h-5 w-5 mr-2" />
+                      Upgrade to Pro
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -685,52 +735,74 @@ export default function AssetDetailPage() {
           </Card>
 
           {/* Revenue Transactions Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-green-600" />
-                Revenue Transactions ({financials.transactions.filter(t => t.type === 'income').length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {financials.transactions.filter(t => t.type === 'income').length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  No revenue transactions for this asset
+          {limits.hasROITracking ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-green-600" />
+                  Revenue Transactions ({financials.transactions.filter(t => t.type === 'income').length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {financials.transactions.filter(t => t.type === 'income').length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No revenue transactions for this asset
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Reference</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {financials.transactions
+                          .filter(t => t.type === 'income')
+                          .map((transaction) => (
+                            <TableRow key={transaction.id}>
+                              <TableCell>{formatDate(transaction.transaction_date)}</TableCell>
+                              <TableCell>{transaction.description}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{transaction.category}</Badge>
+                              </TableCell>
+                              <TableCell>{transaction.reference_number || '-'}</TableCell>
+                              <TableCell className="text-right font-medium text-green-600">
+                                {formatCurrency(transaction.amount)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-blue-200 bg-gradient-to-br from-blue-50/50 to-indigo-50/50">
+              <CardContent className="pt-6">
+                <div className="text-center py-8">
+                  <div className="p-4 bg-blue-100 rounded-full inline-block mb-4">
+                    <TrendingUp className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Revenue Transaction Tracking
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    View detailed revenue transactions linked to this asset. Track income sources and analyze revenue patterns.
+                  </p>
+                  <Button onClick={redirectToUpgrade} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Upgrade to Pro
+                  </Button>
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Reference</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {financials.transactions
-                        .filter(t => t.type === 'income')
-                        .map((transaction) => (
-                          <TableRow key={transaction.id}>
-                            <TableCell>{formatDate(transaction.transaction_date)}</TableCell>
-                            <TableCell>{transaction.description}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{transaction.category}</Badge>
-                            </TableCell>
-                            <TableCell>{transaction.reference_number || '-'}</TableCell>
-                            <TableCell className="text-right font-medium text-green-600">
-                              {formatCurrency(transaction.amount)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
 

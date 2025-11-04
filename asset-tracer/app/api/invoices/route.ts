@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       
-      const { data: monthlyInvoices, error: countError } = await supabase
+      const { count, error: countError } = await supabase
         .from('invoices')
         .select('id', { count: 'exact', head: true })
         .eq('organization_id', organizationId)
@@ -155,12 +155,25 @@ export async function POST(request: NextRequest) {
 
       if (countError) {
         console.error('Error counting monthly invoices:', countError);
+        // If count query fails, be safe and block creation
+        return NextResponse.json(
+          { 
+            error: 'Unable to verify subscription limits',
+            message: 'Please try again or contact support if the issue persists.'
+          },
+          { status: 500 }
+        );
       }
 
-      const currentMonthCount = monthlyInvoices?.length || 0;
+      const currentMonthCount = count ?? 0;
       const maxAllowed = 5;
 
+      console.log(`[Invoice Limit Check] Organization: ${organizationId}, Current count: ${currentMonthCount}, Max allowed: ${maxAllowed}`);
+
+      // Block if current count is already at or above the limit
+      // If currentMonthCount is 5, we already have 5 invoices, so block the 6th
       if (currentMonthCount >= maxAllowed) {
+        console.log(`[Invoice Limit Check] BLOCKED - Count ${currentMonthCount} >= Limit ${maxAllowed}`);
         return NextResponse.json(
           { 
             error: 'Monthly invoice limit reached',
@@ -169,6 +182,8 @@ export async function POST(request: NextRequest) {
           { status: 403 }
         );
       }
+
+      console.log(`[Invoice Limit Check] ALLOWED - Count ${currentMonthCount} < Limit ${maxAllowed}`);
     }
 
     const newInvoice = await createInvoice(
