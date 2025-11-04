@@ -231,39 +231,62 @@ export async function createQuotation(
         .select()
         .single();
 
-      if (quotationError) {
-        console.error(`[createQuotation] Attempt ${attempts} failed:`, {
+            if (quotationError) {
+        console.error(`[createQuotation] Attempt ${attempts}/${maxAttempts} failed:`, {        
           error: quotationError.message,
           code: quotationError.code,
           details: quotationError.details,
           hint: quotationError.hint,
           quotationNumber,
+          organizationId,
+          userId,
         });
 
-        // If duplicate key error, retry with new number
-        if (quotationError.code === '23505' || quotationError.message?.includes('duplicate') || quotationError.message?.includes('unique')) {
-          console.warn(`[createQuotation] Duplicate quotation number ${quotationNumber}, retrying... (attempt ${attempts}/${maxAttempts})`);
+        // Check for duplicate key error (unique constraint violation)
+        // Only retry if it's specifically a duplicate key error (code 23505)
+        // Don't retry on other errors like RLS violations, permission errors, etc.
+        const isDuplicateError = quotationError.code === '23505' || 
+          (quotationError.message?.toLowerCase().includes('duplicate key') && 
+           quotationError.message?.toLowerCase().includes('quotation_number'));
+        
+        if (isDuplicateError) {
+          console.warn(`[createQuotation] Duplicate quotation number ${quotationNumber}, retrying with new number... (attempt ${attempts}/${maxAttempts})`);                    
           // Add a small delay to avoid tight retry loop
           await new Promise(resolve => setTimeout(resolve, 100));
           continue;
         }
-        
-        // For other errors, throw immediately (don't retry)
-        throw new Error(`Failed to create quotation: ${quotationError.message}`);
+
+        // For other errors (RLS, permissions, etc.), throw immediately (don't retry)
+        console.error(`[createQuotation] Non-retryable error on attempt ${attempts}:`, quotationError);
+        throw new Error(`Failed to create quotation: ${quotationError.message} (code: ${quotationError.code || 'unknown'})`);
       }
 
       quotation = newQuotation;
       console.log(`[createQuotation] Successfully created quotation ${quotationNumber} on attempt ${attempts}`);
       break; // Success, exit loop
-    } catch (error) {
-      // If it's not a duplicate key error, don't retry
-      if (error instanceof Error && !error.message.includes('duplicate') && !error.message.includes('unique')) {
+        } catch (error) {
+      console.error(`[createQuotation] Exception caught on attempt ${attempts}:`, error);
+      
+      // Check if this is a duplicate key error
+      const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+      const isDuplicateError = errorMessage.includes('duplicate key') && errorMessage.includes('quotation_number');
+      
+      // If it's not a duplicate key error, don't retry - throw immediately
+      if (!isDuplicateError) {
+        console.error(`[createQuotation] Non-retryable exception:`, error);
         throw error;
       }
-      // Otherwise, continue retrying
+      
+      // If we've exhausted all retries, throw with detailed error message
       if (attempts >= maxAttempts) {
-        throw new Error(`Failed to generate unique quotation number after ${maxAttempts} attempts. Last error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        const lastError = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`[createQuotation] Exhausted all ${maxAttempts} retry attempts. Last error:`, lastError);
+        throw new Error(`Failed to generate unique quotation number after ${maxAttempts} attempts. Last error: ${lastError}`);                                                                   
       }
+      
+      // Otherwise, continue retrying (it's a duplicate error and we haven't hit max attempts)
+      console.warn(`[createQuotation] Duplicate error detected in catch block, will retry... (attempt ${attempts}/${maxAttempts})`);
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
   }
 
