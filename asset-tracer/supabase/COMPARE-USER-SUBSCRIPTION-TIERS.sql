@@ -9,7 +9,7 @@ SELECT
   'User Info' as section,
   u.id as user_id,
   u.email,
-  u.organization_id,
+  pu.organization_id,
   o.id as org_id_from_users,
   o.subscription_tier,
   o.name as org_name
@@ -36,7 +36,7 @@ ORDER BY o.subscription_tier;
 SELECT 
   'Quotation Counts (This Month UTC)' as section,
   u.email,
-  u.organization_id,
+  pu.organization_id,
   o.subscription_tier,
   COUNT(q.id) as quotations_this_month,
   ARRAY_AGG(q.id ORDER BY q.created_at DESC) as quotation_ids,
@@ -47,14 +47,14 @@ JOIN public.organizations o ON pu.organization_id = o.id
 LEFT JOIN public.quotations q ON q.organization_id = o.id
   AND q.created_at >= DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 WHERE u.email IN ('larona@stageworksafrica.com', 'mrlduiker@gmail.com')
-GROUP BY u.email, u.organization_id, o.subscription_tier
+GROUP BY u.email, pu.organization_id, o.subscription_tier
 ORDER BY u.email;
 
 -- Step 4: Count invoices this month for each user (UTC)
 SELECT 
   'Invoice Counts (This Month UTC)' as section,
   u.email,
-  u.organization_id,
+  pu.organization_id,
   o.subscription_tier,
   COUNT(i.id) as invoices_this_month,
   ARRAY_AGG(i.id ORDER BY i.created_at DESC) as invoice_ids,
@@ -65,7 +65,7 @@ JOIN public.organizations o ON pu.organization_id = o.id
 LEFT JOIN public.invoices i ON i.organization_id = o.id
   AND i.created_at >= DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 WHERE u.email IN ('larona@stageworksafrica.com', 'mrlduiker@gmail.com')
-GROUP BY u.email, u.organization_id, o.subscription_tier
+GROUP BY u.email, pu.organization_id, o.subscription_tier
 ORDER BY u.email;
 
 -- Step 5: Check if there are any NULL subscription_tiers
