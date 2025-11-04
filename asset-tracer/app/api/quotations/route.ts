@@ -158,7 +158,16 @@ export async function POST(request: NextRequest) {
       const now = new Date();
       const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
       
-      const { count, error: countError, data } = await supabase
+      // Use a more reliable method: fetch actual quotations and count them
+      // This ensures we get the exact count regardless of count query issues
+      const { data: monthlyQuotations, error: fetchError } = await supabase
+        .from('quotations')
+        .select('id, created_at')
+        .eq('organization_id', userData.organization_id)
+        .gte('created_at', firstDayOfMonth.toISOString());
+      
+      // Also try the count query for comparison
+      const { count, error: countError } = await supabase
         .from('quotations')
         .select('id', { count: 'exact', head: true })
         .eq('organization_id', userData.organization_id)
@@ -166,15 +175,16 @@ export async function POST(request: NextRequest) {
 
       // Log the raw response for debugging
       console.log(`[Quotation Count Query] Raw response:`, {
-        count,
-        data,
-        error: countError,
+        countFromQuery: count,
+        countFromFetch: monthlyQuotations?.length || 0,
+        error: countError || fetchError,
         firstDayOfMonth: firstDayOfMonth.toISOString(),
+        currentTimeUTC: new Date().toISOString(),
       });
 
-      if (countError) {
-        console.error('Error counting monthly quotations:', countError);
-        // If count query fails, be safe and block creation
+      if (fetchError) {
+        console.error('Error fetching monthly quotations:', fetchError);
+        // If fetch fails, be safe and block creation
         return NextResponse.json(
           { 
             error: 'Unable to verify subscription limits',
@@ -184,22 +194,16 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const currentMonthCount = count ?? 0;
+      // Use the actual fetched count as the source of truth
+      // This is more reliable than the count query which can have issues
+      const verifiedCount = monthlyQuotations?.length || 0;
       
-      // Additional verification: also fetch the actual quotations to verify count
-      const { data: actualQuotations, error: fetchError } = await supabase
-        .from('quotations')
-        .select('id, created_at')
-        .eq('organization_id', userData.organization_id)
-        .gte('created_at', firstDayOfMonth.toISOString());
-      
-      console.log(`[Quotation Count Verification] Count from query: ${count}, Actual quotations found: ${actualQuotations?.length || 0}`, {
-        quotationIds: actualQuotations?.map(q => q.id),
-        quotationDates: actualQuotations?.map(q => q.created_at),
+      // Log detailed verification
+      console.log(`[Quotation Count Verification] Count from query: ${count}, Count from fetch: ${verifiedCount}`, {
+        quotationIds: monthlyQuotations?.map(q => q.id),
+        quotationDates: monthlyQuotations?.map(q => q.created_at),
+        discrepancy: count !== verifiedCount ? `⚠️ MISMATCH: Query says ${count}, Fetch says ${verifiedCount}` : '✅ Counts match',
       });
-      
-      // Use the actual count if there's a discrepancy
-      const verifiedCount = actualQuotations?.length ?? count ?? 0;
       const maxAllowed = 5;
 
       console.log(`[Quotation Limit Check] User: ${user.email}, Organization: ${userData.organization_id}, Subscription tier: ${subscriptionTier}, Current count (verified): ${verifiedCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayOfMonth.toISOString()}, Current time (UTC): ${new Date().toISOString()}`);
