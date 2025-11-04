@@ -4,6 +4,9 @@ import type { Quotation, QuotationItem, CreateQuotationInput, UpdateQuotationInp
 /**
  * Generate a unique quotation number
  * Format: QUO-YYYY-XXXX
+ * 
+ * IMPORTANT: quotation_number has a UNIQUE constraint across ALL organizations,
+ * so we must check globally, not just within this organization.
  */
 export async function generateQuotationNumber(organizationId: string): Promise<string> {
   const supabase = await createClient();
@@ -11,8 +14,9 @@ export async function generateQuotationNumber(organizationId: string): Promise<s
   const prefix = `QUO-${year}-`;
 
   try {
-    // Get the last quotation number for this year
-    const { data, error } = await supabase
+    // Step 1: Get the last quotation number for THIS organization for this year
+    // This gives us a starting point
+    const { data: orgData, error: orgError } = await supabase
       .from('quotations')
       .select('quotation_number')
       .eq('organization_id', organizationId)
@@ -20,31 +24,105 @@ export async function generateQuotationNumber(organizationId: string): Promise<s
       .order('quotation_number', { ascending: false })
       .limit(1);
 
-    if (error) {
-      console.error('[generateQuotationNumber] Error fetching last quotation number:', {
-        error: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint,
+    if (orgError) {
+      console.error('[generateQuotationNumber] Error fetching org quotation number:', {
+        error: orgError.message,
+        code: orgError.code,
+        details: orgError.details,
+        hint: orgError.hint,
         organizationId,
       });
-      // If query fails, start from 1 - this is safe for new organizations
     }
 
-    let nextNumber = 1;
-    if (data && data.length > 0 && data[0]?.quotation_number) {
-      const lastNumber = data[0].quotation_number;
+    // Determine starting number based on this org's last quotation
+    let startNumber = 1;
+    if (orgData && orgData.length > 0 && orgData[0]?.quotation_number) {
+      const lastNumber = orgData[0].quotation_number;
       const match = lastNumber.match(/QUO-\d{4}-(\d+)/);
       if (match && match[1]) {
         const lastNum = parseInt(match[1], 10);
         if (!isNaN(lastNum)) {
-          nextNumber = lastNum + 1;
+          startNumber = lastNum + 1;
         }
       }
     }
 
-    const quotationNumber = `${prefix}${nextNumber.toString().padStart(4, '0')}`;
-    console.log(`[generateQuotationNumber] Generated: ${quotationNumber} for org: ${organizationId}`);
+    // Step 2: Check globally to find the highest quotation number for this year
+    // This ensures we don't conflict with other organizations
+    const { data: globalData, error: globalError } = await supabase
+      .from('quotations')
+      .select('quotation_number')
+      .like('quotation_number', `${prefix}%`)
+      .order('quotation_number', { ascending: false })
+      .limit(1);
+
+    if (globalError) {
+      console.error('[generateQuotationNumber] Error fetching global quotation number:', {
+        error: globalError.message,
+        code: globalError.code,
+        details: globalError.details,
+        hint: globalError.hint,
+      });
+      // If global query fails, use org-based number as fallback
+    }
+
+    // Determine the actual next number to use
+    let nextNumber = startNumber;
+    if (globalData && globalData.length > 0 && globalData[0]?.quotation_number) {
+      const globalLastNumber = globalData[0].quotation_number;
+      const globalMatch = globalLastNumber.match(/QUO-\d{4}-(\d+)/);
+      if (globalMatch && globalMatch[1]) {
+        const globalLastNum = parseInt(globalMatch[1], 10);
+        if (!isNaN(globalLastNum)) {
+          // Use the higher of: (org's last + 1) or (global last + 1)
+          nextNumber = Math.max(startNumber, globalLastNum + 1);
+        }
+      }
+    }
+
+    // Step 3: Generate the number and verify it doesn't exist globally
+    // Keep incrementing until we find one that doesn't exist
+    let quotationNumber = `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+    let attempts = 0;
+    const maxAttempts = 100; // Safety limit to prevent infinite loops
+
+    while (attempts < maxAttempts) {
+      // Check if this number exists globally
+      const { data: existsData, error: existsError } = await supabase
+        .from('quotations')
+        .select('id')
+        .eq('quotation_number', quotationNumber)
+        .limit(1);
+
+      if (existsError) {
+        console.error('[generateQuotationNumber] Error checking if number exists:', {
+          error: existsError.message,
+          code: existsError.code,
+          quotationNumber,
+        });
+        // If check fails, assume it doesn't exist and proceed
+        break;
+      }
+
+      // If number doesn't exist, we can use it
+      if (!existsData || existsData.length === 0) {
+        break;
+      }
+
+      // Number exists, try next one
+      nextNumber++;
+      quotationNumber = `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+      attempts++;
+    }
+
+    if (attempts >= maxAttempts) {
+      console.error('[generateQuotationNumber] Reached max attempts, using timestamp fallback');
+      // Fallback to timestamp-based number
+      const timestamp = Date.now().toString().slice(-4);
+      return `${prefix}${timestamp}`;
+    }
+
+    console.log(`[generateQuotationNumber] Generated: ${quotationNumber} for org: ${organizationId} (after ${attempts} checks)`);
     return quotationNumber;
   } catch (error) {
     console.error('[generateQuotationNumber] Unexpected error:', error);
