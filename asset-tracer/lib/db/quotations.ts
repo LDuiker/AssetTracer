@@ -47,82 +47,25 @@ export async function generateQuotationNumber(organizationId: string): Promise<s
       }
     }
 
-    // Step 2: Check globally to find the highest quotation number for this year
-    // This ensures we don't conflict with other organizations
-    const { data: globalData, error: globalError } = await supabase
-      .from('quotations')
-      .select('quotation_number')
-      .like('quotation_number', `${prefix}%`)
-      .order('quotation_number', { ascending: false })
-      .limit(1);
-
-    if (globalError) {
-      console.error('[generateQuotationNumber] Error fetching global quotation number:', {
-        error: globalError.message,
-        code: globalError.code,
-        details: globalError.details,
-        hint: globalError.hint,
-      });
-      // If global query fails, use org-based number as fallback
-    }
-
-    // Determine the actual next number to use
+    // Step 2: Start from the org's last number + some buffer
+    // Since quotation_number is globally unique but we can't query globally due to RLS,
+    // we'll start from org's last number and rely on the insert retry logic in createQuotation
+    // to handle conflicts. However, to reduce retries, we'll add a buffer.
+    
+    // Add a buffer of 10 to reduce chance of conflicts with other orgs
+    // This is a heuristic - the retry logic will handle any conflicts
     let nextNumber = startNumber;
-    if (globalData && globalData.length > 0 && globalData[0]?.quotation_number) {
-      const globalLastNumber = globalData[0].quotation_number;
-      const globalMatch = globalLastNumber.match(/QUO-\d{4}-(\d+)/);
-      if (globalMatch && globalMatch[1]) {
-        const globalLastNum = parseInt(globalMatch[1], 10);
-        if (!isNaN(globalLastNum)) {
-          // Use the higher of: (org's last + 1) or (global last + 1)
-          nextNumber = Math.max(startNumber, globalLastNum + 1);
-        }
-      }
+    
+    // If this org has no quotations yet, start from a higher number to avoid conflicts
+    // with orgs that started earlier. Use a random offset between 1-100.
+    if (startNumber === 1) {
+      const randomOffset = Math.floor(Math.random() * 100) + 1;
+      nextNumber = randomOffset;
+      console.log(`[generateQuotationNumber] New org, using random offset: ${randomOffset}`);
     }
 
-    // Step 3: Generate the number and verify it doesn't exist globally
-    // Keep incrementing until we find one that doesn't exist
-    let quotationNumber = `${prefix}${nextNumber.toString().padStart(4, '0')}`;
-    let attempts = 0;
-    const maxAttempts = 100; // Safety limit to prevent infinite loops
-
-    while (attempts < maxAttempts) {
-      // Check if this number exists globally
-      const { data: existsData, error: existsError } = await supabase
-        .from('quotations')
-        .select('id')
-        .eq('quotation_number', quotationNumber)
-        .limit(1);
-
-      if (existsError) {
-        console.error('[generateQuotationNumber] Error checking if number exists:', {
-          error: existsError.message,
-          code: existsError.code,
-          quotationNumber,
-        });
-        // If check fails, assume it doesn't exist and proceed
-        break;
-      }
-
-      // If number doesn't exist, we can use it
-      if (!existsData || existsData.length === 0) {
-        break;
-      }
-
-      // Number exists, try next one
-      nextNumber++;
-      quotationNumber = `${prefix}${nextNumber.toString().padStart(4, '0')}`;
-      attempts++;
-    }
-
-    if (attempts >= maxAttempts) {
-      console.error('[generateQuotationNumber] Reached max attempts, using timestamp fallback');
-      // Fallback to timestamp-based number
-      const timestamp = Date.now().toString().slice(-4);
-      return `${prefix}${timestamp}`;
-    }
-
-    console.log(`[generateQuotationNumber] Generated: ${quotationNumber} for org: ${organizationId} (after ${attempts} checks)`);
+    const quotationNumber = `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+    console.log(`[generateQuotationNumber] Generated: ${quotationNumber} for org: ${organizationId}`);
     return quotationNumber;
   } catch (error) {
     console.error('[generateQuotationNumber] Unexpected error:', error);
@@ -278,15 +221,29 @@ export async function createQuotation(
   let quotation = null;
   let attempts = 0;
   const maxAttempts = 10; // Increased from 5 to handle more edge cases
+  let lastAttemptedNumber: string | null = null;
+  let nextNumberToTry: number | null = null;
 
   while (!quotation && attempts < maxAttempts) {
     attempts++;
     
     try {
       // Generate quotation number
-      const quotationNumber = await generateQuotationNumber(organizationId);
+      let quotationNumber: string;
+      
+      // On retry after duplicate error, increment the number instead of regenerating
+      if (nextNumberToTry !== null && lastAttemptedNumber) {
+        const year = new Date().getFullYear();
+        const prefix = `QUO-${year}-`;
+        quotationNumber = `${prefix}${nextNumberToTry.toString().padStart(4, '0')}`;
+        console.log(`[createQuotation] Retry attempt ${attempts}/${maxAttempts}: Using incremented number: ${quotationNumber}`);
+      } else {
+        quotationNumber = await generateQuotationNumber(organizationId);
+        console.log(`[createQuotation] Attempt ${attempts}/${maxAttempts}: Trying quotation number: ${quotationNumber}`);
+      }
 
-      console.log(`[createQuotation] Attempt ${attempts}/${maxAttempts}: Trying quotation number: ${quotationNumber}`);
+      // Store the attempted number for retry logic
+      lastAttemptedNumber = quotationNumber;
 
       // Create quotation
       const { data: newQuotation, error: quotationError } = await supabase
@@ -328,7 +285,25 @@ export async function createQuotation(
            quotationError.message?.toLowerCase().includes('quotation_number'));
         
         if (isDuplicateError) {
-          console.warn(`[createQuotation] Duplicate quotation number ${quotationNumber}, retrying with new number... (attempt ${attempts}/${maxAttempts})`);                    
+          console.warn(`[createQuotation] Duplicate quotation number ${quotationNumber}, retrying with incremented number... (attempt ${attempts}/${maxAttempts})`);                    
+
+          // Extract the number from the failed quotation number and increment it
+          lastAttemptedNumber = quotationNumber;
+          const match = quotationNumber.match(/QUO-\d{4}-(\d+)/);
+          if (match && match[1]) {
+            const currentNum = parseInt(match[1], 10);
+            if (!isNaN(currentNum)) {
+              nextNumberToTry = currentNum + 1;
+              console.log(`[createQuotation] Will try next number: ${nextNumberToTry} (extracted from ${quotationNumber})`);
+            } else {
+              // Fallback: generate new number
+              nextNumberToTry = null;
+            }
+          } else {
+            // Fallback: generate new number
+            nextNumberToTry = null;
+          }
+
           // Add a small delay to avoid tight retry loop
           await new Promise(resolve => setTimeout(resolve, 100));
           continue;
@@ -363,6 +338,17 @@ export async function createQuotation(
       }
       
       // Otherwise, continue retrying (it's a duplicate error and we haven't hit max attempts)
+      // Try to extract number from error message if we have lastAttemptedNumber
+      if (lastAttemptedNumber) {
+        const match = lastAttemptedNumber.match(/QUO-\d{4}-(\d+)/);
+        if (match && match[1]) {
+          const currentNum = parseInt(match[1], 10);
+          if (!isNaN(currentNum)) {
+            nextNumberToTry = currentNum + 1;
+          }
+        }
+      }
+      
       console.warn(`[createQuotation] Duplicate error detected in catch block, will retry... (attempt ${attempts}/${maxAttempts})`);
       await new Promise(resolve => setTimeout(resolve, 100));
     }
