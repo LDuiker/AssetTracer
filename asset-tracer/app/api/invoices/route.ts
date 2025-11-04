@@ -144,8 +144,9 @@ export async function POST(request: NextRequest) {
     
     // Count invoices created this month for free tier
     if (subscriptionTier === 'free') {
+      // Create first day of current month in UTC to avoid timezone issues
       const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
       
       const { count, error: countError } = await supabase
         .from('invoices')
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
       const currentMonthCount = count ?? 0;
       const maxAllowed = 5;
 
-      console.log(`[Invoice Limit Check] Organization: ${organizationId}, Current count: ${currentMonthCount}, Max allowed: ${maxAllowed}`);
+      console.log(`[Invoice Limit Check] Organization: ${organizationId}, Subscription tier: ${subscriptionTier}, Current count: ${currentMonthCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayOfMonth.toISOString()}`);
 
       // Block if current count is already at or above the limit
       // If currentMonthCount is 5, we already have 5 invoices, so block the 6th

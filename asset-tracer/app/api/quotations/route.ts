@@ -151,8 +151,9 @@ export async function POST(request: NextRequest) {
     
     // Count quotations created this month for free tier
     if (subscriptionTier === 'free') {
+      // Create first day of current month in UTC to avoid timezone issues
       const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
       
       const { count, error: countError } = await supabase
         .from('quotations')
@@ -175,7 +176,7 @@ export async function POST(request: NextRequest) {
       const currentMonthCount = count ?? 0;
       const maxAllowed = 5;
 
-      console.log(`[Quotation Limit Check] Organization: ${userData.organization_id}, Current count: ${currentMonthCount}, Max allowed: ${maxAllowed}`);
+      console.log(`[Quotation Limit Check] Organization: ${userData.organization_id}, Subscription tier: ${subscriptionTier}, Current count: ${currentMonthCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayOfMonth.toISOString()}`);
 
       // Block if current count is already at or above the limit
       // If currentMonthCount is 5, we already have 5 quotations, so block the 6th
