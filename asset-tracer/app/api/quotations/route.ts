@@ -235,11 +235,32 @@ export async function POST(request: NextRequest) {
       user.id
     );
 
-    return NextResponse.json({ quotation }, { status: 201 });
+        return NextResponse.json({ quotation }, { status: 201 });
   } catch (error) {
-    console.error('Error in POST /api/quotations:', error);
+    console.error('[POST /api/quotations] Error creating quotation:', error);
+    
+    // Enhanced error logging
+    if (error instanceof Error) {
+      console.error('[POST /api/quotations] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      });
+    } else {
+      console.error('[POST /api/quotations] Unknown error type:', typeof error, error);
+    }
+    
+    // Return detailed error message to help with debugging
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create quotation';
+    
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create quotation' },
+      { 
+        error: errorMessage,
+        // Include more details in development/debugging
+        ...(process.env.NODE_ENV === 'development' && error instanceof Error ? {
+          details: error.stack,
+        } : {}),
+      },                                                                         
       { status: 500 }
     );
   }
