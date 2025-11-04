@@ -35,7 +35,7 @@ type InvoiceStatus = 'all' | 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
 
 export default function InvoicesPage() {
   const router = useRouter();
-  const { limits, canCreateInvoice, getUpgradeMessage, redirectToUpgrade } = useSubscription();
+  const { limits, canCreateInvoice, getUpgradeMessage, redirectToUpgrade, tier, isLoading: subscriptionLoading } = useSubscription();
   const { formatCurrency } = useCurrency();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,11 +56,26 @@ export default function InvoicesPage() {
     const now = new Date();
     const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     
-    return invoices.filter((inv) => {
+    const count = invoices.filter((inv) => {
       // Use created_at if available, otherwise use issue_date
-      const invoiceDate = new Date(inv.created_at || inv.issue_date);
+      const dateField = inv.created_at || inv.issue_date;
+      if (!dateField) {
+        console.warn('Invoice missing created_at and issue_date:', inv.id);
+        return false;
+      }
+      const invoiceDate = new Date(dateField);
       return invoiceDate >= firstDayOfMonth;
     }).length;
+    
+    // Debug logging
+    console.log('[Invoices Frontend] Monthly count:', {
+      count,
+      totalInvoices: invoices.length,
+      firstDayOfMonth: firstDayOfMonth.toISOString(),
+      invoicesWithDates: invoices.map(inv => ({ id: inv.id, created_at: inv.created_at, issue_date: inv.issue_date })),
+    });
+    
+    return count;
   }, [invoices]);
 
   // Filter invoices
@@ -109,6 +124,15 @@ export default function InvoicesPage() {
    * Handle create invoice
    */
   const handleCreate = () => {
+    // Debug logging
+    console.log('[Invoices Create] Check:', {
+      invoicesThisMonth,
+      maxAllowed: limits.maxInvoicesPerMonth,
+      canCreate: canCreateInvoice(invoicesThisMonth),
+      tier,
+      subscriptionLoading,
+    });
+    
     // Check subscription limit
     if (!canCreateInvoice(invoicesThisMonth)) {
       toast.error(getUpgradeMessage('invoices'), {
@@ -466,7 +490,7 @@ export default function InvoicesPage() {
             onClick={handleCreate}
             className="bg-primary-blue hover:bg-blue-700 w-full md:w-auto"
             size="lg"
-            disabled={!canCreateInvoice(invoicesThisMonth)}
+            disabled={subscriptionLoading || !canCreateInvoice(invoicesThisMonth)}
           >
             <Plus className="mr-2 h-5 w-5" />
             Create Invoice

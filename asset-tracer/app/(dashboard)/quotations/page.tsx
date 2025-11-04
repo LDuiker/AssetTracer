@@ -36,7 +36,7 @@ type QuotationStatus = 'all' | 'draft' | 'sent' | 'accepted' | 'rejected' | 'exp
 export default function QuotationsPage() {
   const router = useRouter();
   const { formatCurrency } = useCurrency();
-  const { limits, canCreateQuotation, canCreateInvoice, getUpgradeMessage, redirectToUpgrade } = useSubscription();
+  const { limits, canCreateQuotation, canCreateInvoice, getUpgradeMessage, redirectToUpgrade, tier, isLoading: subscriptionLoading } = useSubscription();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<QuotationStatus>('all');
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
@@ -62,10 +62,24 @@ export default function QuotationsPage() {
     const now = new Date();
     const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     
-    return quotations.filter((q) => {
+    const count = quotations.filter((q) => {
+      if (!q.created_at) {
+        console.warn('Quotation missing created_at:', q.id);
+        return false;
+      }
       const quotationDate = new Date(q.created_at);
       return quotationDate >= firstDayOfMonth;
     }).length;
+    
+    // Debug logging
+    console.log('[Quotations Frontend] Monthly count:', {
+      count,
+      totalQuotations: quotations.length,
+      firstDayOfMonth: firstDayOfMonth.toISOString(),
+      quotationsWithDates: quotations.map(q => ({ id: q.id, created_at: q.created_at })),
+    });
+    
+    return count;
   }, [quotations]);
 
   // Calculate invoices created this month (for convert to invoice quota check, using UTC to match backend)
@@ -121,6 +135,15 @@ export default function QuotationsPage() {
    * Handle create quotation
    */
   const handleCreate = () => {
+    // Debug logging
+    console.log('[Quotations Create] Check:', {
+      quotationsThisMonth,
+      maxAllowed: limits.maxQuotationsPerMonth,
+      canCreate: canCreateQuotation(quotationsThisMonth),
+      tier,
+      subscriptionLoading,
+    });
+    
     // Check subscription limit
     if (!canCreateQuotation(quotationsThisMonth)) {
       toast.error(getUpgradeMessage('quotations'), {
@@ -534,7 +557,7 @@ export default function QuotationsPage() {
             onClick={handleCreate}
             className="bg-primary-blue hover:bg-blue-700 w-full md:w-auto"
             size="lg"
-            disabled={!canCreateQuotation(quotationsThisMonth)}
+            disabled={subscriptionLoading || !canCreateQuotation(quotationsThisMonth)}
           >
             <Plus className="mr-2 h-5 w-5" />
             Create Quotation
