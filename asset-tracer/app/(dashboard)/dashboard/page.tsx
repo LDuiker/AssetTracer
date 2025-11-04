@@ -35,7 +35,18 @@ import {
 // Fetch function for SWR
 const fetcher = async (url: string) => {
   const res = await fetch(url, { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to fetch');
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+    const errorMessage = errorData.error || errorData.message || `Failed to fetch (${res.status})`;
+    console.error('[Dashboard API Error]', {
+      url,
+      status: res.status,
+      statusText: res.statusText,
+      error: errorMessage,
+      details: errorData,
+    });
+    throw new Error(errorMessage);
+  }
   return res.json();
 };
 
@@ -46,10 +57,10 @@ const formatPercentage = (value: number) => {
 
 export default function DashboardPage() {
   // Get currency formatting from context (uses global currency setting)
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, isLoading: currencyLoading } = useCurrency();
 
   // Get subscription tier and limits
-  const { limits, redirectToUpgrade } = useSubscription();
+  const { limits, redirectToUpgrade, isLoading: subscriptionLoading } = useSubscription();
 
   // Date range state - default to current year
   const currentYear = new Date().getFullYear();
@@ -58,27 +69,36 @@ export default function DashboardPage() {
   const [activeStartDate, setActiveStartDate] = useState(`${currentYear}-01-01`);
   const [activeEndDate, setActiveEndDate] = useState(`${currentYear}-12-31`);
 
+  // Wait for contexts to load before fetching data
+  const contextsLoading = subscriptionLoading || currencyLoading;
+
   // Fetch financial report (only if date filter is allowed or use default dates)
-  const dateFilterEnabled = limits.hasDateRangeFilter;
+  // Only fetch if contexts have loaded (to avoid errors from undefined limits)
+  const dateFilterEnabled = limits?.hasDateRangeFilter || false;
   const reportUrl = dateFilterEnabled
     ? `/api/reports/financials?start_date=${activeStartDate}&end_date=${activeEndDate}`
     : `/api/reports/financials?start_date=${currentYear}-01-01&end_date=${currentYear}-12-31`;
 
-  const { data: report, isLoading, error } = useSWR(reportUrl, fetcher);
+  const { data: report, isLoading, error } = useSWR(
+    contextsLoading ? null : reportUrl, 
+    fetcher
+  );
 
   // Process monthly chart data (only if charts are allowed)
+  // Must be called before any early returns (React hooks rules)
   const monthlyChartData = useMemo(() => {
-    if (!limits.hasMonthlyCharts || !report?.monthly_pl) return [];
+    if (contextsLoading || !limits?.hasMonthlyCharts || !report?.monthly_pl) return [];
     return report.monthly_pl.map((month: any) => ({
       month: format(new Date(month.month + '-01'), "MMM 'yy"),
       revenue: month.revenue || 0,
       expenses: month.expenses || 0,
     }));
-  }, [report, limits.hasMonthlyCharts]);
+  }, [report, limits?.hasMonthlyCharts, contextsLoading]);
 
   // Process top 5 assets (only if charts are allowed)
+  // Must be called before any early returns (React hooks rules)
   const top5Assets = useMemo(() => {
-    if (!limits.hasTopPerformersChart || !report?.asset_financials) return [];
+    if (contextsLoading || !limits?.hasTopPerformersChart || !report?.asset_financials) return [];
     return [...report.asset_financials]
       .sort((a: any, b: any) => (b.profit_loss || 0) - (a.profit_loss || 0))
       .slice(0, 5)
@@ -88,10 +108,28 @@ export default function DashboardPage() {
           : asset.asset_name || 'Unknown',
         profit: asset.profit_loss || 0,
       }));
-  }, [report, limits.hasTopPerformersChart]);
+  }, [report, limits?.hasTopPerformersChart, contextsLoading]);
+
+  // Show loading state if contexts are still loading
+  // Must be AFTER all hooks are called (React hooks rules)
+  if (contextsLoading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleApplyFilter = () => {
-    if (limits.hasDateRangeFilter) {
+    if (limits?.hasDateRangeFilter) {
       setActiveStartDate(startDate);
       setActiveEndDate(endDate);
     }
@@ -117,7 +155,19 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-red-600">Error loading dashboard data. Please try again later.</p>
+            <div className="space-y-2">
+              <p className="text-red-600 font-semibold">Error loading dashboard data</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {error instanceof Error ? error.message : 'An unknown error occurred'}
+              </p>
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline" 
+                className="mt-4"
+              >
+                Retry
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -137,7 +187,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Date Range Filter - Only shown if allowed */}
-      {limits.hasDateRangeFilter ? (
+      {limits?.hasDateRangeFilter ? (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -211,7 +261,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(revenue)}</div>
-            {limits.hasGrowthMetrics && (
+            {limits?.hasGrowthMetrics && (
               <div className={`flex items-center text-xs mt-1 ${
                 revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
@@ -234,7 +284,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(expenses)}</div>
-            {limits.hasGrowthMetrics && (
+            {limits?.hasGrowthMetrics && (
               <div className={`flex items-center text-xs mt-1 ${
                 expenseGrowth <= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
@@ -257,7 +307,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(profit)}</div>
-            {limits.hasGrowthMetrics && (
+            {limits?.hasGrowthMetrics && (
               <div className={`flex items-center text-xs mt-1 ${
                 profitGrowth >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
@@ -368,7 +418,7 @@ export default function DashboardPage() {
       ) : (
         <>
           {/* Monthly Revenue vs Expenses Line Chart - Locked for Free */}
-          {limits.hasMonthlyCharts ? (
+          {limits?.hasMonthlyCharts ? (
             <Card>
               <CardHeader>
                 <CardTitle>Monthly Revenue vs Expenses</CardTitle>
@@ -433,7 +483,7 @@ export default function DashboardPage() {
           )}
 
           {/* Top 5 Profitable Assets Bar Chart - Locked for Free */}
-          {limits.hasTopPerformersChart ? (
+          {limits?.hasTopPerformersChart ? (
             <Card>
               <CardHeader>
                 <CardTitle>Top 5 Profitable Assets</CardTitle>

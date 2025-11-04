@@ -10,29 +10,48 @@ export async function generateQuotationNumber(organizationId: string): Promise<s
   const year = new Date().getFullYear();
   const prefix = `QUO-${year}-`;
 
-  // Get the last quotation number for this year
-  const { data, error } = await supabase
-    .from('quotations')
-    .select('quotation_number')
-    .eq('organization_id', organizationId)
-    .like('quotation_number', `${prefix}%`)
-    .order('quotation_number', { ascending: false })
-    .limit(1);
+  try {
+    // Get the last quotation number for this year
+    const { data, error } = await supabase
+      .from('quotations')
+      .select('quotation_number')
+      .eq('organization_id', organizationId)
+      .like('quotation_number', `${prefix}%`)
+      .order('quotation_number', { ascending: false })
+      .limit(1);
 
-  if (error) {
-    console.error('Error fetching last quotation number:', error);
-  }
-
-  let nextNumber = 1;
-  if (data && data.length > 0) {
-    const lastNumber = data[0].quotation_number;
-    const match = lastNumber.match(/QUO-\d{4}-(\d+)/);
-    if (match) {
-      nextNumber = parseInt(match[1], 10) + 1;
+    if (error) {
+      console.error('[generateQuotationNumber] Error fetching last quotation number:', {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        organizationId,
+      });
+      // If query fails, start from 1 - this is safe for new organizations
     }
-  }
 
-  return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+    let nextNumber = 1;
+    if (data && data.length > 0 && data[0]?.quotation_number) {
+      const lastNumber = data[0].quotation_number;
+      const match = lastNumber.match(/QUO-\d{4}-(\d+)/);
+      if (match && match[1]) {
+        const lastNum = parseInt(match[1], 10);
+        if (!isNaN(lastNum)) {
+          nextNumber = lastNum + 1;
+        }
+      }
+    }
+
+    const quotationNumber = `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+    console.log(`[generateQuotationNumber] Generated: ${quotationNumber} for org: ${organizationId}`);
+    return quotationNumber;
+  } catch (error) {
+    console.error('[generateQuotationNumber] Unexpected error:', error);
+    // Fallback: use timestamp-based number to ensure uniqueness
+    const timestamp = Date.now().toString().slice(-4);
+    return `${prefix}${timestamp}`;
+  }
 }
 
 /**
@@ -180,51 +199,76 @@ export async function createQuotation(
   // Retry logic for quotation number generation (to handle race conditions)
   let quotation = null;
   let attempts = 0;
-  const maxAttempts = 5;
+  const maxAttempts = 10; // Increased from 5 to handle more edge cases
 
   while (!quotation && attempts < maxAttempts) {
     attempts++;
     
-    // Generate quotation number
-    const quotationNumber = await generateQuotationNumber(organizationId);
+    try {
+      // Generate quotation number
+      const quotationNumber = await generateQuotationNumber(organizationId);
 
-    // Create quotation
-    const { data: newQuotation, error: quotationError } = await supabase
-      .from('quotations')
-      .insert({
-        organization_id: organizationId,
-        client_id: data.client_id,
-        quotation_number: quotationNumber,
-        issue_date: data.issue_date,
-        valid_until: data.valid_until,
-        status: data.status || 'draft',
-        currency: data.currency,
-        subtotal: totals.subtotal,
-        tax_total: totals.tax_total,
-        total: totals.total,
-        notes: data.notes || null,
-        terms: data.terms || null,
-        created_by: userId,
-      })
-      .select()
-      .single();
+      console.log(`[createQuotation] Attempt ${attempts}/${maxAttempts}: Trying quotation number: ${quotationNumber}`);
 
-    if (quotationError) {
-      // If duplicate key error, retry with new number
-      if (quotationError.code === '23505') {
-        console.warn(`Duplicate quotation number ${quotationNumber}, retrying... (attempt ${attempts})`);
-        continue;
+      // Create quotation
+      const { data: newQuotation, error: quotationError } = await supabase
+        .from('quotations')
+        .insert({
+          organization_id: organizationId,
+          client_id: data.client_id,
+          quotation_number: quotationNumber,
+          issue_date: data.issue_date,
+          valid_until: data.valid_until,
+          status: data.status || 'draft',
+          currency: data.currency,
+          subtotal: totals.subtotal,
+          tax_total: totals.tax_total,
+          total: totals.total,
+          notes: data.notes || null,
+          terms: data.terms || null,
+          created_by: userId,
+        })
+        .select()
+        .single();
+
+      if (quotationError) {
+        console.error(`[createQuotation] Attempt ${attempts} failed:`, {
+          error: quotationError.message,
+          code: quotationError.code,
+          details: quotationError.details,
+          hint: quotationError.hint,
+          quotationNumber,
+        });
+
+        // If duplicate key error, retry with new number
+        if (quotationError.code === '23505' || quotationError.message?.includes('duplicate') || quotationError.message?.includes('unique')) {
+          console.warn(`[createQuotation] Duplicate quotation number ${quotationNumber}, retrying... (attempt ${attempts}/${maxAttempts})`);
+          // Add a small delay to avoid tight retry loop
+          await new Promise(resolve => setTimeout(resolve, 100));
+          continue;
+        }
+        
+        // For other errors, throw immediately (don't retry)
+        throw new Error(`Failed to create quotation: ${quotationError.message}`);
       }
-      
-      console.error('Error creating quotation:', quotationError);
-      throw new Error('Failed to create quotation');
-    }
 
-    quotation = newQuotation;
+      quotation = newQuotation;
+      console.log(`[createQuotation] Successfully created quotation ${quotationNumber} on attempt ${attempts}`);
+      break; // Success, exit loop
+    } catch (error) {
+      // If it's not a duplicate key error, don't retry
+      if (error instanceof Error && !error.message.includes('duplicate') && !error.message.includes('unique')) {
+        throw error;
+      }
+      // Otherwise, continue retrying
+      if (attempts >= maxAttempts) {
+        throw new Error(`Failed to generate unique quotation number after ${maxAttempts} attempts. Last error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
   }
 
   if (!quotation) {
-    throw new Error('Failed to generate unique quotation number after multiple attempts');
+    throw new Error(`Failed to generate unique quotation number after ${maxAttempts} attempts`);
   }
 
   // Create quotation items

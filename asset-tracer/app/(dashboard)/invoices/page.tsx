@@ -35,7 +35,7 @@ type InvoiceStatus = 'all' | 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
 
 export default function InvoicesPage() {
   const router = useRouter();
-  const { limits, canCreateInvoice, getUpgradeMessage, redirectToUpgrade } = useSubscription();
+  const { limits, canCreateInvoice, getUpgradeMessage, redirectToUpgrade, tier, isLoading: subscriptionLoading } = useSubscription();
   const { formatCurrency } = useCurrency();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,17 +51,42 @@ export default function InvoicesPage() {
 
   const invoices = data?.invoices || [];
 
-  // Calculate invoices created this month
+  // Calculate invoices created this month (using UTC to match backend)
   const invoicesThisMonth = useMemo(() => {
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    // Format as ISO string without milliseconds to match backend filter format
+    const firstDayISO = firstDayOfMonth.toISOString().split('.')[0] + 'Z';
     
-    return invoices.filter((inv) => {
-      const invoiceDate = new Date(inv.issue_date);
-      return invoiceDate.getMonth() === currentMonth && 
-             invoiceDate.getFullYear() === currentYear;
+    const count = invoices.filter((inv) => {
+      // Use created_at if available, otherwise use issue_date
+      const dateField = inv.created_at || inv.issue_date;
+      if (!dateField) {
+        console.warn('Invoice missing created_at and issue_date:', inv.id);
+        return false;
+      }
+      const invoiceDate = new Date(dateField);
+      // Use getTime() for precise comparison to avoid timezone issues
+      return invoiceDate.getTime() >= firstDayOfMonth.getTime();
     }).length;
+    
+    // Debug logging
+    console.log('[Invoices Frontend] Monthly count:', {
+      count,
+      totalInvoices: invoices.length,
+      firstDayOfMonth: firstDayISO,
+      firstDayOfMonthFull: firstDayOfMonth.toISOString(),
+      invoicesWithDates: invoices.map(inv => ({ 
+        id: inv.id, 
+        created_at: inv.created_at, 
+        issue_date: inv.issue_date,
+        created_at_parsed: inv.created_at ? new Date(inv.created_at).toISOString() : null,
+        issue_date_parsed: inv.issue_date ? new Date(inv.issue_date).toISOString() : null,
+        isIncluded: (inv.created_at || inv.issue_date) ? new Date(inv.created_at || inv.issue_date).getTime() >= firstDayOfMonth.getTime() : false
+      })),
+    });
+    
+    return count;
   }, [invoices]);
 
   // Filter invoices
@@ -110,6 +135,15 @@ export default function InvoicesPage() {
    * Handle create invoice
    */
   const handleCreate = () => {
+    // Debug logging
+    console.log('[Invoices Create] Check:', {
+      invoicesThisMonth,
+      maxAllowed: limits.maxInvoicesPerMonth,
+      canCreate: canCreateInvoice(invoicesThisMonth),
+      tier,
+      subscriptionLoading,
+    });
+    
     // Check subscription limit
     if (!canCreateInvoice(invoicesThisMonth)) {
       toast.error(getUpgradeMessage('invoices'), {
@@ -467,7 +501,7 @@ export default function InvoicesPage() {
             onClick={handleCreate}
             className="bg-primary-blue hover:bg-blue-700 w-full md:w-auto"
             size="lg"
-            disabled={!canCreateInvoice(invoicesThisMonth)}
+            disabled={subscriptionLoading || !canCreateInvoice(invoicesThisMonth)}
           >
             <Plus className="mr-2 h-5 w-5" />
             Create Invoice

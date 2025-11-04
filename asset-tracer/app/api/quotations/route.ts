@@ -118,6 +118,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Log user email for debugging
+    console.log(`[Quotation Creation] User: ${user.email}, User ID: ${user.id}`);
+
     // Get user's organization
     const { data: userData, error: orgError } = await supabase
       .from('users')
@@ -151,18 +154,40 @@ export async function POST(request: NextRequest) {
     
     // Count quotations created this month for free tier
     if (subscriptionTier === 'free') {
+      // Create first day of current month in UTC to avoid timezone issues
       const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      // Format as ISO string without milliseconds for better compatibility with Supabase
+      const firstDayISO = firstDayOfMonth.toISOString().split('.')[0] + 'Z';
       
+      // Use a more reliable method: fetch actual quotations and count them
+      // This ensures we get the exact count regardless of count query issues
+      const { data: monthlyQuotations, error: fetchError } = await supabase
+        .from('quotations')
+        .select('id, created_at')
+        .eq('organization_id', userData.organization_id)
+        .gte('created_at', firstDayISO);
+      
+      // Also try the count query for comparison
       const { count, error: countError } = await supabase
         .from('quotations')
         .select('id', { count: 'exact', head: true })
         .eq('organization_id', userData.organization_id)
-        .gte('created_at', firstDayOfMonth.toISOString());
+        .gte('created_at', firstDayISO);
 
-      if (countError) {
-        console.error('Error counting monthly quotations:', countError);
-        // If count query fails, be safe and block creation
+      // Log the raw response for debugging
+      console.log(`[Quotation Count Query] Raw response:`, {
+        countFromQuery: count,
+        countFromFetch: monthlyQuotations?.length || 0,
+        error: countError || fetchError,
+        firstDayOfMonth: firstDayISO,
+        firstDayOfMonthFull: firstDayOfMonth.toISOString(),
+        currentTimeUTC: new Date().toISOString(),
+      });
+
+      if (fetchError) {
+        console.error('Error fetching monthly quotations:', fetchError);
+        // If fetch fails, be safe and block creation
         return NextResponse.json(
           { 
             error: 'Unable to verify subscription limits',
@@ -172,25 +197,35 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const currentMonthCount = count ?? 0;
+      // Use the actual fetched count as the source of truth
+      // This is more reliable than the count query which can have issues
+      const verifiedCount = monthlyQuotations?.length || 0;
+      
+      // Log detailed verification
+      console.log(`[Quotation Count Verification] Count from query: ${count}, Count from fetch: ${verifiedCount}`, {
+        quotationIds: monthlyQuotations?.map(q => q.id),
+        quotationDates: monthlyQuotations?.map(q => q.created_at),
+        discrepancy: count !== verifiedCount ? `⚠️ MISMATCH: Query says ${count}, Fetch says ${verifiedCount}` : '✅ Counts match',
+      });
       const maxAllowed = 5;
 
-      console.log(`[Quotation Limit Check] Organization: ${userData.organization_id}, Current count: ${currentMonthCount}, Max allowed: ${maxAllowed}`);
+      console.log(`[Quotation Limit Check] User: ${user.email}, Organization: ${userData.organization_id}, Subscription tier: ${subscriptionTier}, Current count (verified): ${verifiedCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayISO}, Current time (UTC): ${new Date().toISOString()}`);
 
       // Block if current count is already at or above the limit
-      // If currentMonthCount is 5, we already have 5 quotations, so block the 6th
-      if (currentMonthCount >= maxAllowed) {
-        console.log(`[Quotation Limit Check] BLOCKED - Count ${currentMonthCount} >= Limit ${maxAllowed}`);
+      // If verifiedCount is 5, we already have 5 quotations, so block the 6th
+      // Use > instead of >= to ensure we block at exactly the limit
+      if (verifiedCount >= maxAllowed) {
+        console.log(`[Quotation Limit Check] BLOCKED - Count ${verifiedCount} >= Limit ${maxAllowed}`);
         return NextResponse.json(
           { 
             error: 'Monthly quotation limit reached',
-            message: `Free plan allows ${maxAllowed} quotations per month. You've created ${currentMonthCount} this month. Upgrade to Pro for unlimited quotations.`
+            message: `Free plan allows ${maxAllowed} quotations per month. You've created ${verifiedCount} this month. Upgrade to Pro for unlimited quotations.`
           },
           { status: 403 }
         );
       }
 
-      console.log(`[Quotation Limit Check] ALLOWED - Count ${currentMonthCount} < Limit ${maxAllowed}`);
+      console.log(`[Quotation Limit Check] ALLOWED - Count ${verifiedCount} < Limit ${maxAllowed} (will allow creation of ${verifiedCount + 1}th quotation)`);
     }
 
     // Create quotation

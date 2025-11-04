@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useOrganization } from './OrganizationContext';
 
 export type SubscriptionTier = 'free' | 'pro' | 'business';
@@ -104,6 +104,19 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   // Get tier from organization or default to free
   const tier: SubscriptionTier = (organization?.subscription_tier as SubscriptionTier) || 'free';
   const limits = TIER_LIMITS[tier];
+  
+  // Debug logging to compare users
+  useEffect(() => {
+    console.log('[SubscriptionContext] Tier determination:', {
+      organizationId: organization?.id,
+      organizationName: organization?.name,
+      subscription_tier: organization?.subscription_tier,
+      tier_determined: tier,
+      maxInvoicesPerMonth: limits.maxInvoicesPerMonth,
+      maxQuotationsPerMonth: limits.maxQuotationsPerMonth,
+      isLoading: orgLoading,
+    });
+  }, [organization, tier, limits, orgLoading]);
 
   const canCreateAsset = (currentCount: number): boolean => {
     return currentCount < limits.maxAssets;

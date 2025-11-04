@@ -59,18 +59,18 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseClient();
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
       );
     }
 
-    const organizationId = await getOrganizationId(session.user.id);
+    const organizationId = await getOrganizationId(user.id);
     if (!organizationId) {
       return NextResponse.json(
         { error: 'User is not associated with an organization.' },
@@ -97,11 +97,11 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseClient();
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
 
     const invoiceData = validationResult.data;
 
-    const organizationId = await getOrganizationId(session.user.id);
+    const organizationId = await getOrganizationId(user.id);
     if (!organizationId) {
       return NextResponse.json(
         { error: 'User is not associated with an organization.' },
@@ -144,18 +144,30 @@ export async function POST(request: NextRequest) {
     
     // Count invoices created this month for free tier
     if (subscriptionTier === 'free') {
+      // Create first day of current month in UTC to avoid timezone issues
       const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      // Format as ISO string without milliseconds for better compatibility with Supabase
+      const firstDayISO = firstDayOfMonth.toISOString().split('.')[0] + 'Z';
       
+      // Use a more reliable method: fetch actual invoices and count them
+      // This ensures we get the exact count regardless of count query issues
+      const { data: monthlyInvoices, error: fetchError } = await supabase
+        .from('invoices')
+        .select('id, created_at')
+        .eq('organization_id', organizationId)
+        .gte('created_at', firstDayISO);
+      
+      // Also try the count query for comparison
       const { count, error: countError } = await supabase
         .from('invoices')
         .select('id', { count: 'exact', head: true })
         .eq('organization_id', organizationId)
-        .gte('created_at', firstDayOfMonth.toISOString());
+        .gte('created_at', firstDayISO);
 
-      if (countError) {
-        console.error('Error counting monthly invoices:', countError);
-        // If count query fails, be safe and block creation
+      if (fetchError) {
+        console.error('Error fetching monthly invoices:', fetchError);
+        // If fetch fails, be safe and block creation
         return NextResponse.json(
           { 
             error: 'Unable to verify subscription limits',
@@ -165,31 +177,41 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const currentMonthCount = count ?? 0;
+      // Use the actual fetched count as the source of truth
+      // This is more reliable than the count query which can have issues
+      const verifiedCount = monthlyInvoices?.length || 0;
       const maxAllowed = 5;
 
-      console.log(`[Invoice Limit Check] Organization: ${organizationId}, Current count: ${currentMonthCount}, Max allowed: ${maxAllowed}`);
+      // Log detailed verification
+      console.log(`[Invoice Count Verification] Count from query: ${count}, Count from fetch: ${verifiedCount}`, {
+        invoiceIds: monthlyInvoices?.map(i => i.id),
+        invoiceDates: monthlyInvoices?.map(i => i.created_at),
+        discrepancy: count !== verifiedCount ? `⚠️ MISMATCH: Query says ${count}, Fetch says ${verifiedCount}` : '✅ Counts match',
+      });
+
+      console.log(`[Invoice Limit Check] User: ${user.email}, Organization: ${organizationId}, Subscription tier: ${subscriptionTier}, Current count (verified): ${verifiedCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayISO}, Current time (UTC): ${new Date().toISOString()}`);
 
       // Block if current count is already at or above the limit
-      // If currentMonthCount is 5, we already have 5 invoices, so block the 6th
-      if (currentMonthCount >= maxAllowed) {
-        console.log(`[Invoice Limit Check] BLOCKED - Count ${currentMonthCount} >= Limit ${maxAllowed}`);
+      // If verifiedCount is 5, we already have 5 invoices, so block the 6th
+      // Use >= to ensure we block at exactly the limit
+      if (verifiedCount >= maxAllowed) {
+        console.log(`[Invoice Limit Check] BLOCKED - Count ${verifiedCount} >= Limit ${maxAllowed}`);
         return NextResponse.json(
           { 
             error: 'Monthly invoice limit reached',
-            message: `Free plan allows ${maxAllowed} invoices per month. You've created ${currentMonthCount} this month. Upgrade to Pro for unlimited invoices.`
+            message: `Free plan allows ${maxAllowed} invoices per month. You've created ${verifiedCount} this month. Upgrade to Pro for unlimited invoices.`
           },
           { status: 403 }
         );
       }
 
-      console.log(`[Invoice Limit Check] ALLOWED - Count ${currentMonthCount} < Limit ${maxAllowed}`);
+      console.log(`[Invoice Limit Check] ALLOWED - Count ${verifiedCount} < Limit ${maxAllowed} (will allow creation of ${verifiedCount + 1}th invoice)`);
     }
 
     const newInvoice = await createInvoice(
       invoiceData,
       organizationId,
-      session.user.id
+      user.id
     );
 
     return NextResponse.json({ invoice: newInvoice }, { status: 201 });
