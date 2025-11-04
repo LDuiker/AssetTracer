@@ -55,6 +55,8 @@ export default function InvoicesPage() {
   const invoicesThisMonth = useMemo(() => {
     const now = new Date();
     const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    // Format as ISO string without milliseconds to match backend filter format
+    const firstDayISO = firstDayOfMonth.toISOString().split('.')[0] + 'Z';
     
     const count = invoices.filter((inv) => {
       // Use created_at if available, otherwise use issue_date
@@ -64,15 +66,24 @@ export default function InvoicesPage() {
         return false;
       }
       const invoiceDate = new Date(dateField);
-      return invoiceDate >= firstDayOfMonth;
+      // Use getTime() for precise comparison to avoid timezone issues
+      return invoiceDate.getTime() >= firstDayOfMonth.getTime();
     }).length;
     
     // Debug logging
     console.log('[Invoices Frontend] Monthly count:', {
       count,
       totalInvoices: invoices.length,
-      firstDayOfMonth: firstDayOfMonth.toISOString(),
-      invoicesWithDates: invoices.map(inv => ({ id: inv.id, created_at: inv.created_at, issue_date: inv.issue_date })),
+      firstDayOfMonth: firstDayISO,
+      firstDayOfMonthFull: firstDayOfMonth.toISOString(),
+      invoicesWithDates: invoices.map(inv => ({ 
+        id: inv.id, 
+        created_at: inv.created_at, 
+        issue_date: inv.issue_date,
+        created_at_parsed: inv.created_at ? new Date(inv.created_at).toISOString() : null,
+        issue_date_parsed: inv.issue_date ? new Date(inv.issue_date).toISOString() : null,
+        isIncluded: (inv.created_at || inv.issue_date) ? new Date(inv.created_at || inv.issue_date).getTime() >= firstDayOfMonth.getTime() : false
+      })),
     });
     
     return count;

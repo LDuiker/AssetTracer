@@ -61,22 +61,32 @@ export default function QuotationsPage() {
   const quotationsThisMonth = useMemo(() => {
     const now = new Date();
     const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    // Format as ISO string without milliseconds to match backend filter format
+    const firstDayISO = firstDayOfMonth.toISOString().split('.')[0] + 'Z';
     
     const count = quotations.filter((q) => {
       if (!q.created_at) {
         console.warn('Quotation missing created_at:', q.id);
         return false;
       }
+      // Parse the created_at timestamp and compare with first day of month
       const quotationDate = new Date(q.created_at);
-      return quotationDate >= firstDayOfMonth;
+      // Use getTime() for precise comparison to avoid timezone issues
+      return quotationDate.getTime() >= firstDayOfMonth.getTime();
     }).length;
     
     // Debug logging
     console.log('[Quotations Frontend] Monthly count:', {
       count,
       totalQuotations: quotations.length,
-      firstDayOfMonth: firstDayOfMonth.toISOString(),
-      quotationsWithDates: quotations.map(q => ({ id: q.id, created_at: q.created_at })),
+      firstDayOfMonth: firstDayISO,
+      firstDayOfMonthFull: firstDayOfMonth.toISOString(),
+      quotationsWithDates: quotations.map(q => ({ 
+        id: q.id, 
+        created_at: q.created_at,
+        created_at_parsed: new Date(q.created_at).toISOString(),
+        isIncluded: q.created_at ? new Date(q.created_at).getTime() >= firstDayOfMonth.getTime() : false
+      })),
     });
     
     return count;
@@ -89,8 +99,13 @@ export default function QuotationsPage() {
     
     return invoices.filter((inv) => {
       // Use created_at if available, otherwise use issue_date
-      const invoiceDate = new Date(inv.created_at || inv.issue_date);
-      return invoiceDate >= firstDayOfMonth;
+      const dateField = inv.created_at || inv.issue_date;
+      if (!dateField) {
+        return false;
+      }
+      const invoiceDate = new Date(dateField);
+      // Use getTime() for precise comparison to avoid timezone issues
+      return invoiceDate.getTime() >= firstDayOfMonth.getTime();
     }).length;
   }, [invoices]);
 
