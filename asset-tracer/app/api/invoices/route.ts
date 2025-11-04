@@ -148,15 +148,24 @@ export async function POST(request: NextRequest) {
       const now = new Date();
       const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
       
+      // Use a more reliable method: fetch actual invoices and count them
+      // This ensures we get the exact count regardless of count query issues
+      const { data: monthlyInvoices, error: fetchError } = await supabase
+        .from('invoices')
+        .select('id, created_at')
+        .eq('organization_id', organizationId)
+        .gte('created_at', firstDayOfMonth.toISOString());
+      
+      // Also try the count query for comparison
       const { count, error: countError } = await supabase
         .from('invoices')
         .select('id', { count: 'exact', head: true })
         .eq('organization_id', organizationId)
         .gte('created_at', firstDayOfMonth.toISOString());
 
-      if (countError) {
-        console.error('Error counting monthly invoices:', countError);
-        // If count query fails, be safe and block creation
+      if (fetchError) {
+        console.error('Error fetching monthly invoices:', fetchError);
+        // If fetch fails, be safe and block creation
         return NextResponse.json(
           { 
             error: 'Unable to verify subscription limits',
@@ -166,25 +175,34 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const currentMonthCount = count ?? 0;
+      // Use the actual fetched count as the source of truth
+      // This is more reliable than the count query which can have issues
+      const verifiedCount = monthlyInvoices?.length || 0;
       const maxAllowed = 5;
 
-      console.log(`[Invoice Limit Check] Organization: ${organizationId}, Subscription tier: ${subscriptionTier}, Current count: ${currentMonthCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayOfMonth.toISOString()}`);
+      // Log detailed verification
+      console.log(`[Invoice Count Verification] Count from query: ${count}, Count from fetch: ${verifiedCount}`, {
+        invoiceIds: monthlyInvoices?.map(i => i.id),
+        invoiceDates: monthlyInvoices?.map(i => i.created_at),
+        discrepancy: count !== verifiedCount ? `⚠️ MISMATCH: Query says ${count}, Fetch says ${verifiedCount}` : '✅ Counts match',
+      });
+
+      console.log(`[Invoice Limit Check] User: ${user.email}, Organization: ${organizationId}, Subscription tier: ${subscriptionTier}, Current count (verified): ${verifiedCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayOfMonth.toISOString()}, Current time (UTC): ${new Date().toISOString()}`);
 
       // Block if current count is already at or above the limit
-      // If currentMonthCount is 5, we already have 5 invoices, so block the 6th
-      if (currentMonthCount >= maxAllowed) {
-        console.log(`[Invoice Limit Check] BLOCKED - Count ${currentMonthCount} >= Limit ${maxAllowed}`);
+      // If verifiedCount is 5, we already have 5 invoices, so block the 6th
+      if (verifiedCount >= maxAllowed) {
+        console.log(`[Invoice Limit Check] BLOCKED - Count ${verifiedCount} >= Limit ${maxAllowed}`);
         return NextResponse.json(
           { 
             error: 'Monthly invoice limit reached',
-            message: `Free plan allows ${maxAllowed} invoices per month. You've created ${currentMonthCount} this month. Upgrade to Pro for unlimited invoices.`
+            message: `Free plan allows ${maxAllowed} invoices per month. You've created ${verifiedCount} this month. Upgrade to Pro for unlimited invoices.`
           },
           { status: 403 }
         );
       }
 
-      console.log(`[Invoice Limit Check] ALLOWED - Count ${currentMonthCount} < Limit ${maxAllowed}`);
+      console.log(`[Invoice Limit Check] ALLOWED - Count ${verifiedCount} < Limit ${maxAllowed}`);
     }
 
     const newInvoice = await createInvoice(
