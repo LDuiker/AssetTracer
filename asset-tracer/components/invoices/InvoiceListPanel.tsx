@@ -23,6 +23,9 @@ interface InvoiceListPanelProps {
   onSearchChange: (query: string) => void;
   statusFilter: string;
   onStatusFilterChange: (status: string) => void;
+  disabled?: boolean;
+  currentCount?: number;
+  maxCount?: number;
 }
 
 const statusColors: Record<string, string> = {
@@ -42,6 +45,9 @@ export function InvoiceListPanel({
   onSearchChange,
   statusFilter,
   onStatusFilterChange,
+  disabled = false,
+  currentCount,
+  maxCount,
 }: InvoiceListPanelProps) {
 
   return (
@@ -56,9 +62,15 @@ export function InvoiceListPanel({
             onClick={onCreate}
             size="sm"
             className="bg-blue-600 hover:bg-blue-700"
+            disabled={disabled}
           >
             <Plus className="h-4 w-4 mr-1" />
             New
+            {maxCount !== undefined && maxCount !== Infinity && (
+              <span className="ml-2 text-xs opacity-75">
+                ({currentCount ?? 0}/{maxCount})
+              </span>
+            )}
           </Button>
         </div>
 

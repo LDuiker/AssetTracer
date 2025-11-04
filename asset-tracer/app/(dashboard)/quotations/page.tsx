@@ -146,10 +146,23 @@ export default function QuotationsPage() {
     return { total, rejected, accepted, totalValue, conversionRate };
   }, [quotations]);
 
-  /**
+    /**
    * Handle create quotation
    */
   const handleCreate = () => {
+    // Check subscription limit
+    if (!canCreateQuotation(quotationsThisMonth)) {
+      toast.error('Free Plan - You\'ve reached the limit for quotations. Upgrade to Pro for unlimited access.', {
+        description: `Free plan allows ${limits.maxQuotationsPerMonth} quotations per month. You've created ${quotationsThisMonth} this month.`,
+        duration: 5000,
+        action: {
+          label: 'Upgrade to Pro',
+          onClick: redirectToUpgrade,
+        },
+      });
+      return;
+    }
+
     // Debug logging
     console.log('[Quotations Create] Check:', {
       quotationsThisMonth,
@@ -757,44 +770,56 @@ export default function QuotationsPage() {
   }
 
   // Split Panel View (View or Edit mode)
+  const canCreate = canCreateQuotation(quotationsThisMonth);
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-      {/* Left Panel - Quotation List */}
-      <div className="w-96 flex-shrink-0">
-        <QuotationListPanel
-          quotations={filteredQuotations}
-          selectedQuotation={selectedQuotation}
-          onSelect={handleView}
-          onCreate={handleCreate}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          statusFilter={statusFilter}
-          onStatusFilterChange={(value) => setStatusFilter(value as QuotationStatus)}
-        />
-      </div>
-
-      {/* Right Panel - View or Edit */}
-      <div className="flex-1">
-        {viewMode === 'view' && selectedQuotation && (
-          <QuotationViewPanel
-            quotation={selectedQuotation}
-            onBack={handleBackToList}
-            onEdit={() => setViewMode('edit')}
-            onClone={() => handleClone(selectedQuotation)}
-            onConvertToInvoice={() => handleConvertToInvoice(selectedQuotation)}
-            onDownloadPDF={() => handleDownloadPDF(selectedQuotation)}
-            onDelete={() => handleDelete(selectedQuotation)}
-            onStatusChange={handleStatusChange}
+    <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+      {/* Subscription Badge - Show when limit reached */}
+      {tier === 'free' && !canCreate && (
+        <div className="px-6 pt-6 pb-2">
+          <SubscriptionBadge feature="quotations" showUpgrade={true} />
+        </div>
+      )}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Panel - Quotation List */}
+        <div className="w-96 flex-shrink-0">
+          <QuotationListPanel
+            quotations={filteredQuotations}
+            selectedQuotation={selectedQuotation}
+            onSelect={handleView}
+            onCreate={handleCreate}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            statusFilter={statusFilter}
+            onStatusFilterChange={(value) => setStatusFilter(value as QuotationStatus)}
+            disabled={!canCreate || subscriptionLoading}
+            currentCount={quotationsThisMonth}
+            maxCount={limits.maxQuotationsPerMonth}
           />
-        )}
+        </div>
 
-        {viewMode === 'edit' && (
-          <QuotationEditPanel
-            quotation={selectedQuotation}
-            onBack={handleBackToList}
-            onSave={handleSave}
-          />
-        )}
+        {/* Right Panel - View or Edit */}
+        <div className="flex-1 overflow-hidden">
+          {viewMode === 'view' && selectedQuotation && (
+            <QuotationViewPanel
+              quotation={selectedQuotation}
+              onBack={handleBackToList}
+              onEdit={() => setViewMode('edit')}
+              onClone={() => handleClone(selectedQuotation)}
+              onConvertToInvoice={() => handleConvertToInvoice(selectedQuotation)}
+              onDownloadPDF={() => handleDownloadPDF(selectedQuotation)}
+              onDelete={() => handleDelete(selectedQuotation)}
+              onStatusChange={handleStatusChange}
+            />
+          )}
+
+          {viewMode === 'edit' && selectedQuotation && (
+            <QuotationEditPanel
+              quotation={selectedQuotation}
+              onBack={handleBackToList}
+              onSave={handleSave}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

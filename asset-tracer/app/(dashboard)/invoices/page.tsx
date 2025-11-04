@@ -135,6 +135,19 @@ export default function InvoicesPage() {
    * Handle create invoice
    */
   const handleCreate = () => {
+    // Check subscription limit
+    if (!canCreateInvoice(invoicesThisMonth)) {
+      toast.error('Free Plan - You\'ve reached the limit for invoices. Upgrade to Pro for unlimited access.', {
+        description: `Free plan allows ${limits.maxInvoicesPerMonth} invoices per month. You've created ${invoicesThisMonth} this month.`,
+        duration: 5000,
+        action: {
+          label: 'Upgrade to Pro',
+          onClick: redirectToUpgrade,
+        },
+      });
+      return;
+    }
+
     // Debug logging
     console.log('[Invoices Create] Check:', {
       invoicesThisMonth,
@@ -688,44 +701,56 @@ export default function InvoicesPage() {
   }
 
   // Split Panel View (View or Edit mode)
+  const canCreate = canCreateInvoice(invoicesThisMonth);
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-      {/* Left Panel - Invoice List */}
-      <div className="w-96 flex-shrink-0">
-        <InvoiceListPanel
-          invoices={filteredInvoices}
-          selectedInvoice={selectedInvoice}
-          onSelect={handleView}
-          onCreate={handleCreate}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          statusFilter={statusFilter}
-          onStatusFilterChange={(value) => setStatusFilter(value as InvoiceStatus)}
-        />
-      </div>
-
-      {/* Right Panel - View or Edit */}
-      <div className="flex-1">
-        {viewMode === 'view' && selectedInvoice && (
-          <InvoiceViewPanel
-            invoice={selectedInvoice}
-            onBack={handleBackToList}
-            onEdit={handleEdit}
-            onClone={() => handleClone(selectedInvoice)}
-            onDelete={() => handleDelete(selectedInvoice)}
-            onStatusChange={handleStatusChange}
-            onDownloadPDF={() => handleDownloadPDF(selectedInvoice)}
-            onMarkAsPaid={() => handleMarkAsPaid(selectedInvoice)}
+    <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+      {/* Subscription Badge - Show when limit reached */}
+      {tier === 'free' && !canCreate && (
+        <div className="px-6 pt-6 pb-2">
+          <SubscriptionBadge feature="invoices" showUpgrade={true} />
+        </div>
+      )}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Panel - Invoice List */}
+        <div className="w-96 flex-shrink-0">
+          <InvoiceListPanel
+            invoices={filteredInvoices}
+            selectedInvoice={selectedInvoice}
+            onSelect={handleView}
+            onCreate={handleCreate}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            statusFilter={statusFilter}
+            onStatusFilterChange={(value) => setStatusFilter(value as InvoiceStatus)}
+            disabled={!canCreate || subscriptionLoading}
+            currentCount={invoicesThisMonth}
+            maxCount={limits.maxInvoicesPerMonth}
           />
-        )}
+        </div>
 
-        {viewMode === 'edit' && selectedInvoice && (
-          <InvoiceEditPanel
-            invoice={selectedInvoice}
-            onBack={() => setViewMode('view')}
-            onSave={handleSave}
-          />
-        )}
+        {/* Right Panel - View or Edit */}
+        <div className="flex-1 overflow-hidden">
+          {viewMode === 'view' && selectedInvoice && (
+            <InvoiceViewPanel
+              invoice={selectedInvoice}
+              onBack={handleBackToList}
+              onEdit={() => setViewMode('edit')}
+              onClone={() => handleClone(selectedInvoice)}
+              onDelete={() => handleDelete(selectedInvoice)}
+              onStatusChange={handleStatusChange}
+              onDownloadPDF={() => handleDownloadPDF(selectedInvoice)}
+              onMarkAsPaid={() => handleMarkAsPaid(selectedInvoice)}
+            />
+          )}
+
+          {viewMode === 'edit' && selectedInvoice && (
+            <InvoiceEditPanel
+              invoice={selectedInvoice}
+              onBack={handleBackToList}
+              onSave={handleSave}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
