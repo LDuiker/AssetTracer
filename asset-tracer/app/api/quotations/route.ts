@@ -202,22 +202,22 @@ export async function POST(request: NextRequest) {
       const verifiedCount = actualQuotations?.length ?? count ?? 0;
       const maxAllowed = 5;
 
-      console.log(`[Quotation Limit Check] User: ${user.email}, Organization: ${userData.organization_id}, Subscription tier: ${subscriptionTier}, Current count: ${currentMonthCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayOfMonth.toISOString()}, Current time (UTC): ${new Date().toISOString()}`);
+      console.log(`[Quotation Limit Check] User: ${user.email}, Organization: ${userData.organization_id}, Subscription tier: ${subscriptionTier}, Current count (verified): ${verifiedCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayOfMonth.toISOString()}, Current time (UTC): ${new Date().toISOString()}`);
 
       // Block if current count is already at or above the limit
-      // If currentMonthCount is 5, we already have 5 quotations, so block the 6th
-      if (currentMonthCount >= maxAllowed) {
-        console.log(`[Quotation Limit Check] BLOCKED - Count ${currentMonthCount} >= Limit ${maxAllowed}`);
+      // If verifiedCount is 5, we already have 5 quotations, so block the 6th
+      if (verifiedCount >= maxAllowed) {
+        console.log(`[Quotation Limit Check] BLOCKED - Count ${verifiedCount} >= Limit ${maxAllowed}`);
         return NextResponse.json(
           { 
             error: 'Monthly quotation limit reached',
-            message: `Free plan allows ${maxAllowed} quotations per month. You've created ${currentMonthCount} this month. Upgrade to Pro for unlimited quotations.`
+            message: `Free plan allows ${maxAllowed} quotations per month. You've created ${verifiedCount} this month. Upgrade to Pro for unlimited quotations.`
           },
           { status: 403 }
         );
       }
 
-      console.log(`[Quotation Limit Check] ALLOWED - Count ${currentMonthCount} < Limit ${maxAllowed}`);
+      console.log(`[Quotation Limit Check] ALLOWED - Count ${verifiedCount} < Limit ${maxAllowed}`);
     }
 
     // Create quotation
