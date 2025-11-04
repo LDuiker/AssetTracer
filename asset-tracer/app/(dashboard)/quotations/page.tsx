@@ -57,29 +57,26 @@ export default function QuotationsPage() {
   const quotations = data?.quotations || [];
   const invoices = invoicesData?.invoices || [];
 
-  // Calculate quotations created this month
+  // Calculate quotations created this month (using UTC to match backend)
   const quotationsThisMonth = useMemo(() => {
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     
     return quotations.filter((q) => {
       const quotationDate = new Date(q.created_at);
-      return quotationDate.getMonth() === currentMonth && 
-             quotationDate.getFullYear() === currentYear;
+      return quotationDate >= firstDayOfMonth;
     }).length;
   }, [quotations]);
 
-  // Calculate invoices created this month (for convert to invoice quota check)
+  // Calculate invoices created this month (for convert to invoice quota check, using UTC to match backend)
   const invoicesThisMonth = useMemo(() => {
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     
     return invoices.filter((inv) => {
-      const invoiceDate = new Date(inv.issue_date);
-      return invoiceDate.getMonth() === currentMonth && 
-             invoiceDate.getFullYear() === currentYear;
+      // Use created_at if available, otherwise use issue_date
+      const invoiceDate = new Date(inv.created_at || inv.issue_date);
+      return invoiceDate >= firstDayOfMonth;
     }).length;
   }, [invoices]);
 
