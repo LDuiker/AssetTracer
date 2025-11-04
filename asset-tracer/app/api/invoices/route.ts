@@ -147,6 +147,8 @@ export async function POST(request: NextRequest) {
       // Create first day of current month in UTC to avoid timezone issues
       const now = new Date();
       const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      // Format as ISO string without milliseconds for better compatibility with Supabase
+      const firstDayISO = firstDayOfMonth.toISOString().split('.')[0] + 'Z';
       
       // Use a more reliable method: fetch actual invoices and count them
       // This ensures we get the exact count regardless of count query issues
@@ -154,14 +156,14 @@ export async function POST(request: NextRequest) {
         .from('invoices')
         .select('id, created_at')
         .eq('organization_id', organizationId)
-        .gte('created_at', firstDayOfMonth.toISOString());
+        .gte('created_at', firstDayISO);
       
       // Also try the count query for comparison
       const { count, error: countError } = await supabase
         .from('invoices')
         .select('id', { count: 'exact', head: true })
         .eq('organization_id', organizationId)
-        .gte('created_at', firstDayOfMonth.toISOString());
+        .gte('created_at', firstDayISO);
 
       if (fetchError) {
         console.error('Error fetching monthly invoices:', fetchError);
@@ -187,7 +189,7 @@ export async function POST(request: NextRequest) {
         discrepancy: count !== verifiedCount ? `⚠️ MISMATCH: Query says ${count}, Fetch says ${verifiedCount}` : '✅ Counts match',
       });
 
-      console.log(`[Invoice Limit Check] User: ${user.email}, Organization: ${organizationId}, Subscription tier: ${subscriptionTier}, Current count (verified): ${verifiedCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayOfMonth.toISOString()}, Current time (UTC): ${new Date().toISOString()}`);
+      console.log(`[Invoice Limit Check] User: ${user.email}, Organization: ${organizationId}, Subscription tier: ${subscriptionTier}, Current count (verified): ${verifiedCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayISO}, Current time (UTC): ${new Date().toISOString()}`);
 
       // Block if current count is already at or above the limit
       // If verifiedCount is 5, we already have 5 invoices, so block the 6th

@@ -157,6 +157,8 @@ export async function POST(request: NextRequest) {
       // Create first day of current month in UTC to avoid timezone issues
       const now = new Date();
       const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      // Format as ISO string without milliseconds for better compatibility with Supabase
+      const firstDayISO = firstDayOfMonth.toISOString().split('.')[0] + 'Z';
       
       // Use a more reliable method: fetch actual quotations and count them
       // This ensures we get the exact count regardless of count query issues
@@ -164,21 +166,22 @@ export async function POST(request: NextRequest) {
         .from('quotations')
         .select('id, created_at')
         .eq('organization_id', userData.organization_id)
-        .gte('created_at', firstDayOfMonth.toISOString());
+        .gte('created_at', firstDayISO);
       
       // Also try the count query for comparison
       const { count, error: countError } = await supabase
         .from('quotations')
         .select('id', { count: 'exact', head: true })
         .eq('organization_id', userData.organization_id)
-        .gte('created_at', firstDayOfMonth.toISOString());
+        .gte('created_at', firstDayISO);
 
       // Log the raw response for debugging
       console.log(`[Quotation Count Query] Raw response:`, {
         countFromQuery: count,
         countFromFetch: monthlyQuotations?.length || 0,
         error: countError || fetchError,
-        firstDayOfMonth: firstDayOfMonth.toISOString(),
+        firstDayOfMonth: firstDayISO,
+        firstDayOfMonthFull: firstDayOfMonth.toISOString(),
         currentTimeUTC: new Date().toISOString(),
       });
 
@@ -206,7 +209,7 @@ export async function POST(request: NextRequest) {
       });
       const maxAllowed = 5;
 
-      console.log(`[Quotation Limit Check] User: ${user.email}, Organization: ${userData.organization_id}, Subscription tier: ${subscriptionTier}, Current count (verified): ${verifiedCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayOfMonth.toISOString()}, Current time (UTC): ${new Date().toISOString()}`);
+      console.log(`[Quotation Limit Check] User: ${user.email}, Organization: ${userData.organization_id}, Subscription tier: ${subscriptionTier}, Current count (verified): ${verifiedCount}, Max allowed: ${maxAllowed}, First day of month (UTC): ${firstDayISO}, Current time (UTC): ${new Date().toISOString()}`);
 
       // Block if current count is already at or above the limit
       // If verifiedCount is 5, we already have 5 quotations, so block the 6th
