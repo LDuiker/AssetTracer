@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { 
@@ -110,34 +110,39 @@ export default function AssetDetailPage() {
     fetcher
   );
 
-  // Calculate financials
-  const financials: AssetFinancial = {
-    totalSpend: asset?.purchase_cost || 0,
-    totalRevenue: 0,
-    profitLoss: 0,
-    roiPercentage: 0,
-    expenses: expenses || [],
-    transactions: transactions || [],
-    timeSeriesData: [],
-  };
+  // Calculate financials using useMemo to recalculate when data changes
+  const financials: AssetFinancial = useMemo(() => {
+    const baseSpend = asset?.purchase_cost || 0;
+    const totalExpenses = expenses ? expenses.reduce((sum, exp) => sum + exp.amount, 0) : 0;
+    const totalSpend = baseSpend + totalExpenses;
 
-  if (expenses) {
-    financials.totalSpend += expenses.reduce((sum, exp) => sum + exp.amount, 0);
-  }
+    const totalRevenue = transactions
+      ? transactions
+          .filter(t => t.type === 'income')
+          .reduce((sum, t) => sum + (t.amount || 0), 0)
+      : 0;
 
-  if (transactions) {
-    financials.totalRevenue = transactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
-  }
+    const profitLoss = totalRevenue - totalSpend;
+    const roiPercentage = totalSpend > 0
+      ? (profitLoss / totalSpend) * 100
+      : 0;
 
-  financials.profitLoss = financials.totalRevenue - financials.totalSpend;
-  financials.roiPercentage = financials.totalSpend > 0
-    ? (financials.profitLoss / financials.totalSpend) * 100
-    : 0;
+    return {
+      totalSpend,
+      totalRevenue,
+      profitLoss,
+      roiPercentage,
+      expenses: expenses || [],
+      transactions: transactions || [],
+      timeSeriesData: [],
+    };
+  }, [asset?.purchase_cost, expenses, transactions]);
 
-  // Generate time series data
-  if (expenses && transactions) {
+  // Generate time series data using useMemo
+  const timeSeriesData = useMemo(() => {
+    if (!expenses || !transactions) return [];
+
+    const monthlyData = new Map<string, { spend: number; revenue: number }>();
     const monthlyData = new Map<string, { spend: number; revenue: number }>();
 
     // Add purchase cost to first month
@@ -173,10 +178,13 @@ export default function AssetDetailPage() {
       }
     });
 
-    financials.timeSeriesData = Array.from(monthlyData.entries())
+    return Array.from(monthlyData.entries())
       .map(([month, data]) => ({ month, ...data }))
       .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
-  }
+  }, [asset?.purchase_date, asset?.purchase_cost, expenses, transactions]);
+
+  // Update financials with time series data
+  financials.timeSeriesData = timeSeriesData;
 
   const handleEditAsset = () => {
     setAssetDialogOpen(true);
