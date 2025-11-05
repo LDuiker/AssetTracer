@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { Plus, Search, TrendingUp, FileText, CheckCircle, DollarSign, Filter, XCircle } from 'lucide-react';
+import { Plus, Search, TrendingUp, FileText, CheckCircle, DollarSign, Filter, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +41,10 @@ export default function QuotationsPage() {
   const [statusFilter, setStatusFilter] = useState<QuotationStatus>('all');
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'view' | 'edit'>('list'); // New state for panel mode
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Pagination constants
+  const ITEMS_PER_PAGE = 100;
 
   // Fetch quotations
   const { data, error, mutate, isLoading } = useSWR<{ quotations: Quotation[] }>(
@@ -130,6 +134,21 @@ export default function QuotationsPage() {
       return true;
     });
   }, [quotations, searchQuery, statusFilter]);
+
+  /**
+   * Calculate pagination values
+   */
+  const totalPages = Math.ceil(filteredQuotations.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedQuotations = filteredQuotations.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change or if current page is out of bounds
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [searchQuery, statusFilter, currentPage, totalPages]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -751,12 +770,39 @@ export default function QuotationsPage() {
 
       {/* Results Summary */}
       <div className="text-sm text-gray-600 dark:text-gray-400">
-        Showing {filteredQuotations.length} of {quotations.length} quotations
+        {filteredQuotations.length > 0 ? (
+          <>
+            Showing{' '}
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {startIndex + 1}
+            </span>
+            {' - '}
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {Math.min(endIndex, filteredQuotations.length)}
+            </span>
+            {' of '}
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {filteredQuotations.length}
+            </span>
+            {' quotation' + (filteredQuotations.length !== 1 ? 's' : '')}
+            {filteredQuotations.length !== quotations.length && (
+              <>
+                {' (filtered from '}
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  {quotations.length}
+                </span>
+                {' total)'}
+              </>
+            )}
+          </>
+        ) : (
+          <>No quotations found</>
+        )}
       </div>
 
       {/* Quotations Table */}
       <QuotationTable
-        quotations={filteredQuotations}
+        quotations={paginatedQuotations}
         onView={handleView}
         onEdit={handleEdit}
         onClone={handleClone}
@@ -765,6 +811,111 @@ export default function QuotationsPage() {
         onDelete={handleDelete}
         isLoading={isLoading}
       />
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t pt-4">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Page{' '}
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {currentPage}
+            </span>{' '}
+            of{' '}
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {totalPages}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Previous Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+
+            {/* Page Numbers */}
+            <div className="flex items-center gap-1">
+              {/* Show first page if not near start */}
+              {currentPage > 3 && (
+                <>
+                  <Button
+                    variant={1 === currentPage ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    className="h-8 w-8 p-0"
+                  >
+                    1
+                  </Button>
+                  {currentPage > 4 && (
+                    <span className="px-2 text-gray-500">...</span>
+                  )}
+                </>
+              )}
+
+              {/* Show pages around current page */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                if (pageNum < 1 || pageNum > totalPages) return null;
+
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={pageNum === currentPage ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className="h-8 w-8 p-0"
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+
+              {/* Show last page if not near end */}
+              {currentPage < totalPages - 2 && (
+                <>
+                  {currentPage < totalPages - 3 && (
+                    <span className="px-2 text-gray-500">...</span>
+                  )}
+                  <Button
+                    variant={totalPages === currentPage ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    className="h-8 w-8 p-0"
+                  >
+                    {totalPages}
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {/* Next Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="gap-1"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
     );
   }
