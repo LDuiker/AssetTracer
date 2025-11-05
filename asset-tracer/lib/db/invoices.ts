@@ -613,58 +613,77 @@ export async function markInvoiceAsPaid(
       }));
     }
 
-    // Create transactions for each item with asset_id
-    if (itemsWithAssetId.length > 0) {
-      const transactions = itemsWithAssetId
-        .filter(item => item.total > 0) // Only create transactions for items with amount
-        .map((item) => ({
-          organization_id: organizationId,
-          type: 'income' as const,
-          category: 'invoice_payment',
-          amount: item.total,
-          currency: existingInvoice.currency,
-          transaction_date: updateData.payment_date,
-          description: `Payment for invoice ${existingInvoice.invoice_number}: ${item.description}`,
-          reference_number: existingInvoice.invoice_number,
-          payment_method: existingInvoice.payment_method || 'unspecified',
-          asset_id: item.asset_id, // Link to asset if available
-          client_id: existingInvoice.client_id,
-          invoice_id: id,
-          notes: `Auto-created from paid invoice ${existingInvoice.invoice_number}`,
-        }));
+    // Check if transactions already exist for this invoice
+    const { data: existingTransactions } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('invoice_id', id)
+      .eq('type', 'income');
 
-      if (transactions.length > 0) {
+    // Only create transactions if they don't already exist
+    if (!existingTransactions || existingTransactions.length === 0) {
+      // Create transactions for each item with asset_id
+      if (itemsWithAssetId.length > 0) {
+        const transactions = itemsWithAssetId
+          .filter(item => item.total > 0 && item.asset_id) // Only create transactions for items with amount and asset_id
+          .map((item) => ({
+            organization_id: organizationId,
+            type: 'income' as const,
+            category: 'invoice_payment',
+            amount: item.total,
+            currency: existingInvoice.currency,
+            transaction_date: updateData.payment_date,
+            description: `Payment for invoice ${existingInvoice.invoice_number}: ${item.description}`,
+            reference_number: existingInvoice.invoice_number,
+            payment_method: existingInvoice.payment_method || 'unspecified',
+            asset_id: item.asset_id, // Link to asset if available
+            client_id: existingInvoice.client_id,
+            invoice_id: id,
+            notes: `Auto-created from paid invoice ${existingInvoice.invoice_number}`,
+          }));
+
+        if (transactions.length > 0) {
+          const { error: transactionError } = await supabase
+            .from('transactions')
+            .insert(transactions);
+
+          if (transactionError) {
+            console.error('Error creating transaction records:', transactionError);
+            console.error('Transaction data:', JSON.stringify(transactions, null, 2));
+            // Don't throw error here - invoice was marked as paid successfully
+          } else {
+            console.log(`✅ Created ${transactions.length} transaction(s) with asset_id for invoice ${existingInvoice.invoice_number}`);
+          }
+        } else {
+          console.log(`⚠️ No transactions created: No items with asset_id found for invoice ${existingInvoice.invoice_number}`);
+        }
+      } else {
+        // If no items with asset_id, create a single transaction without asset_id
         const { error: transactionError } = await supabase
           .from('transactions')
-          .insert(transactions);
+          .insert([{
+            organization_id: organizationId,
+            type: 'income' as const,
+            category: 'invoice_payment',
+            amount: existingInvoice.total,
+            currency: existingInvoice.currency,
+            transaction_date: updateData.payment_date,
+            description: `Payment for invoice ${existingInvoice.invoice_number}`,
+            reference_number: existingInvoice.invoice_number,
+            payment_method: existingInvoice.payment_method || 'unspecified',
+            client_id: existingInvoice.client_id,
+            invoice_id: id,
+            notes: `Auto-created from paid invoice ${existingInvoice.invoice_number}`,
+          }]);
 
         if (transactionError) {
-          console.error('Warning: Failed to create transaction records:', transactionError);
-          // Don't throw error here - invoice was marked as paid successfully
+          console.error('Error creating transaction record:', transactionError);
+        } else {
+          console.log(`✅ Created transaction without asset_id for invoice ${existingInvoice.invoice_number}`);
         }
       }
     } else {
-      // If no items with asset_id, create a single transaction without asset_id
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert([{
-          organization_id: organizationId,
-          type: 'income' as const,
-          category: 'invoice_payment',
-          amount: existingInvoice.total,
-          currency: existingInvoice.currency,
-          transaction_date: updateData.payment_date,
-          description: `Payment for invoice ${existingInvoice.invoice_number}`,
-          reference_number: existingInvoice.invoice_number,
-          payment_method: existingInvoice.payment_method || 'unspecified',
-          client_id: existingInvoice.client_id,
-          invoice_id: id,
-          notes: `Auto-created from paid invoice ${existingInvoice.invoice_number}`,
-        }]);
-
-      if (transactionError) {
-        console.error('Warning: Failed to create transaction record:', transactionError);
-      }
+      console.log(`ℹ️ Transactions already exist for invoice ${existingInvoice.invoice_number}, skipping creation`);
     }
 
     // Fetch full invoice with client and items

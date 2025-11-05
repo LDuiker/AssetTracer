@@ -118,8 +118,11 @@ export default function AssetDetailPage() {
 
     const totalRevenue = transactions
       ? transactions
-          .filter(t => t.type === 'income')
-          .reduce((sum, t) => sum + (t.amount || 0), 0)
+          .filter(t => t.type === 'income' && t.amount)
+          .reduce((sum, t) => {
+            const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount?.toString() || '0');
+            return sum + amount;
+          }, 0)
       : 0;
 
     const profitLoss = totalRevenue - totalSpend;
