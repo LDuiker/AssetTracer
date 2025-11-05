@@ -143,7 +143,6 @@ export default function AssetDetailPage() {
     if (!expenses || !transactions) return [];
 
     const monthlyData = new Map<string, { spend: number; revenue: number }>();
-    const monthlyData = new Map<string, { spend: number; revenue: number }>();
 
     // Add purchase cost to first month
     if (asset?.purchase_date) {
