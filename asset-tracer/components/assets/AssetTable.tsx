@@ -148,20 +148,20 @@ export function AssetTable({ assets, onEdit, onDelete, onClone, onView, isLoadin
                     onClick={() => handleView(asset)}
                   >
                     <TableCell className="font-medium">
-                      <div className="flex flex-col">
+                      <div className="flex flex-col max-w-[300px]">
                         <div className="flex items-center gap-2">
                           {asset.asset_type === 'group' && (
-                            <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                           )}
-                          <span className="text-gray-900 dark:text-gray-100">{asset.name}</span>
+                          <span className="text-gray-900 dark:text-gray-100 truncate">{asset.name}</span>
                           {asset.asset_type === 'group' && asset.quantity && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs flex-shrink-0">
                               {asset.quantity} items
                             </Badge>
                           )}
                         </div>
                         {asset.description && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 break-words">
                             {asset.description}
                           </span>
                         )}
