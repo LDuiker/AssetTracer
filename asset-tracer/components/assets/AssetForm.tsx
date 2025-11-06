@@ -58,6 +58,8 @@ const assetSchema = z.object({
   }),
   location: z.string().optional().nullable(),
   serial_number: z.string().optional().nullable(),
+  asset_type: z.enum(['individual', 'group']).optional().default('individual'),
+  quantity: z.coerce.number().min(1).optional().default(1),
 });
 
 type AssetFormData = z.infer<typeof assetSchema>;
@@ -115,8 +117,13 @@ export function AssetForm({ initialData, onSubmit, onCancel, isCloning = false }
       status: initialData?.status || 'active',
       location: initialData?.location || '',
       serial_number: initialData?.serial_number || '',
+      asset_type: (initialData?.asset_type as 'individual' | 'group') || 'individual',
+      quantity: initialData?.quantity || 1,
     },
   });
+
+  // Watch asset_type to show/hide quantity field
+  const assetType = form.watch('asset_type');
 
   /**
    * Handle form submission
@@ -143,12 +150,71 @@ export function AssetForm({ initialData, onSubmit, onCancel, isCloning = false }
             <FormItem>
               <FormLabel>Name *</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Dell Laptop XPS 15" {...field} />
+                <Input 
+                  placeholder={assetType === 'group' ? "e.g., Cutlery Set - 24 pieces" : "e.g., Dell Laptop XPS 15"} 
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        {/* Asset Type Toggle */}
+        <FormField
+          control={form.control}
+          name="asset_type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Asset Type *</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value || 'individual'}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select asset type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="individual">Individual Asset</SelectItem>
+                  <SelectItem value="group">Group Asset (Set)</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                {field.value === 'group' 
+                  ? 'Create a group for sets (e.g., cutlery set, dinnerware set)' 
+                  : 'Single item asset'}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Quantity Field - Only show for groups */}
+        {assetType === 'group' && (
+          <FormField
+            control={form.control}
+            name="quantity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Total Items in Group *</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="e.g., 24"
+                    {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                    value={field.value || 1}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Total number of items in this group (e.g., 24 pieces for a cutlery set)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         {/* Description Field */}
         <FormField
@@ -159,7 +225,9 @@ export function AssetForm({ initialData, onSubmit, onCancel, isCloning = false }
               <FormLabel>Description</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Provide additional details about the asset..."
+                  placeholder={assetType === 'group' 
+                    ? "e.g., Complete cutlery set including forks, knives, spoons..." 
+                    : "Provide additional details about the asset..."}
                   className="resize-none"
                   {...field}
                   value={field.value || ''}

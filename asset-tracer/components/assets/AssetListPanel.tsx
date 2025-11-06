@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Plus, Package } from 'lucide-react';
+import { Search, Plus, Package, Layers } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -109,9 +109,19 @@ export function AssetListPanel({
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                      {asset.name}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      {asset.asset_type === 'group' && (
+                        <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                      )}
+                      <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                        {asset.name}
+                      </h3>
+                      {asset.asset_type === 'group' && asset.quantity && (
+                        <Badge variant="outline" className="text-xs flex-shrink-0">
+                          {asset.quantity}
+                        </Badge>
+                      )}
+                    </div>
                     {asset.category && (
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                         {asset.category}

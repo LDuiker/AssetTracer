@@ -83,6 +83,10 @@ export async function createAsset(
       ...data,
       organization_id: organizationId,
       created_by: userId,
+      // Ensure quantity defaults to 1 for individual assets
+      quantity: data.asset_type === 'group' ? (data.quantity || 1) : 1,
+      // Ensure asset_type defaults to 'individual'
+      asset_type: data.asset_type || 'individual',
     };
 
     const { data: newAsset, error } = await supabase

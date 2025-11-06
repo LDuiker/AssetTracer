@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { MoreVertical, Edit, Trash2, Package, Eye, Copy } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, Package, Eye, Copy, Layers } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -149,7 +149,17 @@ export function AssetTable({ assets, onEdit, onDelete, onClone, onView, isLoadin
                   >
                     <TableCell className="font-medium">
                       <div className="flex flex-col">
-                        <span className="text-gray-900 dark:text-gray-100">{asset.name}</span>
+                        <div className="flex items-center gap-2">
+                          {asset.asset_type === 'group' && (
+                            <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          )}
+                          <span className="text-gray-900 dark:text-gray-100">{asset.name}</span>
+                          {asset.asset_type === 'group' && asset.quantity && (
+                            <Badge variant="outline" className="text-xs">
+                              {asset.quantity} items
+                            </Badge>
+                          )}
+                        </div>
                         {asset.description && (
                           <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             {asset.description}
