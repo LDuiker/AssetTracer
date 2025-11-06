@@ -22,15 +22,6 @@ import { toast } from 'sonner';
 import type { Quotation, CreateQuotationInput } from '@/types';
 import { motion } from 'framer-motion';
 
-const fetcher = async (url: string) => {
-  const res = await fetch(url, { credentials: 'include' });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to fetch');
-  }
-  return res.json();
-};
-
 type QuotationStatus = 'all' | 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'invoiced';
 
 export default function QuotationsPage() {
@@ -49,13 +40,19 @@ export default function QuotationsPage() {
   // Fetch quotations
   const { data, error, mutate, isLoading } = useSWR<{ quotations: Quotation[] }>(
     '/api/quotations',
-    fetcher
+    {
+      keepPreviousData: true, // Keep previous data while fetching (prevents flicker)
+      revalidateOnMount: false, // Use cached data if available
+    }
   );
 
-  // Fetch invoices to check quota
+  // Fetch invoices to check quota (lower priority)
   const { data: invoicesData } = useSWR<{ invoices: any[] }>(
     '/api/invoices',
-    fetcher
+    {
+      keepPreviousData: true,
+      revalidateOnMount: false,
+    }
   );
 
   const quotations = data?.quotations || [];

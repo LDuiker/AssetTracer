@@ -22,15 +22,6 @@ import { toast } from 'sonner';
 import type { Invoice, CreateInvoiceInput } from '@/types';
 import { motion } from 'framer-motion';
 
-const fetcher = async (url: string) => {
-  const res = await fetch(url, { credentials: 'include' });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to fetch');
-  }
-  return res.json();
-};
-
 type InvoiceStatus = 'all' | 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
 
 export default function InvoicesPage() {
@@ -50,7 +41,10 @@ export default function InvoicesPage() {
   // Fetch invoices
   const { data, error, mutate, isLoading } = useSWR<{ invoices: Invoice[] }>(
     '/api/invoices',
-    fetcher
+    {
+      keepPreviousData: true, // Keep previous data while fetching (prevents flicker)
+      revalidateOnMount: false, // Use cached data if available
+    }
   );
 
   const invoices = data?.invoices || [];
