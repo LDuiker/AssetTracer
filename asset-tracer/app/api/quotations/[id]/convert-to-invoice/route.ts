@@ -166,6 +166,7 @@ export async function POST(
         amount: item.amount,
         tax_amount: item.tax_amount,
         total: item.total,
+        asset_id: item.asset_id || null, // Copy asset_id from quotation_item
       }));
 
       const { error: itemsError } = await supabase
