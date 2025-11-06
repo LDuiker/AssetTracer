@@ -64,6 +64,30 @@ export async function GET(request: NextRequest) {
     if (transactions && transactions.length > 0) {
       console.log('[Transactions API] Sample transaction:', JSON.stringify(transactions[0], null, 2));
       console.log('[Transactions API] Income transactions:', transactions.filter(t => t.type === 'income').length);
+    } else if (assetId) {
+      // If assetId provided but no transactions found, log a warning
+      console.warn('[Transactions API] ⚠️ No transactions found for asset_id:', assetId);
+      console.warn('[Transactions API] ⚠️ Organization ID:', organizationId);
+      
+      // Check if asset exists and belongs to organization
+      const { data: assetCheck } = await supabase
+        .from('assets')
+        .select('id, name, organization_id')
+        .eq('id', assetId)
+        .eq('organization_id', organizationId)
+        .single();
+      
+      console.log('[Transactions API] Asset check:', assetCheck);
+      
+      // Check if transactions exist for this asset but wrong organization
+      const { data: wrongOrgTransactions } = await supabase
+        .from('transactions')
+        .select('id, asset_id, organization_id, amount')
+        .eq('asset_id', assetId)
+        .eq('type', 'income')
+        .limit(5);
+      
+      console.log('[Transactions API] Transactions with this asset_id (any org):', wrongOrgTransactions);
     }
 
     return NextResponse.json(transactions || []);
