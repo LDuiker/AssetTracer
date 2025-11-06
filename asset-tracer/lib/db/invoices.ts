@@ -16,13 +16,14 @@ async function generateInvoiceNumber(organizationId: string): Promise<string> {
   const prefix = `INV-${year}${month}`;
 
   // Get all invoices with this prefix to find the highest number
+  // Use created_at DESC to get the most recent, then extract number
   const { data: invoices, error } = await supabase
     .from('invoices')
-    .select('invoice_number')
+    .select('invoice_number, created_at')
     .eq('organization_id', organizationId)
     .like('invoice_number', `${prefix}-%`)
-    .order('invoice_number', { ascending: false })
-    .limit(1);
+    .order('created_at', { ascending: false })
+    .limit(10); // Get more to find the highest number
 
   if (error) {
     console.error('Error fetching invoices for numbering:', error);
@@ -30,17 +31,22 @@ async function generateInvoiceNumber(organizationId: string): Promise<string> {
     return `${prefix}-${Date.now().toString().slice(-4)}`;
   }
 
-  let nextNumber = 1;
+  let maxNumber = 0;
 
   if (invoices && invoices.length > 0) {
-    // Extract the number from the last invoice
-    const lastInvoiceNumber = invoices[0].invoice_number;
-    const lastNumberMatch = lastInvoiceNumber.match(/-(\d+)$/);
-    
-    if (lastNumberMatch) {
-      nextNumber = parseInt(lastNumberMatch[1], 10) + 1;
-    }
+    // Extract numbers from all invoices and find the maximum
+    invoices.forEach((invoice) => {
+      const match = invoice.invoice_number.match(/-(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxNumber) {
+          maxNumber = num;
+        }
+      }
+    });
   }
+
+  const nextNumber = maxNumber + 1;
 
   // Pad to 4 digits
   return `${prefix}-${nextNumber.toString().padStart(4, '0')}`;
