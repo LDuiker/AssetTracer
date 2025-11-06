@@ -129,7 +129,7 @@ export function InvoiceForm({ invoice, onSubmit, onCancel }: InvoiceFormProps) {
       notes: invoice?.notes || orgData?.organization?.default_notes || '',
       terms: invoice?.terms || orgData?.organization?.invoice_terms || 'Payment due within 30 days',
       items: invoice?.items || [
-        { description: '', quantity: 1, unit_price: 0 },
+        { description: '', quantity: 1, unit_price: 0, asset_id: null },
       ],
     },
   });
