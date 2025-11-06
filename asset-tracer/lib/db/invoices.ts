@@ -340,10 +340,39 @@ export async function createInvoice(
     });
 
     // Create invoice items
-    const { data: createdItems, error: itemsError } = await supabase
+    // Try with asset_id first, fallback to without if column doesn't exist
+    let createdItems;
+    let itemsError;
+    
+    const { data: itemsWithAssetId, error: errorWithAssetId } = await supabase
       .from('invoice_items')
       .insert(invoiceItems)
       .select();
+    
+    if (errorWithAssetId) {
+      // If error is about missing column, try without asset_id
+      if (errorWithAssetId.message?.includes('asset_id') || errorWithAssetId.message?.includes('column')) {
+        console.log('⚠️ asset_id column not found, creating items without asset_id...');
+        const itemsWithoutAssetId = invoiceItems.map((item: any) => {
+          const { asset_id, ...rest } = item;
+          return rest;
+        });
+        
+        const { data: itemsWithout, error: errorWithout } = await supabase
+          .from('invoice_items')
+          .insert(itemsWithoutAssetId)
+          .select();
+        
+        createdItems = itemsWithout;
+        itemsError = errorWithout;
+      } else {
+        createdItems = itemsWithAssetId;
+        itemsError = errorWithAssetId;
+      }
+    } else {
+      createdItems = itemsWithAssetId;
+      itemsError = errorWithAssetId;
+    }
 
     if (itemsError) {
       // Rollback: delete the invoice if items creation fails
