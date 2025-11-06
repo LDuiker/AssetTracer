@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { 
@@ -105,39 +105,77 @@ export default function AssetDetailPage() {
   );
 
   // Fetch transactions for this asset
-  const { data: transactions } = useSWR<Transaction[]>(
+  const { data: transactions, error: transactionsError } = useSWR<Transaction[]>(
     assetId ? `/api/transactions?asset_id=${assetId}` : null,
     fetcher
   );
 
-  // Calculate financials
-  const financials: AssetFinancial = {
-    totalSpend: asset?.purchase_cost || 0,
-    totalRevenue: 0,
-    profitLoss: 0,
-    roiPercentage: 0,
-    expenses: expenses || [],
-    transactions: transactions || [],
-    timeSeriesData: [],
-  };
+  // Debug logging - Always log when component mounts/updates
+  useEffect(() => {
+    console.log('🔍 [Asset Detail Page] Component rendered');
+    console.log('🔍 [Asset Detail Page] Asset ID from params:', params?.id);
+    console.log('🔍 [Asset Detail Page] Asset ID:', assetId);
+    console.log('🔍 [Asset Detail Page] Asset data:', asset);
+    console.log('🔍 [Asset Detail Page] Transactions:', transactions);
+    console.log('🔍 [Asset Detail Page] Transactions Error:', transactionsError);
+    
+    if (assetId) {
+      console.log('✅ [Asset Detail Page] Asset ID is set:', assetId);
+      if (transactions) {
+        console.log('✅ [Asset Detail Page] Transaction count:', transactions.length);
+        const incomeTransactions = transactions.filter(t => t.type === 'income');
+        console.log('✅ [Asset Detail Page] Income transactions:', incomeTransactions);
+        const totalRevenue = incomeTransactions
+          .filter(t => t.amount)
+          .reduce((sum, t) => {
+            const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount?.toString() || '0');
+            console.log('💰 [Asset Detail Page] Transaction amount:', t.amount, 'type:', typeof t.amount, 'parsed:', amount);
+            return sum + amount;
+          }, 0);
+        console.log('💰 [Asset Detail Page] Total revenue calculated:', totalRevenue);
+      } else {
+        console.log('⚠️ [Asset Detail Page] No transactions data yet');
+      }
+    } else {
+      console.log('❌ [Asset Detail Page] Asset ID is missing!');
+    }
+  }, [assetId, transactions, transactionsError, asset, params]);
 
-  if (expenses) {
-    financials.totalSpend += expenses.reduce((sum, exp) => sum + exp.amount, 0);
-  }
+  // Calculate financials using useMemo to recalculate when data changes
+  const financials: AssetFinancial = useMemo(() => {
+    const baseSpend = asset?.purchase_cost || 0;
+    const totalExpenses = expenses ? expenses.reduce((sum, exp) => sum + exp.amount, 0) : 0;
+    const totalSpend = baseSpend + totalExpenses;
 
-  if (transactions) {
-    financials.totalRevenue = transactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
-  }
+    const totalRevenue = transactions
+      ? transactions
+          .filter(t => t.type === 'income' && t.amount)
+          .reduce((sum, t) => {
+            const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount?.toString() || '0');
+            return sum + amount;
+          }, 0)
+      : 0;
 
-  financials.profitLoss = financials.totalRevenue - financials.totalSpend;
-  financials.roiPercentage = financials.totalSpend > 0
-    ? (financials.profitLoss / financials.totalSpend) * 100
-    : 0;
+    const profitLoss = totalRevenue - totalSpend;
+    const roiPercentage = totalSpend > 0
+      ? (profitLoss / totalSpend) * 100
+      : 0;
 
-  // Generate time series data
-  if (expenses && transactions) {
+    return {
+      totalSpend,
+      totalRevenue,
+      profitLoss,
+      roiPercentage,
+      expenses: expenses || [],
+      transactions: transactions || [],
+      timeSeriesData: [],
+    };
+  }, [asset?.purchase_cost, expenses, transactions]);
+
+  // Generate time series data using useMemo
+  const timeSeriesData = useMemo(() => {
+    if (!expenses || !transactions) return [];
+
     const monthlyData = new Map<string, { spend: number; revenue: number }>();
 
     // Add purchase cost to first month
@@ -173,10 +211,13 @@ export default function AssetDetailPage() {
       }
     });
 
-    financials.timeSeriesData = Array.from(monthlyData.entries())
+    return Array.from(monthlyData.entries())
       .map(([month, data]) => ({ month, ...data }))
       .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
-  }
+  }, [asset?.purchase_date, asset?.purchase_cost, expenses, transactions]);
+
+  // Update financials with time series data
+  financials.timeSeriesData = timeSeriesData;
 
   const handleEditAsset = () => {
     setAssetDialogOpen(true);

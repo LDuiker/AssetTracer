@@ -37,6 +37,7 @@ const lineItemSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   quantity: z.coerce.number().min(1, 'Quantity must be at least 1'),
   unit_price: z.coerce.number().min(0, 'Unit price must be at least 0'),
+  asset_id: z.string().optional().nullable(),
 });
 
 /**
@@ -81,6 +82,10 @@ export function InvoiceForm({ invoice, onSubmit, onCancel }: InvoiceFormProps) {
   const { data: clientsData } = useSWR<{ clients: Client[] }>('/api/clients', fetcher);
   const clients = clientsData?.clients || [];
 
+  // Fetch assets for dropdown
+  const { data: assetsData } = useSWR<{ assets: any[] }>('/api/assets', fetcher);
+  const assets = assetsData?.assets || [];
+
   // Fetch organization settings for default currency
   const { data: orgData } = useSWR('/api/organization/settings', fetcher);
   const defaultCurrency = orgData?.organization?.default_currency || 'USD';
@@ -124,7 +129,7 @@ export function InvoiceForm({ invoice, onSubmit, onCancel }: InvoiceFormProps) {
       notes: invoice?.notes || orgData?.organization?.default_notes || '',
       terms: invoice?.terms || orgData?.organization?.invoice_terms || 'Payment due within 30 days',
       items: invoice?.items || [
-        { description: '', quantity: 1, unit_price: 0 },
+        { description: '', quantity: 1, unit_price: 0, asset_id: null },
       ],
     },
   });
@@ -213,6 +218,7 @@ export function InvoiceForm({ invoice, onSubmit, onCancel }: InvoiceFormProps) {
           amount: amount,
           tax_amount: taxAmount,
           total: itemTotal,
+          asset_id: item.asset_id || null,
         };
       });
 
@@ -242,7 +248,7 @@ export function InvoiceForm({ invoice, onSubmit, onCancel }: InvoiceFormProps) {
   };
 
   const addLineItem = () => {
-    append({ description: '', quantity: 1, unit_price: 0 });
+    append({ description: '', quantity: 1, unit_price: 0, asset_id: null });
   };
 
   return (
@@ -474,6 +480,35 @@ export function InvoiceForm({ invoice, onSubmit, onCancel }: InvoiceFormProps) {
                       <FormControl>
                         <Input placeholder="e.g., Web Design Services" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`items.${index}.asset_id`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Asset (Optional)</FormLabel>
+                      <Select 
+                        onValueChange={(value) => field.onChange(value === 'none' ? null : value)} 
+                        value={field.value || 'none'}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select an asset" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">No asset</SelectItem>
+                          {assets.map((asset) => (
+                            <SelectItem key={asset.id} value={asset.id}>
+                              {asset.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
