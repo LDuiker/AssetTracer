@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { ArrowLeft, Edit, Copy, Trash2, Package, MapPin, Hash, Calendar, DollarSign, TrendingUp, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -64,15 +64,51 @@ export function AssetViewPanel({
   const { limits, redirectToUpgrade } = useSubscription();
 
   // Fetch transactions for this asset to show financials
-  const { data: transactions } = useSWR<Transaction[]>(
+  const { data: transactions, error: transactionsError } = useSWR<Transaction[]>(
     asset.id ? `/api/transactions?asset_id=${asset.id}` : null,
     fetcher
   );
 
-  // Calculate financials
-  const totalRevenue = transactions?.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0) || 0;
-  const totalExpenses = transactions?.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0) || 0;
-  const totalSpend = asset.purchase_cost + totalExpenses;
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 [AssetViewPanel] Asset ID:', asset.id);
+    console.log('🔍 [AssetViewPanel] Transactions:', transactions);
+    console.log('🔍 [AssetViewPanel] Transactions Error:', transactionsError);
+    if (transactions) {
+      console.log('✅ [AssetViewPanel] Transaction count:', transactions.length);
+      const incomeTransactions = transactions.filter(t => t.type === 'income');
+      console.log('✅ [AssetViewPanel] Income transactions:', incomeTransactions);
+      incomeTransactions.forEach(t => {
+        console.log('💰 [AssetViewPanel] Transaction:', {
+          id: t.id,
+          amount: t.amount,
+          amountType: typeof t.amount,
+          parsed: typeof t.amount === 'number' ? t.amount : parseFloat(t.amount?.toString() || '0')
+        });
+      });
+    }
+  }, [asset.id, transactions, transactionsError]);
+
+  // Calculate financials with proper type handling
+  const totalRevenue = transactions
+    ? transactions
+        .filter(t => t.type === 'income' && t.amount)
+        .reduce((sum, t) => {
+          const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount?.toString() || '0');
+          return sum + amount;
+        }, 0)
+    : 0;
+  
+  const totalExpenses = transactions
+    ? transactions
+        .filter(t => t.type === 'expense' && t.amount)
+        .reduce((sum, t) => {
+          const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount?.toString() || '0');
+          return sum + amount;
+        }, 0)
+    : 0;
+  
+  const totalSpend = (asset.purchase_cost || 0) + totalExpenses;
   const profitLoss = totalRevenue - totalSpend;
   const roiPercentage = totalSpend > 0 ? ((profitLoss / totalSpend) * 100) : 0;
 
