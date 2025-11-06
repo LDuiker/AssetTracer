@@ -25,9 +25,9 @@ BEGIN
     -- Add index for better query performance
     CREATE INDEX IF NOT EXISTS idx_invoice_items_asset_id ON invoice_items(asset_id);
     
-    RAISE NOTICE '✅ Added asset_id column to invoice_items table';
+    RAISE NOTICE 'Added asset_id column to invoice_items table';
   ELSE
-    RAISE NOTICE 'ℹ️ asset_id column already exists in invoice_items table';
+    RAISE NOTICE 'asset_id column already exists in invoice_items table';
   END IF;
 END $$;
 
@@ -40,4 +40,3 @@ SELECT
 FROM information_schema.columns 
 WHERE table_name = 'invoice_items' 
   AND column_name = 'asset_id';
-
