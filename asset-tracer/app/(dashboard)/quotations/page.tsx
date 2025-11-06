@@ -39,20 +39,12 @@ export default function QuotationsPage() {
 
   // Fetch quotations
   const { data, error, mutate, isLoading } = useSWR<{ quotations: Quotation[] }>(
-    '/api/quotations',
-    {
-      keepPreviousData: true, // Keep previous data while fetching (prevents flicker)
-      revalidateOnMount: false, // Use cached data if available
-    }
+    '/api/quotations'
   );
 
-  // Fetch invoices to check quota (lower priority)
+  // Fetch invoices to check quota
   const { data: invoicesData } = useSWR<{ invoices: any[] }>(
-    '/api/invoices',
-    {
-      keepPreviousData: true,
-      revalidateOnMount: false,
-    }
+    '/api/invoices'
   );
 
   const quotations = data?.quotations || [];

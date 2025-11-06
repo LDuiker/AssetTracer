@@ -26,11 +26,7 @@ export default function AssetsPage() {
   
   // Fetch assets with SWR (uses global config from layout)
   const { data, error, isLoading, mutate } = useSWR<{ assets: Asset[] }>(
-    '/api/assets',
-    {
-      keepPreviousData: true, // Keep previous data while fetching (prevents flicker)
-      revalidateOnMount: false, // Use cached data if available
-    }
+    '/api/assets'
   );
 
   const assets = data?.assets || [];

@@ -40,11 +40,7 @@ export default function InvoicesPage() {
 
   // Fetch invoices
   const { data, error, mutate, isLoading } = useSWR<{ invoices: Invoice[] }>(
-    '/api/invoices',
-    {
-      keepPreviousData: true, // Keep previous data while fetching (prevents flicker)
-      revalidateOnMount: false, // Use cached data if available
-    }
+    '/api/invoices'
   );
 
   const invoices = data?.invoices || [];
