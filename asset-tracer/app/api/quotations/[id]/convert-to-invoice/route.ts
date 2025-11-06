@@ -157,7 +157,8 @@ export async function POST(
 
     // Create invoice items from quotation items
     if (quotation.items && quotation.items.length > 0) {
-      const invoiceItems = quotation.items.map((item: any) => ({
+      // Build invoice items - conditionally include asset_id if column exists
+      const baseInvoiceItems = quotation.items.map((item: any) => ({
         invoice_id: invoice.id,
         description: item.description,
         quantity: item.quantity,
@@ -166,8 +167,17 @@ export async function POST(
         amount: item.amount,
         tax_amount: item.tax_amount,
         total: item.total,
-        asset_id: item.asset_id || null, // Copy asset_id from quotation_item
       }));
+
+      // Try to insert with asset_id first, fallback to without if column doesn't exist
+      let invoiceItems = baseInvoiceItems;
+      if (quotation.items.some((item: any) => item.asset_id)) {
+        // Only include asset_id if at least one quotation item has it
+        invoiceItems = quotation.items.map((item: any) => ({
+          ...baseInvoiceItems.find((bi: any) => bi.description === item.description),
+          asset_id: item.asset_id || null,
+        }));
+      }
 
       const { error: itemsError } = await supabase
         .from('invoice_items')
@@ -175,9 +185,31 @@ export async function POST(
 
       if (itemsError) {
         console.error('Error creating invoice items:', itemsError);
-        // Rollback invoice creation
-        await supabase.from('invoices').delete().eq('id', invoice.id);
-        return NextResponse.json({ error: 'Failed to create invoice items' }, { status: 500 });
+        
+        // If error is about missing column, try without asset_id
+        if (itemsError.message?.includes('column') && itemsError.message?.includes('asset_id')) {
+          console.log('Retrying without asset_id column...');
+          const { error: retryError } = await supabase
+            .from('invoice_items')
+            .insert(baseInvoiceItems);
+          
+          if (retryError) {
+            console.error('Error creating invoice items (retry):', retryError);
+            // Rollback invoice creation
+            await supabase.from('invoices').delete().eq('id', invoice.id);
+            return NextResponse.json({ 
+              error: 'Failed to create invoice items',
+              details: retryError.message 
+            }, { status: 500 });
+          }
+        } else {
+          // Rollback invoice creation
+          await supabase.from('invoices').delete().eq('id', invoice.id);
+          return NextResponse.json({ 
+            error: 'Failed to create invoice items',
+            details: itemsError.message 
+          }, { status: 500 });
+        }
       }
     }
 
