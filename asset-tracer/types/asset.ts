@@ -4,6 +4,11 @@
 export type AssetStatus = 'active' | 'maintenance' | 'retired' | 'sold';
 
 /**
+ * Asset type - individual item or a group
+ */
+export type AssetType = 'individual' | 'group';
+
+/**
  * Main Asset interface representing an asset in the database
  */
 export interface Asset {
@@ -19,6 +24,9 @@ export interface Asset {
   location: string | null;
   serial_number: string | null;
   image_url: string | null;
+  asset_type?: AssetType; // 'individual' or 'group'
+  parent_group_id?: string | null; // Reference to parent group if this is a group item
+  quantity?: number; // For groups: total items, for individuals: 1
   created_at: string;
   updated_at: string;
 }
