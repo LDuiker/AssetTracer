@@ -110,25 +110,36 @@ export default function AssetDetailPage() {
     fetcher
   );
 
-  // Debug logging
+  // Debug logging - Always log when component mounts/updates
   useEffect(() => {
+    console.log('🔍 [Asset Detail Page] Component rendered');
+    console.log('🔍 [Asset Detail Page] Asset ID from params:', params?.id);
+    console.log('🔍 [Asset Detail Page] Asset ID:', assetId);
+    console.log('🔍 [Asset Detail Page] Asset data:', asset);
+    console.log('🔍 [Asset Detail Page] Transactions:', transactions);
+    console.log('🔍 [Asset Detail Page] Transactions Error:', transactionsError);
+    
     if (assetId) {
-      console.log('[Asset Detail] Asset ID:', assetId);
-      console.log('[Asset Detail] Transactions:', transactions);
-      console.log('[Asset Detail] Transactions Error:', transactionsError);
+      console.log('✅ [Asset Detail Page] Asset ID is set:', assetId);
       if (transactions) {
-        console.log('[Asset Detail] Transaction count:', transactions.length);
-        console.log('[Asset Detail] Income transactions:', transactions.filter(t => t.type === 'income'));
-        console.log('[Asset Detail] Total revenue calculation:', transactions
-          .filter(t => t.type === 'income' && t.amount)
+        console.log('✅ [Asset Detail Page] Transaction count:', transactions.length);
+        const incomeTransactions = transactions.filter(t => t.type === 'income');
+        console.log('✅ [Asset Detail Page] Income transactions:', incomeTransactions);
+        const totalRevenue = incomeTransactions
+          .filter(t => t.amount)
           .reduce((sum, t) => {
             const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount?.toString() || '0');
-            console.log('[Asset Detail] Transaction amount:', t.amount, 'parsed:', amount);
+            console.log('💰 [Asset Detail Page] Transaction amount:', t.amount, 'type:', typeof t.amount, 'parsed:', amount);
             return sum + amount;
-          }, 0));
+          }, 0);
+        console.log('💰 [Asset Detail Page] Total revenue calculated:', totalRevenue);
+      } else {
+        console.log('⚠️ [Asset Detail Page] No transactions data yet');
       }
+    } else {
+      console.log('❌ [Asset Detail Page] Asset ID is missing!');
     }
-  }, [assetId, transactions, transactionsError]);
+  }, [assetId, transactions, transactionsError, asset, params]);
 
   // Calculate financials using useMemo to recalculate when data changes
   const financials: AssetFinancial = useMemo(() => {
