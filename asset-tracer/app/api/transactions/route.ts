@@ -44,6 +44,19 @@ export async function GET(request: NextRequest) {
 
     // Filter by asset if provided
     if (assetId) {
+      // Also verify the asset belongs to this organization
+      const { data: assetCheck } = await supabase
+        .from('assets')
+        .select('id, organization_id')
+        .eq('id', assetId)
+        .eq('organization_id', organizationId)
+        .single();
+      
+      if (!assetCheck) {
+        console.warn('[Transactions API] ⚠️ Asset not found or belongs to different organization');
+        return NextResponse.json([]);
+      }
+      
       query = query.eq('asset_id', assetId);
     }
 
