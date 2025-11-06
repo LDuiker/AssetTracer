@@ -45,12 +45,30 @@ interface Transaction {
 }
 
 const fetcher = async (url: string) => {
-  const res = await fetch(url, { credentials: 'include' });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to fetch');
+  try {
+    const res = await fetch(url, { credentials: 'include' });
+    if (!res.ok) {
+      let errorData;
+      try {
+        errorData = await res.json();
+      } catch {
+        errorData = { error: `HTTP ${res.status}: ${res.statusText}` };
+      }
+      console.error('[AssetViewPanel] API Error:', errorData);
+      throw new Error(errorData.error || errorData.message || `Failed to fetch: ${res.status} ${res.statusText}`);
+    }
+    return res.json();
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      console.error('[AssetViewPanel] Network error - check:', {
+        url,
+        message: 'Possible CORS issue, network problem, or API route not responding',
+        error: error.message
+      });
+      throw new Error('Network error: Unable to connect to server. Please check your internet connection and try again.');
+    }
+    throw error;
   }
-  return res.json();
 };
 
 export function AssetViewPanel({
