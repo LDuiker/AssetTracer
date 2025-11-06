@@ -315,12 +315,12 @@ export async function createInvoice(
     }
 
     // Prepare invoice items with calculated values
-    const invoiceItems = data.items.map((item) => {
+    const invoiceItems = data.items.map((item: any) => {
       const amount = item.quantity * item.unit_price;
       const tax_amount = amount * (item.tax_rate / 100);
       const item_total = amount + tax_amount;
 
-      return {
+      const baseItem = {
         invoice_id: newInvoice.id,
         description: item.description,
         quantity: item.quantity,
@@ -330,6 +330,13 @@ export async function createInvoice(
         tax_amount,
         total: item_total,
       };
+
+      // Conditionally include asset_id if provided
+      if (item.asset_id) {
+        return { ...baseItem, asset_id: item.asset_id };
+      }
+
+      return baseItem;
     });
 
     // Create invoice items

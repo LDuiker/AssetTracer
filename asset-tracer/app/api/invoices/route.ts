@@ -11,6 +11,7 @@ const lineItemSchema = z.object({
   quantity: z.coerce.number().min(1, 'Quantity must be at least 1'),
   unit_price: z.coerce.number().min(0, 'Unit price must be at least 0'),
   tax_rate: z.coerce.number().min(0).max(100, 'Tax rate must be between 0 and 100'),
+  asset_id: z.string().optional().nullable(),
 });
 
 /**
