@@ -57,7 +57,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(transactions);
+    // Debug logging
+    console.log('[Transactions API] Asset ID:', assetId);
+    console.log('[Transactions API] Organization ID:', organizationId);
+    console.log('[Transactions API] Transaction count:', transactions?.length || 0);
+    if (transactions && transactions.length > 0) {
+      console.log('[Transactions API] Sample transaction:', JSON.stringify(transactions[0], null, 2));
+      console.log('[Transactions API] Income transactions:', transactions.filter(t => t.type === 'income').length);
+    }
+
+    return NextResponse.json(transactions || []);
   } catch (error) {
     console.error('Unexpected error:', error);
     return NextResponse.json(

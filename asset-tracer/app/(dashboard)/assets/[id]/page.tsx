@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { 
@@ -105,10 +105,30 @@ export default function AssetDetailPage() {
   );
 
   // Fetch transactions for this asset
-  const { data: transactions } = useSWR<Transaction[]>(
+  const { data: transactions, error: transactionsError } = useSWR<Transaction[]>(
     assetId ? `/api/transactions?asset_id=${assetId}` : null,
     fetcher
   );
+
+  // Debug logging
+  useEffect(() => {
+    if (assetId) {
+      console.log('[Asset Detail] Asset ID:', assetId);
+      console.log('[Asset Detail] Transactions:', transactions);
+      console.log('[Asset Detail] Transactions Error:', transactionsError);
+      if (transactions) {
+        console.log('[Asset Detail] Transaction count:', transactions.length);
+        console.log('[Asset Detail] Income transactions:', transactions.filter(t => t.type === 'income'));
+        console.log('[Asset Detail] Total revenue calculation:', transactions
+          .filter(t => t.type === 'income' && t.amount)
+          .reduce((sum, t) => {
+            const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount?.toString() || '0');
+            console.log('[Asset Detail] Transaction amount:', t.amount, 'parsed:', amount);
+            return sum + amount;
+          }, 0));
+      }
+    }
+  }, [assetId, transactions, transactionsError]);
 
   // Calculate financials using useMemo to recalculate when data changes
   const financials: AssetFinancial = useMemo(() => {
