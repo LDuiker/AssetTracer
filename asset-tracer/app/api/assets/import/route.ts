@@ -62,7 +62,6 @@ const importAssetSchema = z.object({
   }),
   quantity: z.number().int().min(1, 'Quantity must be at least 1'),
   parent_group_id: z.string().uuid().nullable(),
-  image_url: z.string().url().nullable(),
 });
 
 function normalizeKey(key: string): string {
@@ -231,7 +230,6 @@ function buildParsedRow(
       assetType === 'group'
         ? toStringOrNull(normalizedRecord.parent_group_id)
         : null,
-    image_url: null,
   } satisfies ParsedAssetRow;
 
   const validation = importAssetSchema.safeParse(parsedRow);
