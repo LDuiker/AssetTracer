@@ -1,10 +1,6 @@
 'use client';
 
-<<<<<<< HEAD
-import { Search, Plus, Package, Layers } from 'lucide-react';
-=======
 import { Search, Plus, Package, Layers, Upload } from 'lucide-react';
->>>>>>> staging
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
