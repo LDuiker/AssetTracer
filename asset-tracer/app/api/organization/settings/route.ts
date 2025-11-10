@@ -27,6 +27,8 @@ const updateOrganizationSchema = z.object({
   quotation_template: z.enum(['classic', 'compact']).optional(),
 });
 
+type UpdateOrganizationInput = z.infer<typeof updateOrganizationSchema>;
+
 /**
  * Helper function to get user's organization ID
  */
@@ -175,7 +177,7 @@ export async function PATCH(request: NextRequest) {
     const updateData = validationResult.data;
 
     // Build update object
-    const updatePayload: any = {
+    const updatePayload: Partial<UpdateOrganizationInput> & { updated_at: string } = {
       updated_at: new Date().toISOString(),
     };
 

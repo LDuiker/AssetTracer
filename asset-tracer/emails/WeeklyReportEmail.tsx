@@ -13,7 +13,6 @@ import {
 import * as React from 'react';
 
 interface WeeklyReportEmailProps {
-  organizationName: string;
   userName: string;
   weekOf: string;
   totalRevenue: string;
@@ -25,7 +24,6 @@ interface WeeklyReportEmailProps {
 }
 
 export default function WeeklyReportEmail({
-  organizationName = 'AssetTracer',
   userName = 'User',
   weekOf = 'January 15-21, 2025',
   totalRevenue = '25,480.00',
@@ -53,7 +51,7 @@ export default function WeeklyReportEmail({
           <Text style={text}>Hi {userName},</Text>
           
           <Text style={text}>
-            Here's your financial summary for <strong>{weekOf}</strong>:
+            Here&apos;s your financial summary for <strong>{weekOf}</strong>:
           </Text>
 
           {/* Financial Overview */}
@@ -92,7 +90,7 @@ export default function WeeklyReportEmail({
           {/* Highlights */}
           {highlights && highlights.length > 0 && (
             <Section style={highlightsBox}>
-              <Text style={highlightsTitle}>📈 This Week's Highlights</Text>
+              <Text style={highlightsTitle}>📈 This Week&apos;s Highlights</Text>
               {highlights.map((highlight, index) => (
                 <div key={index} style={highlightItem}>
                   <span style={highlightBullet}>•</span>

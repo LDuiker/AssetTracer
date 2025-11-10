@@ -1,6 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { polar, PolarWebhookEvent } from '@/lib/polar';
+
+type PolarSubscriptionPayload = {
+  id: string;
+  customer_id: string;
+  product_id: string;
+  status: string;
+  current_period_start: string;
+  current_period_end: string;
+  metadata?: ({ tier?: string } & Record<string, unknown>) | null;
+};
+
+type PolarCustomerPayload = {
+  id: string;
+  email?: string | null;
+  name?: string | null;
+  metadata?: Record<string, unknown> | null;
+};
+
+type SubscriptionEventAttributes = {
+  subscription: PolarSubscriptionPayload;
+};
+
+type CustomerEventAttributes = {
+  customer: PolarCustomerPayload;
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +66,7 @@ export async function POST(request: NextRequest) {
         break;
       
       case 'customer.created':
-        await handleCustomerCreated(event, supabase);
+        await handleCustomerCreated(event);
         break;
       
       case 'customer.updated':
@@ -58,8 +84,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleSubscriptionCreated(event: PolarWebhookEvent, supabase: any) {
-  const { subscription } = event.data.attributes;
+async function handleSubscriptionCreated(event: PolarWebhookEvent, supabase: SupabaseClient) {
+  const { subscription } = event.data.attributes as SubscriptionEventAttributes;
   
   console.log('Processing subscription.created webhook:', {
     subscription_id: subscription.id,
@@ -80,7 +106,8 @@ async function handleSubscriptionCreated(event: PolarWebhookEvent, supabase: any
   }
 
   // Get tier from metadata (passed during checkout)
-  const subscriptionTier = subscription.metadata?.tier || 'free';
+  const metadataTier = subscription.metadata?.tier;
+  const subscriptionTier = typeof metadataTier === 'string' ? metadataTier : 'free';
   
   console.log(`Updating organization ${org.id} to tier: ${subscriptionTier}`);
 
@@ -97,7 +124,7 @@ async function handleSubscriptionCreated(event: PolarWebhookEvent, supabase: any
       subscription_end_date: subscription.current_period_end,
       polar_current_period_start: subscription.current_period_start,
       polar_current_period_end: subscription.current_period_end,
-      polar_metadata: subscription.metadata || {},
+      polar_metadata: subscription.metadata ?? {},
       updated_at: new Date().toISOString(),
     })
     .eq('id', org.id);
@@ -105,8 +132,8 @@ async function handleSubscriptionCreated(event: PolarWebhookEvent, supabase: any
   console.log(`✅ Subscription created for organization ${org.id}, tier: ${subscriptionTier}`);
 }
 
-async function handleSubscriptionUpdated(event: PolarWebhookEvent, supabase: any) {
-  const { subscription } = event.data.attributes;
+async function handleSubscriptionUpdated(event: PolarWebhookEvent, supabase: SupabaseClient) {
+  const { subscription } = event.data.attributes as SubscriptionEventAttributes;
   
   const { data: org } = await supabase
     .from('organizations')
@@ -120,7 +147,9 @@ async function handleSubscriptionUpdated(event: PolarWebhookEvent, supabase: any
   }
 
   // Get tier from metadata (passed during checkout)
-  const subscriptionTier = subscription.metadata?.tier || org.subscription_tier || 'free';
+  const metadataTier = subscription.metadata?.tier;
+  const subscriptionTier =
+    typeof metadataTier === 'string' ? metadataTier : org.subscription_tier || 'free';
 
   // Update organization with new subscription details
   await supabase
@@ -134,7 +163,7 @@ async function handleSubscriptionUpdated(event: PolarWebhookEvent, supabase: any
       subscription_end_date: subscription.current_period_end,
       polar_current_period_start: subscription.current_period_start,
       polar_current_period_end: subscription.current_period_end,
-      polar_metadata: subscription.metadata || {},
+      polar_metadata: subscription.metadata ?? {},
       updated_at: new Date().toISOString(),
     })
     .eq('id', org.id);
@@ -142,8 +171,8 @@ async function handleSubscriptionUpdated(event: PolarWebhookEvent, supabase: any
   console.log(`✅ Subscription updated for organization ${org.id}, tier: ${subscriptionTier}`);
 }
 
-async function handleSubscriptionCanceled(event: PolarWebhookEvent, supabase: any) {
-  const { subscription } = event.data.attributes;
+async function handleSubscriptionCanceled(event: PolarWebhookEvent, supabase: SupabaseClient) {
+  const { subscription } = event.data.attributes as SubscriptionEventAttributes;
   
   const { data: org } = await supabase
     .from('organizations')
@@ -171,8 +200,8 @@ async function handleSubscriptionCanceled(event: PolarWebhookEvent, supabase: an
   console.log(`Subscription canceled for organization ${org.id}, downgraded to free`);
 }
 
-async function handlePaymentSucceeded(event: PolarWebhookEvent, supabase: any) {
-  const { subscription } = event.data.attributes;
+async function handlePaymentSucceeded(event: PolarWebhookEvent, supabase: SupabaseClient) {
+  const { subscription } = event.data.attributes as SubscriptionEventAttributes;
   
   const { data: org } = await supabase
     .from('organizations')
@@ -199,8 +228,8 @@ async function handlePaymentSucceeded(event: PolarWebhookEvent, supabase: any) {
   console.log(`Payment succeeded for organization ${org.id}`);
 }
 
-async function handlePaymentFailed(event: PolarWebhookEvent, supabase: any) {
-  const { subscription } = event.data.attributes;
+async function handlePaymentFailed(event: PolarWebhookEvent, supabase: SupabaseClient) {
+  const { subscription } = event.data.attributes as SubscriptionEventAttributes;
   
   const { data: org } = await supabase
     .from('organizations')
@@ -225,16 +254,16 @@ async function handlePaymentFailed(event: PolarWebhookEvent, supabase: any) {
   console.log(`Payment failed for organization ${org.id}`);
 }
 
-async function handleCustomerCreated(event: PolarWebhookEvent, supabase: any) {
-  const { customer } = event.data.attributes;
+async function handleCustomerCreated(event: PolarWebhookEvent) {
+  const { customer } = event.data.attributes as CustomerEventAttributes;
   
   // This is typically handled when creating a subscription
   // but we can log it for reference
   console.log(`Customer created: ${customer.id}`);
 }
 
-async function handleCustomerUpdated(event: PolarWebhookEvent, supabase: any) {
-  const { customer } = event.data.attributes;
+async function handleCustomerUpdated(event: PolarWebhookEvent, supabase: SupabaseClient) {
+  const { customer } = event.data.attributes as CustomerEventAttributes;
   
   // Update customer information if needed
   const { data: org } = await supabase
@@ -248,7 +277,7 @@ async function handleCustomerUpdated(event: PolarWebhookEvent, supabase: any) {
       .from('organizations')
       .update({
         polar_metadata: {
-          ...org.polar_metadata,
+          ...(org.polar_metadata ?? {}),
           customer_email: customer.email,
           customer_name: customer.name,
         },

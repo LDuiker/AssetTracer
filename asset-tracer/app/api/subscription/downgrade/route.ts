@@ -39,13 +39,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body (optional tier parameter)
-    const body = await request.json().catch(() => ({}));
+    const body = (await request.json().catch(() => ({}))) as unknown;
     const validationResult = downgradeSchema.safeParse(body);
     
     // Default to 'free' if no tier specified
-    const targetTier = validationResult.success && validationResult.data.tier 
-      ? validationResult.data.tier 
-      : 'free';
+    const targetTier: 'free' | 'pro' =
+      validationResult.success && validationResult.data.tier
+        ? validationResult.data.tier
+        : 'free';
 
     // Get organization details
     const { data: organization, error: orgError } = await supabase
@@ -68,7 +69,18 @@ export async function POST(request: NextRequest) {
       }
 
       // Update organization subscription
-      const updatePayload: any = {
+      const updatePayload: {
+        subscription_tier: 'free' | 'pro';
+        subscription_status: 'inactive' | 'active';
+        updated_at: string;
+        subscription_start_date?: string | null;
+        subscription_end_date?: string | null;
+        polar_subscription_id?: string | null;
+        polar_product_id?: string | null;
+        polar_subscription_status?: string | null;
+        polar_current_period_start?: string | null;
+        polar_current_period_end?: string | null;
+      } = {
         subscription_tier: targetTier,
         subscription_status: targetTier === 'free' ? 'inactive' : 'active',
         updated_at: new Date().toISOString(),
@@ -108,17 +120,18 @@ export async function POST(request: NextRequest) {
         organization: updatedOrg,
         message: `Successfully downgraded to ${targetTier} plan`,
       });
-    } catch (polarError) {
+    } catch (polarError: unknown) {
       console.error('Polar API error:', polarError);
       return NextResponse.json(
         { error: 'Failed to cancel subscription' },
         { status: 500 }
       );
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Downgrade error:', error);
+    const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: message },
       { status: 500 }
     );
   }

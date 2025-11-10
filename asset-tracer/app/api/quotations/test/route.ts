@@ -1,12 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+
+type DiagnosticCheck = {
+  name: string;
+  status: string;
+  error?: string | null;
+  hint?: string | null;
+  code?: string | null;
+  details?: string | null;
+  data?: Record<string, unknown>;
+};
+
+type DiagnosticResult = {
+  timestamp: string;
+  checks: DiagnosticCheck[];
+  summary?: string;
+  error?: string;
+};
 
 /**
  * GET /api/quotations/test
  * Test endpoint to diagnose quotations issues
  */
-export async function GET(request: NextRequest) {
-  const results: any = {
+export async function GET() {
+  const results: DiagnosticResult = {
     timestamp: new Date().toISOString(),
     checks: [],
   };
@@ -57,7 +74,7 @@ export async function GET(request: NextRequest) {
 
     // Check 4: Quotations table exists
     results.checks.push({ name: '4. Quotations table exists', status: 'checking...' });
-    const { data: quotationsTest, error: quotationsError } = await supabase
+    const { error: quotationsError } = await supabase
       .from('quotations')
       .select('count')
       .eq('organization_id', userData.organization_id)
@@ -93,7 +110,7 @@ export async function GET(request: NextRequest) {
 
     // Check 6: Clients table exists
     results.checks.push({ name: '6. Clients table exists', status: 'checking...' });
-    const { data: clientsTest, error: clientsError } = await supabase
+    const { error: clientsError } = await supabase
       .from('clients')
       .select('count')
       .eq('organization_id', userData.organization_id)

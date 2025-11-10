@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const EMAIL_FROM = process.env.EMAIL_FROM || 'AssetTracer <notifications@asset-tracer.com>';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient();
 
@@ -114,11 +114,12 @@ export async function GET(request: NextRequest) {
       instructions: 'Check your inbox (and spam folder) for the test email',
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Test email error:', error);
+    const message = error instanceof Error ? error.message : '';
     
     // Provide specific error messages
-    if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
+    if (message.includes('403') || message.includes('Forbidden')) {
       return NextResponse.json({
         error: 'Domain not verified yet',
         details: 'Your DNS records are still propagating. Please wait 15-30 minutes and try again.',
@@ -128,7 +129,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       error: 'Failed to send test email',
-      details: error.message,
+      details: message || 'Unknown error',
       tip: 'Make sure DNS records are verified in Resend dashboard',
     }, { status: 500 });
   }

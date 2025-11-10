@@ -1,5 +1,44 @@
 import { createClient as createSupabaseClient } from '@/lib/supabase/server';
-import type { Invoice, CreateInvoiceInput, UpdateInvoiceInput, InvoiceItem } from '@/types';
+import type { PostgrestError } from '@supabase/supabase-js';
+import type { Invoice, CreateInvoiceInput, UpdateInvoiceInput, InvoiceItem, CreateInvoiceItemInput } from '@/types';
+
+type InvoiceItemInputWithAsset = CreateInvoiceItemInput & {
+  asset_id?: string | null;
+};
+
+type InvoiceItemInsertPayload = {
+  invoice_id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number;
+  amount: number;
+  tax_amount: number;
+  total: number;
+  asset_id?: string | null;
+};
+
+type InvoiceUpdatePayload = Partial<UpdateInvoiceInput> & {
+  updated_at: string;
+  subtotal?: number;
+  tax_total?: number;
+  total?: number;
+  balance?: number;
+};
+
+type InvoiceItemSummary = {
+  asset_id: string | null;
+  description: string | null;
+  total: number | null;
+};
+
+type QuotationWithItemsSummary = {
+  quotation_items?: Array<{
+    asset_id: string | null;
+    description: string | null;
+    total: number | null;
+  }>;
+};
 
 /**
  * Generate invoice number in format: INV-YYYYMM-XXXX
@@ -140,13 +179,13 @@ export async function getInvoices(organizationId: string): Promise<Invoice[]> {
     }
 
     // Map items to their respective invoices
-    const itemsByInvoiceId = (allItems || []).reduce((acc, item) => {
+    const itemsByInvoiceId = (allItems as InvoiceItem[] | null)?.reduce<Record<string, InvoiceItem[]>>((acc, item) => {
       if (!acc[item.invoice_id]) {
         acc[item.invoice_id] = [];
       }
       acc[item.invoice_id].push(item);
       return acc;
-    }, {} as Record<string, any[]>);
+    }, {}) ?? {};
 
     // Attach items to invoices
     return invoices.map(invoice => ({
@@ -241,7 +280,7 @@ export async function getInvoiceById(
  * @returns The created invoice with items
  */
 export async function createInvoice(
-  data: CreateInvoiceInput & { items: Array<{ description: string; quantity: number; unit_price: number; tax_rate: number }> },
+  data: CreateInvoiceInput & { items: InvoiceItemInputWithAsset[] },
   organizationId: string,
   userId: string
 ): Promise<Invoice> {
@@ -321,12 +360,12 @@ export async function createInvoice(
     }
 
     // Prepare invoice items with calculated values
-    const invoiceItems = data.items.map((item: any) => {
+    const invoiceItems: InvoiceItemInsertPayload[] = data.items.map((item) => {
       const amount = item.quantity * item.unit_price;
       const tax_amount = amount * (item.tax_rate / 100);
       const item_total = amount + tax_amount;
 
-      const baseItem = {
+      const baseItem: InvoiceItemInsertPayload = {
         invoice_id: newInvoice.id,
         description: item.description,
         quantity: item.quantity,
@@ -347,10 +386,9 @@ export async function createInvoice(
 
     // Create invoice items
     // Try with asset_id first, fallback to without if column doesn't exist
-    let createdItems;
-    let itemsError;
-    
-    const { data: itemsWithAssetId, error: errorWithAssetId } = await supabase
+    let itemsError: PostgrestError | null = null;
+
+    const { error: errorWithAssetId } = await supabase
       .from('invoice_items')
       .insert(invoiceItems)
       .select();
@@ -359,25 +397,37 @@ export async function createInvoice(
       // If error is about missing column, try without asset_id
       if (errorWithAssetId.message?.includes('asset_id') || errorWithAssetId.message?.includes('column')) {
         console.log('⚠️ asset_id column not found, creating items without asset_id...');
-        const itemsWithoutAssetId = invoiceItems.map((item: any) => {
-          const { asset_id, ...rest } = item;
-          return rest;
-        });
-        
-        const { data: itemsWithout, error: errorWithout } = await supabase
+        const itemsWithoutAssetId = invoiceItems.map(
+          ({
+            invoice_id: invoiceId,
+            description,
+            quantity,
+            unit_price,
+            tax_rate,
+            amount,
+            tax_amount,
+            total,
+          }) => ({
+            invoice_id: invoiceId,
+            description,
+            quantity,
+            unit_price,
+            tax_rate,
+            amount,
+            tax_amount,
+            total,
+          })
+        );
+
+        const { error: errorWithout } = await supabase
           .from('invoice_items')
           .insert(itemsWithoutAssetId)
           .select();
-        
-        createdItems = itemsWithout;
+
         itemsError = errorWithout;
       } else {
-        createdItems = itemsWithAssetId;
         itemsError = errorWithAssetId;
       }
-    } else {
-      createdItems = itemsWithAssetId;
-      itemsError = errorWithAssetId;
     }
 
     if (itemsError) {
@@ -410,7 +460,7 @@ export async function createInvoice(
  */
 export async function updateInvoice(
   id: string,
-  data: UpdateInvoiceInput & { items?: Array<{ description: string; quantity: number; unit_price: number; tax_rate: number }> },
+  data: UpdateInvoiceInput & { items?: InvoiceItemInputWithAsset[] },
   organizationId: string
 ): Promise<Invoice> {
   try {
@@ -423,8 +473,9 @@ export async function updateInvoice(
     }
 
     // If items are provided, recalculate totals
-    let updateData: any = {
-      ...data,
+    const { items, ...invoiceUpdateFields } = data;
+    const updateData: InvoiceUpdatePayload = {
+      ...invoiceUpdateFields,
       updated_at: new Date().toISOString(),
     };
     
@@ -432,8 +483,8 @@ export async function updateInvoice(
     console.log('🔧 updateInvoice - Subject in input:', data.subject);
     console.log('🔧 updateInvoice - Update data before DB:', JSON.stringify(updateData, null, 2));
 
-    if (data.items && data.items.length > 0) {
-      const { subtotal, tax_total, total } = calculateInvoiceTotals(data.items);
+    if (items && items.length > 0) {
+      const { subtotal, tax_total, total } = calculateInvoiceTotals(items);
       
       updateData.subtotal = subtotal;
       updateData.tax_total = tax_total;
@@ -452,12 +503,12 @@ export async function updateInvoice(
       }
 
       // Create new items
-      const invoiceItems = data.items.map((item) => {
+      const invoiceItems: InvoiceItemInsertPayload[] = items.map((item) => {
         const amount = item.quantity * item.unit_price;
         const tax_amount = amount * (item.tax_rate / 100);
         const item_total = amount + tax_amount;
 
-        return {
+        const baseItem: InvoiceItemInsertPayload = {
           invoice_id: id,
           description: item.description,
           quantity: item.quantity,
@@ -467,6 +518,12 @@ export async function updateInvoice(
           tax_amount,
           total: item_total,
         };
+
+        if (item.asset_id) {
+          return { ...baseItem, asset_id: item.asset_id };
+        }
+
+        return baseItem;
       });
 
       const { error: itemsError } = await supabase
@@ -479,7 +536,7 @@ export async function updateInvoice(
       }
 
       // Remove items from update data
-      delete updateData.items;
+      delete (updateData as Partial<UpdateInvoiceInput>).items;
     }
 
     // Update invoice
@@ -610,13 +667,13 @@ export async function markInvoiceAsPaid(
 
     // Create income transaction for the invoice
     // First, check invoice_items for asset_id (if column exists)
-    const { data: invoiceItems } = await supabase
+    const { data: invoiceItemsData } = await supabase
       .from('invoice_items')
       .select('asset_id, description, total')
       .eq('invoice_id', id);
 
     // Also check if this invoice was converted from a quotation to get asset_id
-    const { data: quotation } = await supabase
+    const { data: quotationData } = await supabase
       .from('quotations')
       .select(`
         id,
@@ -634,24 +691,23 @@ export async function markInvoiceAsPaid(
     // Prioritize invoice_items if they have asset_id, otherwise use quotation_items
     let itemsWithAssetId: Array<{ asset_id: string | null; description: string; total: number }> = [];
     
-    if (invoiceItems && invoiceItems.length > 0) {
-      // Check if invoice_items has asset_id column by checking if any item has it
-      const hasAssetIdColumn = invoiceItems.some((item: any) => 'asset_id' in item);
-      if (hasAssetIdColumn) {
-        itemsWithAssetId = invoiceItems.map((item: any) => ({
-          asset_id: item.asset_id || null,
-          description: item.description || '',
-          total: item.total || 0,
-        }));
-      }
+    const invoiceItemSummaries = (invoiceItemsData as InvoiceItemSummary[] | null) ?? [];
+
+    if (invoiceItemSummaries.length > 0 && invoiceItemSummaries.some((item) => item.asset_id !== undefined)) {
+      itemsWithAssetId = invoiceItemSummaries.map((item) => ({
+        asset_id: item.asset_id ?? null,
+        description: item.description ?? '',
+        total: item.total ?? 0,
+      }));
     }
 
     // If no invoice_items with asset_id, try quotation_items
-    if (itemsWithAssetId.length === 0 && quotation && quotation.quotation_items && quotation.quotation_items.length > 0) {
-      itemsWithAssetId = quotation.quotation_items.map((item: any) => ({
-        asset_id: item.asset_id || null,
-        description: item.description || '',
-        total: item.total || 0,
+    const quotationSummary = (quotationData as (QuotationWithItemsSummary & { id: string }) | null)?.quotation_items ?? [];
+    if (itemsWithAssetId.length === 0 && quotationSummary.length > 0) {
+      itemsWithAssetId = quotationSummary.map((item) => ({
+        asset_id: item.asset_id ?? null,
+        description: item.description ?? '',
+        total: item.total ?? 0,
       }));
     }
 

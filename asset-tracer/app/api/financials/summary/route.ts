@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@/lib/supabase/server';
 import { getFinancialSummary } from '@/lib/db';
 
@@ -35,7 +35,7 @@ async function getOrganizationId(userId: string) {
  * - Assets summary
  * - Invoices summary
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createSupabaseClient();
     const {

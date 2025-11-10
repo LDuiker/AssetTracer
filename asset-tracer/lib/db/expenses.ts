@@ -1,6 +1,17 @@
 import { createClient as createSupabaseClient } from '@/lib/supabase/server';
 import type { Expense, CreateExpenseInput, UpdateExpenseInput } from '@/types';
 
+type TransactionUpdateData = {
+  amount?: number;
+  transaction_date?: string;
+  description?: string;
+  category?: string;
+  reference_number?: string | null;
+  payment_method?: string | null;
+  asset_id?: string | null;
+  notes?: string | null;
+};
+
 /**
  * Fetch all expenses for an organization
  * @param organizationId - The organization ID
@@ -217,7 +228,7 @@ export async function updateExpense(
 
     // Also update the corresponding transaction record if it exists
     if (data.amount || data.expense_date || data.description || data.category) {
-      const transactionUpdateData: any = {};
+      const transactionUpdateData: TransactionUpdateData = {};
       
       if (data.amount !== undefined) transactionUpdateData.amount = data.amount;
       if (data.expense_date) transactionUpdateData.transaction_date = data.expense_date;

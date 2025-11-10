@@ -30,7 +30,7 @@ const createAssetSchema = z.object({
  * GET /api/assets
  * Fetch all assets for the authenticated user's organization
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Get authenticated user session
     const supabase = await createClient();

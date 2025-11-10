@@ -24,13 +24,13 @@ export default function TermsPage() {
                 1. Agreement to Terms
               </h2>
               <p className="text-gray-700 dark:text-gray-300 mb-4">
-                These Terms of Service ("Terms") constitute a legally binding agreement between you (either an individual or an entity, "you" or "your") and Asset Tracer ("we," "us," or "our") concerning your access to and use of the Asset Tracer software-as-a-service platform (the "Service").
+                These Terms of Service (&quot;Terms&quot;) constitute a legally binding agreement between you (either an individual or an entity, &quot;you&quot; or &quot;your&quot;) and Asset Tracer (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) concerning your access to and use of the Asset Tracer software-as-a-service platform (the &quot;Service&quot;).
               </p>
               <p className="text-gray-700 dark:text-gray-300 mb-4">
                 By accessing or using the Service, you agree that you have read, understood, and agree to be bound by these Terms. If you do not agree with these Terms, you must not access or use the Service.
               </p>
               <p className="text-gray-700 dark:text-gray-300">
-                We reserve the right to modify these Terms at any time. We will notify you of any material changes by posting the new Terms on our website and updating the "Last Updated" date. Your continued use of the Service after such changes constitutes your acceptance of the new Terms.
+                We reserve the right to modify these Terms at any time. We will notify you of any material changes by posting the new Terms on our website and updating the &quot;Last Updated&quot; date. Your continued use of the Service after such changes constitutes your acceptance of the new Terms.
               </p>
             </section>
 
@@ -115,7 +115,7 @@ export default function TermsPage() {
                 4.4. Price Changes
               </h3>
               <p className="text-gray-700 dark:text-gray-300 mb-4">
-                We reserve the right to change our pricing at any time. If we increase the price of your subscription plan, we will provide you with at least 30 days' advance notice. The price change will take effect at the start of your next billing cycle after the notice period.
+                We reserve the right to change our pricing at any time. If we increase the price of your subscription plan, we will provide you with at least 30 days&rsquo; advance notice. The price change will take effect at the start of your next billing cycle after the notice period.
               </p>
               <p className="text-gray-700 dark:text-gray-300">
                 If you do not agree to a price increase, you may cancel your subscription before the new price takes effect.
@@ -164,7 +164,7 @@ export default function TermsPage() {
                 <li>Use the Service in any way that violates any applicable federal, state, local, or international law or regulation</li>
                 <li>Use the Service to transmit, or procure the sending of, any advertising or promotional material without our prior written consent</li>
                 <li>Impersonate or attempt to impersonate Asset Tracer, an Asset Tracer employee, another user, or any other person or entity</li>
-                <li>Engage in any conduct that restricts or inhibits anyone's use or enjoyment of the Service</li>
+                <li>Engage in any conduct that restricts or inhibits anyone&rsquo;s use or enjoyment of the Service</li>
                 <li>Use any robot, spider, or other automatic device, process, or means to access the Service for any purpose</li>
                 <li>Introduce any viruses, trojan horses, worms, logic bombs, or other material that is malicious or technologically harmful</li>
                 <li>Attempt to gain unauthorized access to, interfere with, damage, or disrupt any parts of the Service, the server on which the Service is stored, or any server, computer, or database connected to the Service</li>
@@ -198,7 +198,7 @@ export default function TermsPage() {
                 6.1. Your Data
               </h3>
               <p className="text-gray-700 dark:text-gray-300 mb-4">
-                You retain all rights, title, and interest in and to the data you upload, store, or transmit through the Service ("Customer Data"). You are solely responsible for the accuracy, quality, integrity, legality, reliability, and appropriateness of your Customer Data.
+                You retain all rights, title, and interest in and to the data you upload, store, or transmit through the Service (&quot;Customer Data&quot;). You are solely responsible for the accuracy, quality, integrity, legality, reliability, and appropriateness of your Customer Data.
               </p>
 
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 mt-6">
@@ -258,7 +258,7 @@ export default function TermsPage() {
                 7.3. Feedback
               </h3>
               <p className="text-gray-700 dark:text-gray-300">
-                If you provide us with any feedback, suggestions, or ideas about the Service ("Feedback"), you grant us a perpetual, irrevocable, worldwide, royalty-free license to use, modify, and incorporate such Feedback into the Service without any obligation to you.
+                If you provide us with any feedback, suggestions, or ideas about the Service (&quot;Feedback&quot;), you grant us a perpetual, irrevocable, worldwide, royalty-free license to use, modify, and incorporate such Feedback into the Service without any obligation to you.
               </p>
             </section>
 
@@ -307,7 +307,7 @@ export default function TermsPage() {
                 10.2. Disclaimer of Warranties
               </h3>
               <p className="text-gray-700 dark:text-gray-300 mb-4">
-                EXCEPT AS EXPRESSLY PROVIDED IN THESE TERMS, THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT.
+                EXCEPT AS EXPRESSLY PROVIDED IN THESE TERMS, THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT.
               </p>
               <p className="text-gray-700 dark:text-gray-300">
                 WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR COMPLETELY SECURE. WE DO NOT WARRANT THAT THE RESULTS OBTAINED FROM THE USE OF THE SERVICE WILL BE ACCURATE OR RELIABLE.
@@ -343,7 +343,7 @@ export default function TermsPage() {
                 12. Indemnification
               </h2>
               <p className="text-gray-700 dark:text-gray-300">
-                You agree to defend, indemnify, and hold harmless Asset Tracer, its affiliates, officers, directors, employees, agents, and licensors from and against any claims, liabilities, damages, judgments, awards, losses, costs, expenses, or fees (including reasonable attorneys' fees) arising out of or relating to:
+                You agree to defend, indemnify, and hold harmless Asset Tracer, its affiliates, officers, directors, employees, agents, and licensors from and against any claims, liabilities, damages, judgments, awards, losses, costs, expenses, or fees (including reasonable attorneys&rsquo; fees) arising out of or relating to:
               </p>
               <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300 mt-4">
                 <li>Your violation of these Terms</li>

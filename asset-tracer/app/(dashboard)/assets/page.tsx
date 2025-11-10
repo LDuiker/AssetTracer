@@ -29,7 +29,8 @@ export default function AssetsPage() {
     '/api/assets'
   );
 
-  const assets = data?.assets || [];
+  const assetsData = data?.assets;
+  const assets = useMemo<Asset[]>(() => assetsData ?? [], [assetsData]);
 
   // State management
   const [searchQuery, setSearchQuery] = useState('');

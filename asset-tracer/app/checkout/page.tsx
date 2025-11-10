@@ -167,7 +167,7 @@ function CheckoutForm() {
                       💡 Quick Fix: Sync Your Subscription
                     </p>
                     <p className="text-xs text-blue-700">
-                      This will check Polar's payment system and activate your subscription if payment was successful.
+                      This will check Polar&apos;s payment system and activate your subscription if payment was successful.
                     </p>
                   </div>
                   

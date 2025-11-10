@@ -37,10 +37,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const body = await request.json();
+    const body = (await request.json()) as { new_tier?: unknown };
     const { new_tier } = body;
 
-    if (!new_tier || !['pro', 'business'].includes(new_tier)) {
+    if (typeof new_tier !== 'string' || !['pro', 'business'].includes(new_tier)) {
       return NextResponse.json(
         { error: 'Invalid tier. Must be "pro" or "business"' },
         { status: 400 }
@@ -89,10 +89,11 @@ export async function POST(request: NextRequest) {
         message: 'You can proceed with checkout for the new plan',
       });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Change plan error:', error);
+    const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: message },
       { status: 500 }
     );
   }

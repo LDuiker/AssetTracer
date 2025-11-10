@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@/lib/supabase/server';
 import { getAssetFinancials } from '@/lib/db';
 
@@ -27,7 +27,7 @@ async function getOrganizationId(userId: string) {
  * GET /api/financials/asset-financials
  * Returns financial summary for all assets including ROI calculations
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createSupabaseClient();
     const {

@@ -11,7 +11,6 @@ function AcceptInviteForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'error' | 'invalid' | 'ready'>('loading');
-  const [invitation, setInvitation] = useState<any>(null);
   const token = searchParams.get('token');
 
   useEffect(() => {
@@ -27,12 +26,6 @@ function AcceptInviteForm() {
     // For now, we'll just show a placeholder
     setTimeout(() => {
       setStatus('ready');
-      // This would be real invitation data
-      setInvitation({
-        organization: 'Your Organization',
-        role: 'member',
-        email: 'you@example.com',
-      });
     }, 1000);
   }, [token]);
 
@@ -68,7 +61,7 @@ function AcceptInviteForm() {
             <CardTitle>Team Invitation</CardTitle>
           </div>
           <CardDescription>
-            You've been invited to join a team on Asset Tracer
+            You&apos;ve been invited to join a team on Asset Tracer
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

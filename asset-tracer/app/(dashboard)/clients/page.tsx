@@ -16,7 +16,8 @@ export default function ClientsPage() {
     '/api/clients'
   );
 
-  const clients = data?.clients || [];
+  const clientsData = data?.clients;
+  const clients = useMemo<Client[]>(() => clientsData ?? [], [clientsData]);
 
   // State management
   const [searchQuery, setSearchQuery] = useState('');

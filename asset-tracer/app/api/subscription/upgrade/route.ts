@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const body = await request.json();
+    const body = (await request.json()) as unknown;
     const validationResult = upgradeSchema.safeParse(body);
 
     if (!validationResult.success) {
@@ -98,14 +98,16 @@ export async function POST(request: NextRequest) {
             }
           );
           customerId = customer.id;
-        } catch (customerError: any) {
+        } catch (customerError: unknown) {
+          const customerErrorMessage =
+            customerError instanceof Error ? customerError.message : 'Unknown Polar customer error';
           // If customer already exists, try to get existing customer by email
-          if (customerError.message.includes('already exists')) {
+          if (customerError instanceof Error && customerError.message.includes('already exists')) {
             console.log('Customer already exists, fetching existing customer...');
             const existingCustomer = await polar.getCustomerByEmail(user.email!);
             customerId = existingCustomer.id;
           } else {
-            throw customerError;
+            throw new Error(customerErrorMessage);
           }
         }
       }
@@ -138,23 +140,27 @@ export async function POST(request: NextRequest) {
         session_id: checkoutSession.session_id,
         message: `Redirecting to checkout for ${tier} plan`,
       });
-    } catch (polarError: any) {
+    } catch (polarError: unknown) {
       console.error('Polar API error:', polarError);
+      const polarErrorMessage =
+        polarError instanceof Error ? polarError.message : 'Unknown Polar API error';
+      const polarErrorStack = polarError instanceof Error ? polarError.stack : undefined;
       console.error('Error details:', {
-        message: polarError.message,
-        stack: polarError.stack,
+        message: polarErrorMessage,
+        stack: polarErrorStack,
         productId,
         customerId
       });
       return NextResponse.json(
-        { error: 'Failed to create checkout session', details: polarError.message },
+        { error: 'Failed to create checkout session', details: polarErrorMessage },
         { status: 500 }
       );
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Upgrade error:', error);
+    const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: message },
       { status: 500 }
     );
   }

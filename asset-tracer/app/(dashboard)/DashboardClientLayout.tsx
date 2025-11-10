@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { SWRConfig } from 'swr';
 import { Sidebar, DashboardWrapper } from '@/components/dashboard';
 import { X } from 'lucide-react';
@@ -85,7 +86,7 @@ export default function DashboardClientLayout({
               <nav className="flex-1 px-4 py-6 overflow-y-auto">
                 <ul className="space-y-2">
                   <li>
-                    <a
+                    <Link
                       href="/dashboard"
                       className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
@@ -97,10 +98,10 @@ export default function DashboardClientLayout({
                         <rect x="3" y="14" width="7" height="7" />
                       </svg>
                       <span>Dashboard</span>
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
+                    <Link
                       href="/assets"
                       className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
@@ -109,10 +110,10 @@ export default function DashboardClientLayout({
                         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                       </svg>
                       <span>Assets</span>
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
+                    <Link
                       href="/inventory"
                       className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
@@ -123,10 +124,10 @@ export default function DashboardClientLayout({
                         <path d="M10 12h4" />
                       </svg>
                       <span>Inventory</span>
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
+                    <Link
                       href="/clients"
                       className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
@@ -138,10 +139,10 @@ export default function DashboardClientLayout({
                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                       </svg>
                       <span>Clients</span>
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
+                    <Link
                       href="/quotations"
                       className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
@@ -154,10 +155,10 @@ export default function DashboardClientLayout({
                         <polyline points="10 9 9 9 8 9" />
                       </svg>
                       <span>Quotations</span>
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
+                    <Link
                       href="/invoices"
                       className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
@@ -167,10 +168,10 @@ export default function DashboardClientLayout({
                         <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8" />
                       </svg>
                       <span>Invoices</span>
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
+                    <Link
                       href="/settings"
                       className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
@@ -183,7 +184,7 @@ export default function DashboardClientLayout({
                         <path d="m4.93 19.07 4.24-4.24m5.66-5.66 4.24-4.24" />
                       </svg>
                       <span>Settings</span>
-                    </a>
+                    </Link>
                   </li>
                 </ul>
               </nav>

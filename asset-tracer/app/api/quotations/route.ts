@@ -29,7 +29,7 @@ const CreateQuotationSchema = z.object({
  * GET /api/quotations
  * Get all quotations for the organization
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log('🔍 GET /api/quotations - Starting');
     const supabase = await createClient();

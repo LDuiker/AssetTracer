@@ -24,7 +24,7 @@ export default function PrivacyPage() {
                 1. Introduction
               </h2>
               <p className="text-gray-700 dark:text-gray-300 mb-4">
-                Welcome to Asset Tracer ("we," "us," or "our"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our software-as-a-service (SaaS) platform (the "Service").
+                Welcome to Asset Tracer (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our software-as-a-service (SaaS) platform (the &quot;Service&quot;).
               </p>
               <p className="text-gray-700 dark:text-gray-300 mb-4">
                 This policy applies to all information collected through our Service, as well as any related services, sales, marketing, or events. By using our Service, you agree to the collection and use of information in accordance with this policy. If you do not agree with the terms of this privacy policy, please do not access the Service.
@@ -194,7 +194,7 @@ export default function PrivacyPage() {
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-                9. Children's Privacy
+                9. Children&apos;s Privacy
               </h2>
               <p className="text-gray-700 dark:text-gray-300">
                 Our Service is not intended for use by children under the age of 18. We do not knowingly collect personally identifiable information from children under 18. If you become aware that a child has provided us with Personal Data, please contact us. If we become aware that we have collected Personal Data from a child without verification of parental consent, we take steps to remove that information from our servers.
@@ -206,7 +206,7 @@ export default function PrivacyPage() {
                 10. Changes to This Privacy Policy
               </h2>
               <p className="text-gray-700 dark:text-gray-300">
-                We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last Updated" date. You are advised to review this Privacy Policy periodically for any changes.
+                We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the &quot;Last Updated&quot; date. You are advised to review this Privacy Policy periodically for any changes.
               </p>
             </section>
 

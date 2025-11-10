@@ -77,7 +77,7 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { tier, limits } = useSubscription();
+  const { tier } = useSubscription();
 
   const isActive = (href: string) => {
     return pathname === href || pathname?.startsWith(href + '/');

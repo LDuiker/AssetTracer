@@ -46,7 +46,7 @@ async function getOrganizationId(userId: string) {
  * GET /api/clients
  * Fetch all clients for the authenticated user's organization
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createSupabaseClient();
     const {

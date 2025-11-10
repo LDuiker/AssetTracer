@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const apiKey = process.env.POLAR_API_KEY;
     const baseUrl = process.env.POLAR_BASE_URL || 'https://api.polar.sh';
@@ -42,12 +42,14 @@ export async function GET(request: NextRequest) {
       message: 'Direct API call successful!',
       data,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Direct API test error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    const stack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json({
       success: false,
-      error: error.message,
-      stack: error.stack,
+      error: message,
+      stack,
     }, { status: 500 });
   }
 }

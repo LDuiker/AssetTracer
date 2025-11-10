@@ -12,7 +12,7 @@ interface SubscriptionBadgeProps {
 }
 
 export function SubscriptionBadge({ feature, showUpgrade = false }: SubscriptionBadgeProps) {
-  const { tier, limits, redirectToUpgrade } = useSubscription();
+  const { tier, redirectToUpgrade } = useSubscription();
 
   if (tier === 'free' && showUpgrade) {
     return (

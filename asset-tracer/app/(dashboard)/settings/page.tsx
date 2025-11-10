@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { User, Building2, Bell, Shield, Globe, Save, Loader2, Upload, X, Image as ImageIcon, CreditCard, Check, Zap, Users, Crown, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { User, Building2, Bell, Shield, Save, Loader2, Upload, X, Image as ImageIcon, CreditCard, Check, Users, Crown, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -45,6 +46,20 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
+type ValidationErrorDetail = {
+  field: string;
+  message: string;
+};
+
+const isValidationErrorDetail = (value: unknown): value is ValidationErrorDetail => {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const detail = value as Record<string, unknown>;
+  return typeof detail.field === 'string' && typeof detail.message === 'string';
+};
+
 function SettingsPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -55,59 +70,6 @@ function SettingsPageContent() {
   const [isDeleting, setIsDeleting] = useState(false);
   const supabase = createClient();
   const { refetch: refetchCurrency } = useCurrency();
-
-  // Handle tab from URL parameter (client-side only to avoid hydration issues)
-  useEffect(() => {
-    const tabParam = searchParams.get('tab');
-    if (tabParam) {
-      setActiveTab(tabParam);
-    }
-
-    // Handle Polar.sh checkout success/cancel
-    const success = searchParams.get('success');
-    const canceled = searchParams.get('canceled');
-    
-    if (success === 'true') {
-      toast.success('Payment successful! Activating your subscription...', {
-        duration: 5000,
-      });
-      
-      // Refresh organization data after successful payment
-      // Poll for updated subscription status (webhooks may take a few seconds)
-      const pollInterval = setInterval(() => {
-        mutateOrg();
-      }, 2000);
-      
-      // Stop polling after 30 seconds
-      setTimeout(() => {
-        clearInterval(pollInterval);
-      }, 30000);
-      
-      // Clear the interval when component unmounts
-      return () => clearInterval(pollInterval);
-    } else if (canceled === 'true') {
-      toast.error('Payment canceled. Your subscription was not changed.', {
-        duration: 5000,
-      });
-    }
-    
-    // Handle plan parameter from landing page
-    const planParam = searchParams.get('plan');
-    if (planParam && tabParam === 'billing') {
-      // Show a message to the user about upgrading
-      setTimeout(() => {
-        if (planParam === 'pro') {
-          toast.info('Ready to upgrade to Pro? Click the "Get Started" button below!', {
-            duration: 6000,
-          });
-        } else if (planParam === 'business') {
-          toast.info('Ready to upgrade to Business? Click the "Get Started" button below!', {
-            duration: 6000,
-          });
-        }
-      }, 500);
-    }
-  }, [searchParams]);
 
   // Fetch current user data
   const { data: userData, error: userError, isLoading: userLoading, mutate: mutateUser } = useSWR(
@@ -136,10 +98,65 @@ function SettingsPageContent() {
   }, [userData]);
 
   // Fetch organization data
-  const { data: orgData, error: orgError, isLoading: orgLoading, mutate: mutateOrg } = useSWR(
+  const { data: orgData, mutate: mutateOrg } = useSWR(
     '/api/organization/settings',
     fetcher
   );
+
+  // Handle tab from URL parameter (client-side only to avoid hydration issues)
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+
+    // Handle Polar.sh checkout success/cancel
+    const success = searchParams.get('success');
+    const canceled = searchParams.get('canceled');
+
+    if (success === 'true') {
+      toast.success('Payment successful! Activating your subscription...', {
+        duration: 5000,
+      });
+
+      // Refresh organization data after successful payment
+      // Poll for updated subscription status (webhooks may take a few seconds)
+      const pollInterval = setInterval(() => {
+        mutateOrg();
+      }, 2000);
+
+      // Stop polling after 30 seconds
+      setTimeout(() => {
+        clearInterval(pollInterval);
+      }, 30000);
+
+      // Clear the interval when component unmounts
+      return () => clearInterval(pollInterval);
+    }
+
+    if (canceled === 'true') {
+      toast.error('Payment canceled. Your subscription was not changed.', {
+        duration: 5000,
+      });
+    }
+
+    // Handle plan parameter from landing page
+    const planParam = searchParams.get('plan');
+    if (planParam && tabParam === 'billing') {
+      // Show a message to the user about upgrading
+      setTimeout(() => {
+        if (planParam === 'pro') {
+          toast.info('Ready to upgrade to Pro? Click the "Get Started" button below!', {
+            duration: 6000,
+          });
+        } else if (planParam === 'business') {
+          toast.info('Ready to upgrade to Business? Click the "Get Started" button below!', {
+            duration: 6000,
+          });
+        }
+      }, 500);
+    }
+  }, [mutateOrg, searchParams]);
 
   // Track previous subscription tier to detect upgrades
   const [prevTier, setPrevTier] = useState<string | null>(null);
@@ -230,25 +247,13 @@ function SettingsPageContent() {
     }
   }, [notificationData]);
 
-  const [appearanceSettings, setAppearanceSettings] = useState({
-    theme: 'light',
-    compactMode: false,
-  });
-
   // Load appearance settings from localStorage on mount
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    const savedCompactMode = localStorage.getItem('compactMode') === 'true';
-    
-    setAppearanceSettings({
-      theme: savedTheme,
-      compactMode: savedCompactMode,
-    });
+    const savedTheme = localStorage.getItem('theme');
 
-    // Apply theme to document
     if (savedTheme === 'dark') {
       document.documentElement.classList.add('dark');
-    } else {
+    } else if (savedTheme === 'light') {
       document.documentElement.classList.remove('dark');
     }
   }, []);
@@ -319,20 +324,25 @@ function SettingsPageContent() {
       if (!res.ok) {
         let errorMessage = 'Failed to update organization';
         try {
-          const error = await res.json();
-          console.error('Organization update failed:', error);
-          
-          // Handle different error formats
-          if (error.details) {
-            if (Array.isArray(error.details)) {
-              errorMessage = error.details.map((e: any) => `${e.field}: ${e.message}`).join(', ');
-            } else if (typeof error.details === 'string') {
-              errorMessage = error.details;
+          const errorResponse = (await res.json()) as { error?: string; details?: unknown };
+          console.error('Organization update failed:', errorResponse);
+
+          if (errorResponse.details !== undefined) {
+            if (Array.isArray(errorResponse.details)) {
+              const messages = errorResponse.details.map((detail) => {
+                if (isValidationErrorDetail(detail)) {
+                  return `${detail.field}: ${detail.message}`;
+                }
+                return JSON.stringify(detail);
+              });
+              errorMessage = messages.join(', ');
+            } else if (typeof errorResponse.details === 'string') {
+              errorMessage = errorResponse.details;
             } else {
-              errorMessage = JSON.stringify(error.details);
+              errorMessage = JSON.stringify(errorResponse.details);
             }
-          } else if (error.error) {
-            errorMessage = error.error;
+          } else if (errorResponse.error) {
+            errorMessage = errorResponse.error;
           }
         } catch (parseError) {
           console.error('Could not parse error response:', parseError);
@@ -389,7 +399,7 @@ function SettingsPageContent() {
       const fileName = `${user.id}/logo-${Date.now()}.${fileExt}`;
 
       // Upload to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('company-logos')
         .upload(fileName, file, {
           cacheControl: '3600',
@@ -399,9 +409,10 @@ function SettingsPageContent() {
       if (uploadError) throw uploadError;
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
+      const { data: publicUrlData } = supabase.storage
         .from('company-logos')
         .getPublicUrl(fileName);
+      const { publicUrl } = publicUrlData;
 
       // Update organization settings with new logo URL
       setOrganizationSettings({
@@ -456,40 +467,6 @@ function SettingsPageContent() {
     }
   };
 
-  const handleSaveAppearance = async () => {
-    setIsSaving(true);
-    try {
-      // Save to localStorage
-      localStorage.setItem('theme', appearanceSettings.theme);
-      localStorage.setItem('compactMode', String(appearanceSettings.compactMode));
-
-      // Apply theme immediately
-      if (appearanceSettings.theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else if (appearanceSettings.theme === 'light') {
-        document.documentElement.classList.remove('dark');
-      } else {
-        // System preference
-        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (isDark) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      }
-
-      // Simulate small delay for UX
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      toast.success('Appearance settings saved successfully');
-    } catch (error) {
-      console.error('Error saving appearance:', error);
-      toast.error('Failed to save appearance settings');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
     try {
@@ -514,9 +491,10 @@ function SettingsPageContent() {
       
       // Redirect to home page with signup parameter
       window.location.href = '/?deleted=true';
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting account:', error);
-      toast.error(error.message || 'Failed to delete account');
+      const message = error instanceof Error ? error.message : 'Failed to delete account';
+      toast.error(message);
       setIsDeleting(false);
       setShowDeleteDialog(false);
     }
@@ -967,10 +945,13 @@ function SettingsPageContent() {
                       <div className="relative w-full max-w-md p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
                         <div className="flex items-center gap-4">
                           <div className="flex-shrink-0">
-                            <img
+                            <Image
                               src={organizationSettings.companyLogoUrl}
                               alt="Company Logo"
+                              width={160}
+                              height={80}
                               className="h-20 w-auto object-contain"
+                              unoptimized
                             />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -1299,7 +1280,7 @@ function SettingsPageContent() {
                   <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                     <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
                       <Bell className="h-4 w-4 text-blue-600" />
-                      You'll receive emails for:
+                      You&apos;ll receive emails for:
                     </h4>
                     <ul className="space-y-2.5 text-sm text-gray-700 dark:text-gray-300">
                       <li className="flex items-start gap-2">

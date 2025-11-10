@@ -1,13 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { polar } from '@/lib/polar';
+
+type PolarSubscription = {
+  id: string;
+  status: string;
+  product_id: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  metadata?: Record<string, unknown> | null;
+};
+
+type PolarSubscriptionsResponse = {
+  items?: PolarSubscription[];
+};
 
 /**
  * Manual subscription sync endpoint
  * Fetches subscription data from Polar and updates the database
  * Useful when webhooks fail or there's a mismatch
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const supabase = await createClient();
 
@@ -77,17 +89,18 @@ export async function POST(request: NextRequest) {
         throw new Error(`Polar API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as PolarSubscriptionsResponse;
       console.log('Polar subscriptions response:', JSON.stringify(data, null, 2));
 
       // Check if there are any active subscriptions
       const activeSubscription = data.items?.find(
-        (sub: any) => sub.status === 'active' || sub.status === 'trialing'
+        (sub) => sub.status === 'active' || sub.status === 'trialing'
       );
 
       if (activeSubscription) {
         // Get tier from metadata
-        const tier = activeSubscription.metadata?.tier || 'free';
+        const metadataTier = activeSubscription.metadata?.tier;
+        const tier = typeof metadataTier === 'string' ? metadataTier : 'free';
         
         console.log(`✅ Found active subscription: ${activeSubscription.id}, tier: ${tier}`);
 
@@ -133,20 +146,22 @@ export async function POST(request: NextRequest) {
           subscription_tier: 'free',
         });
       }
-    } catch (polarError: any) {
+    } catch (polarError: unknown) {
       console.error('Polar API error:', polarError);
+      const details = polarError instanceof Error ? polarError.message : 'Unknown error';
       return NextResponse.json(
         { 
           error: 'Failed to fetch subscription from Polar',
-          details: polarError.message,
+          details,
         },
         { status: 500 }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Sync error:', error);
+    const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: message },
       { status: 500 }
     );
   }

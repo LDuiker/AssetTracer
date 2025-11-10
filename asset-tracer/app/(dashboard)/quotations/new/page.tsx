@@ -30,8 +30,6 @@ export default function NewQuotationPage() {
         throw new Error(error.error || 'Failed to create quotation');
       }
 
-      const { quotation } = await response.json();
-
       toast.success('Quotation created successfully');
       
       // Redirect back to quotations page and refresh

@@ -73,7 +73,7 @@ export function QuotationViewPanel({
     try {
       await onStatusChange(quotation.id, newStatus);
       toast.success(`Status updated to ${newStatus}`);
-    } catch (error) {
+    } catch {
       toast.error('Failed to update status');
     } finally {
       setIsUpdatingStatus(false);

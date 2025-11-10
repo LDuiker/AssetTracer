@@ -39,7 +39,8 @@ export default function InventoryPage() {
     fetcher
   );
 
-  const assets = data?.assets || [];
+  const assetsData = data?.assets;
+  const assets = useMemo<Asset[]>(() => assetsData ?? [], [assetsData]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');

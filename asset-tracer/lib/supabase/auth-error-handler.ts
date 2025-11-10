@@ -43,31 +43,38 @@ export async function validateSession() {
  * Wraps an async function with auth error handling
  * Automatically signs out if user was deleted
  */
-export function withAuthErrorHandler<T extends (...args: any[]) => Promise<any>>(
+export function withAuthErrorHandler<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T
-): T {
-  return (async (...args: any[]) => {
+): (...args: Parameters<T>) => ReturnType<T> {
+  return (async (...args: Parameters<T>) => {
     try {
-      return await fn(...args);
-    } catch (error: any) {
+      return (await fn(...args)) as ReturnType<T>;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '';
+      const status =
+        typeof error === 'object' && error !== null && 'status' in error
+          ? (error as { status?: number }).status
+          : undefined;
+
       // Check if it's an auth error
-      if (error?.message?.includes('User from sub claim in JWT does not exist') ||
-          error?.message?.includes('JWT') ||
-          error?.status === 401) {
-        
+      if (
+        message.includes('User from sub claim in JWT does not exist') ||
+        message.includes('JWT') ||
+        status === 401
+      ) {
         console.warn('Auth error detected, clearing session...');
         const supabase = createClient();
         await supabase.auth.signOut();
-        
+
         if (typeof window !== 'undefined') {
           localStorage.clear();
           sessionStorage.clear();
           window.location.href = '/login';
         }
       }
-      
+
       throw error;
     }
-  }) as T;
+  }) as (...args: Parameters<T>) => ReturnType<T>;
 }
 

@@ -83,7 +83,7 @@ function PaymentSuccessContent() {
   }, [token, invoiceId]);
 
   // Use global currency formatter (ignore currency param from DPO response)
-  const formatCurrency = (amount: number, currency?: string) => {
+  const formatCurrency = (amount: number) => {
     return formatCurrencyGlobal(amount);
   };
 
@@ -158,7 +158,7 @@ function PaymentSuccessContent() {
                   <div className="flex justify-between items-center py-2 border-b border-blue-200">
                     <span className="text-gray-600 font-medium">Amount Paid</span>
                     <span className="text-2xl font-bold text-green-600">
-                      {formatCurrency(verification.amount, verification.currency)}
+                      {formatCurrency(verification.amount)}
                     </span>
                   </div>
                 )}
@@ -252,7 +252,7 @@ function PaymentSuccessContent() {
             Payment Verification Failed
           </CardTitle>
           <p className="text-center text-gray-600 mt-2">
-            We couldn't verify your payment
+            We couldn&apos;t verify your payment
           </p>
         </CardHeader>
 
