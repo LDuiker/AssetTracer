@@ -8,4 +8,5 @@ export * from './AssetDialog';
 export * from './AssetListPanel';
 export * from './AssetViewPanel';
 export * from './AssetEditPanel';
+export * from './AssetImportDialog';
 

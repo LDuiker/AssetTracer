@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Plus, Package, Layers } from 'lucide-react';
+import { Search, Plus, Package, Layers, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,7 @@ interface AssetListPanelProps {
   selectedAsset: Asset | null;
   onSelect: (asset: Asset) => void;
   onCreate: () => void;
+  onImport: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   statusFilter: string;
@@ -37,6 +38,7 @@ export function AssetListPanel({
   selectedAsset,
   onSelect,
   onCreate,
+  onImport,
   searchQuery,
   onSearchChange,
   statusFilter,
@@ -52,14 +54,24 @@ export function AssetListPanel({
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             Assets
           </h2>
-          <Button
-            onClick={onCreate}
-            size="sm"
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            New
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={onImport}
+              variant="outline"
+              size="sm"
+            >
+              <Upload className="h-4 w-4 mr-1" />
+              Import
+            </Button>
+            <Button
+              onClick={onCreate}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              New
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
