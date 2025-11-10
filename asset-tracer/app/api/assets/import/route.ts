@@ -332,14 +332,14 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file');
 
-    if (!(file instanceof File)) {
+    if (!file || typeof file === 'string' || !('arrayBuffer' in file)) {
       return NextResponse.json(
         { error: 'No import file provided. Please select a CSV file to upload.' },
         { status: 400 },
       );
     }
 
-    const text = await file.text();
+    const text = await (file as Blob).text();
 
     let records: Record<string, unknown>[];
     try {
