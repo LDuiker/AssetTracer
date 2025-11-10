@@ -5,32 +5,44 @@ import { useCurrency } from '@/lib/context/CurrencyContext';
 import useSWR from 'swr';
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
-import { 
-  DollarSign, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
   Package,
   Calendar,
   Filter,
   Crown,
-  Lock
+  Lock,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  LineChart, 
-  Line, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
 } from 'recharts';
+import type {
+  FinancialReport,
+  FinancialReportSummary,
+  MonthlyPL,
+  AssetFinancials,
+} from '@/types';
 
 // Fetch function for SWR
 const fetcher = async (url: string) => {
@@ -49,6 +61,17 @@ const fetcher = async (url: string) => {
   }
   return res.json();
 };
+
+interface MonthlyChartPoint {
+  month: string;
+  revenue: number;
+  expenses: number;
+}
+
+interface TopAssetChartDatum {
+  name: string;
+  profit: number;
+}
 
 // Format percentage
 const formatPercentage = (value: number) => {
@@ -79,34 +102,39 @@ export default function DashboardPage() {
     ? `/api/reports/financials?start_date=${activeStartDate}&end_date=${activeEndDate}`
     : `/api/reports/financials?start_date=${currentYear}-01-01&end_date=${currentYear}-12-31`;
 
-  const { data: report, isLoading, error } = useSWR(
-    contextsLoading ? null : reportUrl, 
-    fetcher
-  );
+  const {
+    data: report,
+    isLoading,
+    error,
+  } = useSWR<FinancialReport>(contextsLoading ? null : reportUrl, fetcher);
 
   // Process monthly chart data (only if charts are allowed)
   // Must be called before any early returns (React hooks rules)
-  const monthlyChartData = useMemo(() => {
+  const monthlyChartData = useMemo<MonthlyChartPoint[]>(() => {
     if (contextsLoading || !limits?.hasMonthlyCharts || !report?.monthly_pl) return [];
-    return report.monthly_pl.map((month: any) => ({
-      month: format(new Date(month.month + '-01'), "MMM 'yy"),
-      revenue: month.revenue || 0,
-      expenses: month.expenses || 0,
+    return report.monthly_pl.map((month: MonthlyPL) => ({
+      month: format(new Date(`${month.month}-01`), "MMM 'yy"),
+      revenue: month.total_revenue ?? 0,
+      expenses: month.total_expenses ?? 0,
     }));
   }, [report, limits?.hasMonthlyCharts, contextsLoading]);
 
   // Process top 5 assets (only if charts are allowed)
   // Must be called before any early returns (React hooks rules)
-  const top5Assets = useMemo(() => {
+  const top5Assets = useMemo<TopAssetChartDatum[]>(() => {
     if (contextsLoading || !limits?.hasTopPerformersChart || !report?.asset_financials) return [];
     return [...report.asset_financials]
-      .sort((a: any, b: any) => (b.profit_loss || 0) - (a.profit_loss || 0))
+      .sort(
+        (a: AssetFinancials, b: AssetFinancials) =>
+          (b.profit_loss ?? 0) - (a.profit_loss ?? 0),
+      )
       .slice(0, 5)
-      .map((asset: any) => ({
-        name: asset.asset_name?.length > 15 
-          ? asset.asset_name.substring(0, 15) + '...' 
-          : asset.asset_name || 'Unknown',
-        profit: asset.profit_loss || 0,
+      .map((asset: AssetFinancials) => ({
+        name:
+          asset.asset_name.length > 15
+            ? `${asset.asset_name.substring(0, 15)}...`
+            : asset.asset_name,
+        profit: asset.profit_loss ?? 0,
       }));
   }, [report, limits?.hasTopPerformersChart, contextsLoading]);
 
@@ -136,18 +164,21 @@ export default function DashboardPage() {
   };
 
   // Calculate summary values
-  const summary = report?.summary || {};
-  const revenue = summary.period_total_revenue || 0;
-  const expenses = summary.period_total_expenses || 0;
-  const profit = summary.period_net_profit || 0;
-  const assetCount = report?.asset_financials?.length || 0;
-  const assetValue = report?.asset_financials?.reduce((sum: number, asset: any) => 
-    sum + (asset.current_value || 0), 0) || 0;
+  const summary: FinancialReportSummary | undefined = report?.summary;
+  const revenue = summary?.period_total_revenue ?? 0;
+  const expenses = summary?.period_total_expenses ?? 0;
+  const profit = summary?.period_net_profit ?? 0;
+  const assetCount = report?.asset_financials?.length ?? 0;
+  const assetValue =
+    report?.asset_financials?.reduce(
+      (sum: number, asset: AssetFinancials) => sum + (asset.current_value ?? 0),
+      0,
+    ) ?? 0;
 
   // Calculate growth percentages (only shown if hasGrowthMetrics)
-  const revenueGrowth = summary.revenue_growth_percentage || 0;
-  const expenseGrowth = summary.expense_growth_percentage || 0;
-  const profitGrowth = summary.profit_growth_percentage || 0;
+  const revenueGrowth = summary?.revenue_growth_percentage ?? 0;
+  const expenseGrowth = summary?.expense_growth_percentage ?? 0;
+  const profitGrowth = summary?.profit_growth_percentage ?? 0;
 
   if (error) {
     return (

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { 
@@ -43,7 +44,7 @@ import { AssetDialog } from '@/components/assets';
 import { toast } from 'sonner';
 import { useCurrency } from '@/lib/context/CurrencyContext';
 import { useSubscription } from '@/lib/context/SubscriptionContext';
-import type { Asset, Expense, CreateAssetInput } from '@/types';
+import type { Asset, Expense, CreateAssetInput, CreateExpenseInput } from '@/types';
 
 const fetcher = async (url: string) => {
   const res = await fetch(url, { credentials: 'include' });
@@ -278,7 +279,7 @@ export default function AssetDetailPage() {
     }
   };
 
-  const handleSaveExpense = async (data: any) => {
+  const handleSaveExpense = async (data: CreateExpenseInput) => {
     try {
       const url = selectedExpense
         ? `/api/expenses/${selectedExpense.id}`
@@ -286,14 +287,16 @@ export default function AssetDetailPage() {
       
       const method = selectedExpense ? 'PATCH' : 'POST';
       
+      const payload: CreateExpenseInput = {
+        ...data,
+        asset_id: assetId,
+      };
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          ...data,
-          asset_id: assetId,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error('Failed to save expense');
@@ -385,10 +388,13 @@ export default function AssetDetailPage() {
             {/* Image */}
             <div className="flex-shrink-0">
               {asset.image_url ? (
-                <img
+                <Image
                   src={asset.image_url}
                   alt={asset.name}
+                  width={192}
+                  height={192}
                   className="w-48 h-48 object-cover rounded-lg border"
+                  unoptimized
                 />
               ) : (
                 <div className="w-48 h-48 bg-gray-100 rounded-lg border flex items-center justify-center">
@@ -654,9 +660,10 @@ export default function AssetDetailPage() {
                         tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                       />
                       <Tooltip 
-                        formatter={(value: any) => {
-                          const numValue = typeof value === 'number' ? value : parseFloat(value);
-                          return isNaN(numValue) ? value : formatCurrency(numValue);
+                        formatter={(value: number | string) => {
+                          const numValue =
+                            typeof value === 'number' ? value : Number.parseFloat(value);
+                          return Number.isNaN(numValue) ? value : formatCurrency(numValue);
                         }}
                         contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
                       />
@@ -694,7 +701,7 @@ export default function AssetDetailPage() {
                       Spend vs Revenue Analytics
                     </h3>
                     <p className="text-gray-600 mb-6">
-                      Visualize your asset's spending and revenue trends over time with interactive charts. Track profitability and ROI performance.
+                      Visualize your asset&apos;s spending and revenue trends over time with interactive charts. Track profitability and ROI performance.
                     </p>
                     <Button onClick={redirectToUpgrade} size="lg" className="bg-blue-600 hover:bg-blue-700">
                       <TrendingUp className="h-5 w-5 mr-2" />

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useOrganization } from '@/lib/context/OrganizationContext';
 import { useSubscription } from '@/lib/context/SubscriptionContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { Users, UserPlus, Mail, Shield, MoreHorizontal, Trash2, UserMinus, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -39,7 +37,6 @@ interface TeamInvitation {
 }
 
 export function TeamSection() {
-  const { organization } = useOrganization();
   const { limits } = useSubscription();
   const [isLoading, setIsLoading] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -242,7 +239,7 @@ export function TeamSection() {
             <Alert className="mb-6">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                You've reached the maximum number of team members for your plan. 
+                You&apos;ve reached the maximum number of team members for your plan.
                 Upgrade to add more team members.
               </AlertDescription>
             </Alert>

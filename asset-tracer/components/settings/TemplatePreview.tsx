@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, FileText, Receipt, Download, Maximize2, Minimize2 } from 'lucide-react';
+import Image from 'next/image';
+import { Eye, EyeOff, FileText, Receipt, Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import type { Invoice, Quotation } from '@/types';
 import { InvoiceStatus } from '@/types';
 
-interface OrganizationData {
+export interface OrganizationData {
   name: string;
   company_email?: string;
   company_phone?: string;
@@ -247,11 +248,14 @@ export function InvoicePreview({ organization, template = 'classic' }: TemplateP
           <div className="flex justify-between items-center">
             <div className="flex-[2]">
               {organization.company_logo_url ? (
-                <img 
+                <Image 
                   src={organization.company_logo_url} 
                   alt="Company Logo" 
+                  width={120}
+                  height={40}
                   className="mb-2 object-contain"
                   style={{ width: '120px', height: '40px', maxHeight: '40px' }}
+                  unoptimized
                 />
               ) : (
                 <h1 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontSize: '22pt', fontWeight: 'bold', color: '#1e293b' }}>
@@ -415,11 +419,14 @@ export function InvoicePreview({ organization, template = 'classic' }: TemplateP
         <div className="flex justify-between items-start mb-5">
           <div className="flex-1">
             {organization.company_logo_url ? (
-              <img 
+              <Image 
                 src={organization.company_logo_url} 
                 alt="Company Logo" 
+                width={140}
+                height={56}
                 className="mb-2 object-contain"
                 style={{ width: '140px', height: '56px', maxHeight: '56px' }}
+                unoptimized
               />
             ) : (
               <h1 className="text-lg font-bold text-gray-900 mb-2" style={{ fontSize: '18pt', fontWeight: 'bold', color: '#1f2937' }}>
@@ -639,11 +646,14 @@ export function QuotationPreview({ organization, template = 'classic' }: Templat
           <div className="flex justify-between items-center">
             <div className="flex-[2]">
               {organization.company_logo_url ? (
-                <img 
+                <Image 
                   src={organization.company_logo_url} 
                   alt="Company Logo" 
+                  width={120}
+                  height={40}
                   className="mb-2 object-contain"
                   style={{ width: '120px', height: '40px', maxHeight: '40px' }}
+                  unoptimized
                 />
               ) : (
                 <h1 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontSize: '22pt', fontWeight: 'bold', color: '#1e293b' }}>
@@ -806,11 +816,14 @@ export function QuotationPreview({ organization, template = 'classic' }: Templat
         <div className="flex justify-between items-start mb-5">
           <div className="flex-1">
             {organization.company_logo_url ? (
-              <img 
+              <Image 
                 src={organization.company_logo_url} 
                 alt="Company Logo" 
+                width={140}
+                height={56}
                 className="mb-2 object-contain"
                 style={{ width: '140px', height: '56px', maxHeight: '56px' }}
+                unoptimized
               />
             ) : (
               <h1 className="text-lg font-bold text-gray-900 mb-2" style={{ fontSize: '18pt', fontWeight: 'bold', color: '#1f2937' }}>

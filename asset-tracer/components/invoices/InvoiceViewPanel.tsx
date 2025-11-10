@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { ArrowLeft, Edit, Copy, Download, FileText, Trash2, Building2, User, Mail, Calendar, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -71,7 +70,7 @@ export function InvoiceViewPanel({
     try {
       await onStatusChange(invoice.id, newStatus);
       toast.success(`Status updated to ${newStatus}`);
-    } catch (error) {
+    } catch {
       toast.error('Failed to update status');
     } finally {
       setIsUpdatingStatus(false);

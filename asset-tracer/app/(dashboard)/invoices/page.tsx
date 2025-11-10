@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { Plus, Search, TrendingUp, FileText, CheckCircle, DollarSign, Filter, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, FileText, CheckCircle, DollarSign, Filter, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,16 +20,8 @@ import { useSubscription } from '@/lib/context/SubscriptionContext';
 import { useCurrency } from '@/lib/context/CurrencyContext';
 import { toast } from 'sonner';
 import type { Invoice, CreateInvoiceInput } from '@/types';
+import { InvoiceStatus } from '@/types';
 import { motion } from 'framer-motion';
-
-const fetcher = async (url: string) => {
-  const res = await fetch(url, { credentials: 'include' });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to fetch');
-  }
-  return res.json();
-};
 
 type InvoiceStatus = 'all' | 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
 
@@ -49,11 +41,11 @@ export default function InvoicesPage() {
 
   // Fetch invoices
   const { data, error, mutate, isLoading } = useSWR<{ invoices: Invoice[] }>(
-    '/api/invoices',
-    fetcher
+    '/api/invoices'
   );
 
-  const invoices = data?.invoices || [];
+  const invoicesData = data?.invoices;
+  const invoices = useMemo<Invoice[]>(() => invoicesData ?? [], [invoicesData]);
 
   // Calculate invoices created this month (using UTC to match backend)
   const invoicesThisMonth = useMemo(() => {
@@ -201,29 +193,25 @@ export default function InvoicesPage() {
   };
 
   /**
-   * Handle edit invoice
-   */
-  const handleEdit = () => {
-    setViewMode('edit');
-  };
-
-  /**
    * Handle clone invoice
    */
   const handleClone = (invoice: Invoice) => {
     // Create a clone without the id and with updated dates
-    const clonedInvoice = {
+    const clonedInvoice: Invoice = {
       ...invoice,
-      id: undefined, // Remove id so it creates a new one
-      invoice_number: undefined, // Will be auto-generated
-      status: 'draft' as const,
+      id: '',
+      invoice_number: '',
+      status: InvoiceStatus.DRAFT,
       issue_date: new Date().toISOString().split('T')[0],
       due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      paid_date: undefined, // Clear paid date
-      payment_link: undefined, // Clear payment link
+      payment_date: null,
+      payment_method: null,
+      paid_amount: 0,
+      balance: invoice.total,
+      updated_at: new Date().toISOString(),
     };
 
-    setSelectedInvoice(clonedInvoice as any);
+    setSelectedInvoice(clonedInvoice);
     setViewMode('edit');
 
     toast.info(`Cloning invoice ${invoice.invoice_number}`);

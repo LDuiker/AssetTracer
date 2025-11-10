@@ -5,18 +5,15 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { 
-  Package, 
-  FileText, 
-  TrendingUp, 
-  Check, 
-  Menu, 
+import {
+  Package,
+  FileText,
+  TrendingUp,
+  Check,
+  Menu,
   X,
-  Sparkles,
   BarChart3,
   Users,
-  Bell,
-  Download,
   Building2,
   Laptop,
   Tv,
@@ -26,7 +23,7 @@ import {
   Clock,
   Settings,
   Briefcase,
-  Globe
+  Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -392,7 +389,7 @@ function LandingPageContent() {
         </div>
       </section>
 
-      {/* Who It's For Section */}
+      {/* Who It&apos;s For Section */}
       <section id="who-its-for" className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6 text-center">
           <motion.h2
@@ -412,7 +409,7 @@ function LandingPageContent() {
             viewport={{ once: true }}
             className="text-lg text-gray-600 max-w-2xl mx-auto mb-16"
           >
-            Whether you're a solo freelancer or managing a growing team — Asset Tracer keeps your finances, equipment, and reports simple, smart, and stress-free.
+            Whether you&apos;re a solo freelancer or managing a growing team — Asset Tracer keeps your finances, equipment, and reports simple, smart, and stress-free.
           </motion.p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
@@ -491,7 +488,7 @@ function LandingPageContent() {
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm font-semibold text-gray-700 mb-1">Problem:</p>
-                  <p className="text-sm text-gray-600">Couldn't track equipment loans or calculate ROI on rented devices.</p>
+                  <p className="text-sm text-gray-600">Couldn&apos;t track equipment loans or calculate ROI on rented devices.</p>
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-gray-700 mb-1">Solution:</p>
@@ -808,7 +805,7 @@ function LandingPageContent() {
                 </span>
               </AccordionTrigger>
               <AccordionContent className="text-gray-600 pb-6 leading-relaxed">
-                No. It's built to be intuitive — sign in with Google, add your first asset, and you're up and running in minutes.
+                No. It&apos;s built to be intuitive — sign in with Google, add your first asset, and you&apos;re up and running in minutes.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -819,7 +816,7 @@ function LandingPageContent() {
       <section className="py-20 bg-gradient-to-br from-[#2563EB] via-[#1e40af] to-[#0F172A]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-5xl font-bold text-white mb-6">
-            Get Started Today — It's Free.
+            Get Started Today — It&apos;s Free.
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
             Track assets, send invoices, and know your numbers — all in one lean, powerful dashboard.

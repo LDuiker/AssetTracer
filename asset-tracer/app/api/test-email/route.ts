@@ -66,11 +66,12 @@ export async function GET(request: NextRequest) {
       note: 'Check your inbox (and spam folder)',
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Test email error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to send test email';
     return NextResponse.json({ 
-      error: error.message || 'Failed to send test email',
-      details: error,
+      error: message,
+      details: error instanceof Error ? { message: error.message, stack: error.stack } : error,
     }, { status: 500 });
   }
 }

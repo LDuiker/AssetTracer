@@ -116,14 +116,14 @@ export function getDPOConfig(): DPOConfig {
 /**
  * Build XML string from object (simple implementation)
  */
-function buildXML(obj: Record<string, any>, rootTag?: string): string {
+function buildXML(obj: Record<string, unknown>, rootTag?: string): string {
   let xml = '';
   
   for (const [key, value] of Object.entries(obj)) {
     if (value === null || value === undefined) continue;
     
     if (typeof value === 'object' && !Array.isArray(value)) {
-      xml += `<${key}>${buildXML(value)}</${key}>`;
+      xml += `<${key}>${buildXML(value as Record<string, unknown>)}</${key}>`;
     } else {
       // Escape XML special characters
       const escapedValue = String(value)
@@ -142,8 +142,8 @@ function buildXML(obj: Record<string, any>, rootTag?: string): string {
 /**
  * Parse XML to object (simple implementation using regex)
  */
-function parseXML(xml: string): Record<string, any> {
-  const result: Record<string, any> = {};
+function parseXML(xml: string): Record<string, string> {
+  const result: Record<string, string> = {};
   
   // Remove XML declaration and whitespace
   xml = xml.replace(/<\?xml[^?]*\?>/g, '').trim();

@@ -18,12 +18,27 @@ const createAssetSchema = z
   status: z.enum(['active', 'maintenance', 'retired', 'sold']),
   location: z.string().optional().nullable(),
   serial_number: z.string().optional().nullable(),
-    asset_type: z.enum(['individual', 'group']).optional(),
-    quantity: z.coerce.number().int().min(1, 'Quantity must be at least 1').optional(),
-    parent_group_id: z.string().uuid('Parent group must be a valid UUID').optional().nullable(),
-  })
+  asset_type: z
+    .enum(['individual', 'group'])
+    .optional()
+    .default('individual'),
+  quantity: z
+    .coerce
+    .number()
+    .int()
+    .min(1, 'Quantity must be at least 1')
+    .optional()
+    .default(1),
+  parent_group_id: z
+    .string()
+    .uuid('Parent group must be a valid UUID')
+    .optional()
+    .nullable(),
+  image_url: z.string().url().nullable().optional(),
+})
   .refine(
-    (data) => (data.asset_type === 'group' ? data.quantity && data.quantity >= 1 : true),
+    (data) =>
+      data.asset_type === 'group' ? data.quantity !== undefined && data.quantity >= 1 : true,
     {
       path: ['quantity'],
       message: 'Group assets must have a quantity of at least 1',
@@ -34,7 +49,7 @@ const createAssetSchema = z
  * GET /api/assets
  * Fetch all assets for the authenticated user's organization
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Get authenticated user session
     const supabase = await createClient();
@@ -124,12 +139,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const assetData = validationResult.data as CreateAssetInput;
+    const validated = validationResult.data;
 
-    // Transform empty strings to null for date fields
-    if (assetData.purchase_date === '') {
-      assetData.purchase_date = null;
-    }
+    const assetData: CreateAssetInput = {
+      ...validated,
+      purchase_date: validated.purchase_date ? validated.purchase_date : null,
+      quantity:
+        validated.asset_type === 'group'
+          ? validated.quantity ?? 1
+          : 1,
+      parent_group_id:
+        validated.asset_type === 'group'
+          ? validated.parent_group_id ?? null
+          : null,
+      image_url: validated.image_url ?? null,
+    };
 
     // Get user's organization_id from user metadata or profile
     const { data: userProfile, error: profileError } = await supabase

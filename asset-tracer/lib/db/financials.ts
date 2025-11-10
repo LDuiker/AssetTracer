@@ -24,6 +24,15 @@ export interface FinancialSummaryDB {
   currency: string;
 }
 
+type MonthlyPLRow = {
+  month: string;
+  total_revenue: string | number;
+  total_expenses: string | number;
+  net_profit: string | number;
+  currency: string;
+  transaction_count: number;
+};
+
 /**
  * Type for asset ROI ranking from database function
  */
@@ -97,11 +106,13 @@ export async function getMonthlyPL(
     }
 
     // Transform database response to match MonthlyPL type
-    return (data || []).map((row: any) => ({
+    const rows = (data as MonthlyPLRow[] | null) ?? [];
+    return rows.map((row) => ({
       month: row.month,
-      total_revenue: parseFloat(row.total_revenue),
-      total_expenses: parseFloat(row.total_expenses),
-      net_profit: parseFloat(row.net_profit),
+      total_revenue: typeof row.total_revenue === 'number' ? row.total_revenue : parseFloat(row.total_revenue),
+      total_expenses:
+        typeof row.total_expenses === 'number' ? row.total_expenses : parseFloat(row.total_expenses),
+      net_profit: typeof row.net_profit === 'number' ? row.net_profit : parseFloat(row.net_profit),
       currency: row.currency,
       transactions_count: row.transaction_count,
     }));

@@ -2,19 +2,21 @@
 
 /**
  * Create Test Subscriptions Script
- * 
+ *
  * This script creates test customers and subscriptions in Polar.sh
  * for testing the AssetTracer billing integration.
- * 
+ *
  * Usage:
  *   node scripts/create-test-subscriptions.js
- * 
+ *
  * Or with specific plan:
  *   node scripts/create-test-subscriptions.js pro
  *   node scripts/create-test-subscriptions.js business
  */
 
-require('dotenv').config({ path: '.env.local' });
+import dotenv from 'dotenv';
+
+dotenv.config({ path: '.env.local' });
 
 const POLAR_API_KEY = process.env.POLAR_API_KEY;
 const POLAR_BASE_URL = process.env.POLAR_BASE_URL || 'https://api.polar.sh';
@@ -22,7 +24,7 @@ const POLAR_BASE_URL = process.env.POLAR_BASE_URL || 'https://api.polar.sh';
 // Product IDs from your configuration
 const PRODUCTS = {
   pro: '4bd7788b-d3dd-4f17-837a-3a5a56341b05',
-  business: 'bbb245ef-6915-4c75-b59f-f14d61abb414'
+  business: 'bbb245ef-6915-4c75-b59f-f14d61abb414',
 };
 
 // ANSI color codes for terminal output
@@ -48,18 +50,18 @@ function logSection(title) {
 
 async function makeRequest(endpoint, options = {}) {
   const url = `${POLAR_BASE_URL}${endpoint}`;
-  
+
   const response = await fetch(url, {
     ...options,
     headers: {
-      'Authorization': `Bearer ${POLAR_API_KEY}`,
+      Authorization: `Bearer ${POLAR_API_KEY}`,
       'Content-Type': 'application/json',
       ...options.headers,
     },
   });
 
   const responseText = await response.text();
-  
+
   if (!response.ok) {
     throw new Error(`API Error (${response.status}): ${responseText}`);
   }

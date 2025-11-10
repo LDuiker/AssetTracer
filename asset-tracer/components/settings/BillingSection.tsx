@@ -62,7 +62,7 @@ const TIER_DETAILS = {
 
 export function BillingSection() {
   const { organization, refetch } = useOrganization();
-  const { tier, limits } = useSubscription();
+  const { tier } = useSubscription();
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -114,17 +114,18 @@ export function BillingSection() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        
+        const errorData = (await response.json()) as { error?: string; details?: unknown };
+        const errorText = (errorData.error ?? '').toLowerCase();
+        const detailText = typeof errorData.details === 'string' ? errorData.details.toLowerCase() : '';
+
         // Special handling for "already have subscription" errors
-        if (response.status === 400 && 
-            (errorData.error?.toLowerCase().includes('already') || 
-             errorData.details?.toLowerCase().includes('already'))) {
-          
-          // User is trying to upgrade/change an existing subscription
+        if (
+          response.status === 400 &&
+          (errorText.includes('already') || detailText.includes('already'))
+        ) {
           const currentTierName = currentTier.charAt(0).toUpperCase() + currentTier.slice(1);
           const targetTierName = targetTier.charAt(0).toUpperCase() + targetTier.slice(1);
-          
+
           toast.error(
             `You're currently on the ${currentTierName} plan. To switch to ${targetTierName}, please cancel your current subscription first, then subscribe to the new plan after it expires.`,
             { duration: 8000 }
@@ -132,7 +133,7 @@ export function BillingSection() {
           setIsUpgrading(false);
           return;
         }
-        
+
         throw new Error(errorData.error || 'Failed to upgrade subscription');
       }
 
@@ -152,7 +153,8 @@ export function BillingSection() {
       }
     } catch (err) {
       console.error('Upgrade error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to upgrade subscription');
+      const message = err instanceof Error ? err.message : 'Failed to upgrade subscription';
+      setError(message);
     } finally {
       setIsUpgrading(false);
     }
@@ -188,7 +190,8 @@ export function BillingSection() {
       alert(`Successfully downgraded to ${tierName} plan.`);
     } catch (err) {
       console.error('Downgrade error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to downgrade subscription');
+      const message = err instanceof Error ? err.message : 'Failed to downgrade subscription';
+      setError(message);
     } finally {
       setIsUpgrading(false);
     }
@@ -211,11 +214,11 @@ export function BillingSection() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = (await response.json()) as { error?: string };
         throw new Error(errorData.error || 'Failed to cancel subscription');
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { message?: string };
 
       // Refetch organization to get updated status
       await refetch();
@@ -224,7 +227,8 @@ export function BillingSection() {
       alert(data.message || 'Your subscription has been cancelled. You will retain access until the end of your billing period.');
     } catch (err) {
       console.error('Cancel subscription error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to cancel subscription');
+      const message = err instanceof Error ? err.message : 'Failed to cancel subscription';
+      setError(message);
     } finally {
       setIsUpgrading(false);
     }
@@ -265,7 +269,7 @@ export function BillingSection() {
               <AlertDescription className="text-orange-800 dark:text-orange-200">
                 <strong>Subscription Cancelled</strong> — Access until {nextPaymentDate}
                 <p className="text-sm mt-1.5">
-                  To resume: Check your email for the Polar subscription link and click "Resume Subscription".
+                  To resume: Check your email for the Polar subscription link and click &quot;Resume Subscription&quot;.
                 </p>
               </AlertDescription>
             </Alert>
@@ -464,7 +468,7 @@ export function BillingSection() {
                     Payment Method
                   </h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Securely managed by Polar.sh. Check your email for the "Manage Subscription" link to update payment details.
+                    Securely managed by Polar.sh. Check your email for the &quot;Manage Subscription&quot; link to update payment details.
                   </p>
                 </div>
                 <Mail className="h-5 w-5 text-gray-400" />
@@ -497,8 +501,9 @@ export function BillingSection() {
                     } else {
                       toast.info('No active subscription found in payment system');
                     }
-                  } catch (err: any) {
-                    toast.error(err.message || 'Failed to sync subscription');
+                  } catch (err) {
+                    const message = err instanceof Error ? err.message : 'Failed to sync subscription';
+                    toast.error(message);
                   } finally {
                     setIsUpgrading(false);
                   }
@@ -674,7 +679,7 @@ export function BillingSection() {
               <Alert className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800">
                 <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
                 <AlertDescription className="text-xs text-yellow-800 dark:text-yellow-300">
-                  <strong>Plan Change Process:</strong> To switch from Pro to Business, you'll need to cancel your current Pro plan first. After cancellation, you'll retain Pro access until the end of your billing period, then you can subscribe to Business.
+                  <strong>Plan Change Process:</strong> To switch from Pro to Business, you&apos;ll need to cancel your current Pro plan first. After cancellation, you&apos;ll retain Pro access until the end of your billing period, then you can subscribe to Business.
                 </AlertDescription>
               </Alert>
             )}
@@ -704,7 +709,7 @@ export function BillingSection() {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Other Plans</CardTitle>
             <CardDescription>
-              Compare what's included in each plan
+              Compare what&apos;s included in each plan
             </CardDescription>
           </CardHeader>
           <CardContent>

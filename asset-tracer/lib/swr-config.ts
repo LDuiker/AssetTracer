@@ -25,11 +25,14 @@ export const fetcher = async (url: string) => {
 /**
  * Default SWR configuration
  * Applied globally to all SWR hooks in the application
+ * Optimized for performance and better UX
  */
 export const swrConfig: SWRConfiguration = {
   fetcher,
   revalidateOnFocus: false, // Don't revalidate when window regains focus
   revalidateOnReconnect: true, // Revalidate when internet connection is restored
   shouldRetryOnError: false, // Don't automatically retry on errors
+  dedupingInterval: 2000, // Dedupe requests within 2 seconds (prevents duplicate API calls)
+  focusThrottleInterval: 5000, // Throttle focus revalidation to 5 seconds
 };
 

@@ -4,6 +4,31 @@ import { resend, isResendConfigured, EMAIL_FROM } from '@/lib/resend';
 import { render } from '@react-email/render';
 import WeeklyReportEmail from '@/emails/WeeklyReportEmail';
 
+type OrganizationWithUsers = {
+  id: string;
+  name: string | null;
+  default_currency: string | null;
+  email_notifications_enabled: boolean;
+  users: Array<{
+    id: string;
+    email: string | null;
+    full_name: string | null;
+  }>;
+};
+
+type InvoiceSummary = {
+  total_amount: number | null;
+  status: string | null;
+};
+
+type ExpenseSummary = {
+  amount: number | null;
+};
+
+type AssetSummary = {
+  id: string;
+};
+
 export async function GET(request: NextRequest) {
   try {
     // Verify cron secret (for security)
@@ -26,7 +51,8 @@ export async function GET(request: NextRequest) {
       .from('organizations')
       .select('id, name, default_currency, email_notifications_enabled, users!inner(id, email, full_name)')
       .eq('subscription_tier', 'business')
-      .eq('email_notifications_enabled', true);
+      .eq('email_notifications_enabled', true)
+      .returns<OrganizationWithUsers[]>();
 
     if (orgsError) {
       console.error('Error fetching organizations:', orgsError);
@@ -59,7 +85,13 @@ export async function GET(request: NextRequest) {
           .select('total_amount, status')
           .eq('organization_id', org.id)
           .gte('created_at', startDate.toISOString())
-          .lte('created_at', endDate.toISOString());
+          .lte('created_at', endDate.toISOString())
+          .returns<InvoiceSummary[]>();
+
+        if (invoicesError) {
+          console.error('Error fetching weekly invoices:', invoicesError);
+          continue;
+        }
 
         // Get expenses for this week
         const { data: expenses, error: expensesError } = await supabase
@@ -67,7 +99,13 @@ export async function GET(request: NextRequest) {
           .select('amount')
           .eq('organization_id', org.id)
           .gte('date', startDate.toISOString())
-          .lte('date', endDate.toISOString());
+          .lte('date', endDate.toISOString())
+          .returns<ExpenseSummary[]>();
+
+        if (expensesError) {
+          console.error('Error fetching weekly expenses:', expensesError);
+          continue;
+        }
 
         // Get assets added this week
         const { data: assets, error: assetsError } = await supabase
@@ -75,7 +113,13 @@ export async function GET(request: NextRequest) {
           .select('id')
           .eq('organization_id', org.id)
           .gte('created_at', startDate.toISOString())
-          .lte('created_at', endDate.toISOString());
+          .lte('created_at', endDate.toISOString())
+          .returns<AssetSummary[]>();
+
+        if (assetsError) {
+          console.error('Error fetching weekly assets:', assetsError);
+          continue;
+        }
 
         // Calculate totals
         const totalRevenue = invoices
@@ -112,8 +156,9 @@ export async function GET(request: NextRequest) {
         }
 
         // Get the user's email for sending
-        const userEmail = (org.users as any)?.email;
-        const userName = (org.users as any)?.full_name || 'User';
+        const primaryUser = org.users?.[0];
+        const userEmail = primaryUser?.email ?? null;
+        const userName = primaryUser?.full_name || 'User';
         
         if (!userEmail) continue;
 
@@ -151,10 +196,11 @@ export async function GET(request: NextRequest) {
       organizations: orgs.length,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error sending weekly reports:', error);
+    const message = error instanceof Error ? error.message : 'Failed to send weekly reports';
     return NextResponse.json(
-      { error: error.message || 'Failed to send weekly reports' },
+      { error: message },
       { status: 500 }
     );
   }

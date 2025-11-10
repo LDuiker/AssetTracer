@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { InvoicePreview, QuotationPreview } from './TemplatePreview';
+import { InvoicePreview, QuotationPreview, OrganizationData } from './TemplatePreview';
 
 interface TemplateOption {
   id: string;
@@ -25,7 +25,7 @@ interface TemplateSelectorProps {
   quotationTemplate: 'classic' | 'compact';
   onInvoiceSelect: (template: 'classic' | 'compact') => void;
   onQuotationSelect: (template: 'classic' | 'compact') => void;
-  organization: any;
+  organization: OrganizationData;
 }
 
 const templateOptions: TemplateOption[] = [

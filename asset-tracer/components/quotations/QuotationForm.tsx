@@ -28,7 +28,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import type { Quotation, Client, CreateQuotationInput, Asset } from '@/types';
-import { useCurrency } from '@/lib/context/CurrencyContext';
 
 const quotationItemSchema = z.object({
   asset_id: z.string().optional(), // Optional link to an asset
@@ -66,7 +65,6 @@ const fetcher = async (url: string) => {
 
 export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { formatCurrency, getCurrencySymbol } = useCurrency();
 
   // Fetch clients for dropdown
   const { data: clientsData } = useSWR<{ clients: Client[] }>('/api/clients', fetcher);

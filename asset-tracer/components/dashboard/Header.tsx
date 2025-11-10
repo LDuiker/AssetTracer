@@ -82,12 +82,20 @@ export function Header({ title, onMobileMenuToggle }: HeaderProps) {
           avatar,
           initials,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : '';
+        const status =
+          typeof error === 'object' && error !== null && 'status' in error
+            ? (error as { status?: number }).status
+            : undefined;
+
         // Check if it's an auth error (deleted user with valid JWT)
-        if (error?.message?.includes('User from sub claim in JWT does not exist') ||
-            error?.message?.includes('JWT') ||
-            error?.status === 401 ||
-            error?.status === 403) {
+        if (
+          message.includes('User from sub claim in JWT does not exist') ||
+          message.includes('JWT') ||
+          status === 401 ||
+          status === 403
+        ) {
           console.warn('Invalid session detected in Header catch, clearing...');
           const supabase = createClient();
           // Use local scope to avoid API call with invalid JWT

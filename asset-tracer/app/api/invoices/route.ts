@@ -56,7 +56,7 @@ async function getOrganizationId(userId: string) {
  * GET /api/invoices
  * Fetch all invoices for the authenticated user's organization
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createSupabaseClient();
     const {
@@ -165,6 +165,10 @@ export async function POST(request: NextRequest) {
         .select('id', { count: 'exact', head: true })
         .eq('organization_id', organizationId)
         .gte('created_at', firstDayISO);
+
+      if (countError) {
+        console.warn('Count query for monthly invoices returned an error:', countError);
+      }
 
       if (fetchError) {
         console.error('Error fetching monthly invoices:', fetchError);

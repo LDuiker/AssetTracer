@@ -4,6 +4,30 @@ import { resend, isResendConfigured, EMAIL_FROM } from '@/lib/resend';
 import { render } from '@react-email/render';
 import InvoiceReminderEmail from '@/emails/InvoiceReminderEmail';
 
+type OrganizationWithUsers = {
+  id: string;
+  name: string | null;
+  default_currency: string | null;
+  email_notifications_enabled: boolean;
+  users: Array<{
+    id: string;
+    email: string | null;
+    full_name: string | null;
+  }>;
+};
+
+type InvoiceWithClient = {
+  invoice_number: string;
+  total_amount: number | null;
+  total: number | null;
+  due_date: string | null;
+  status: string | null;
+  clients: {
+    name: string | null;
+    email: string | null;
+  } | null;
+};
+
 export async function GET(request: NextRequest) {
   try {
     // Verify cron secret (for security)
@@ -26,7 +50,8 @@ export async function GET(request: NextRequest) {
       .from('organizations')
       .select('id, name, default_currency, email_notifications_enabled, users!inner(id, email, full_name)')
       .eq('subscription_tier', 'business')
-      .eq('email_notifications_enabled', true);
+      .eq('email_notifications_enabled', true)
+      .returns<OrganizationWithUsers[]>();
 
     if (orgsError) {
       console.error('Error fetching organizations:', orgsError);
@@ -46,10 +71,11 @@ export async function GET(request: NextRequest) {
       // Get invoices that are due or overdue
       const { data: invoices, error: invoicesError } = await supabase
         .from('invoices')
-        .select('*, clients(name, email)')
+        .select('invoice_number, total_amount, total, due_date, status, clients(name, email)')
         .eq('organization_id', org.id)
         .in('status', ['sent', 'pending'])
-        .not('due_date', 'is', null);
+        .not('due_date', 'is', null)
+        .returns<InvoiceWithClient[]>();
 
       if (invoicesError || !invoices || invoices.length === 0) {
         continue;
@@ -69,16 +95,20 @@ export async function GET(request: NextRequest) {
         const isOverdue = dueDate < today;
 
         // Get the user's email for sending
-        const userEmail = (org.users as any)?.email;
+        const userEmail = org.users?.[0]?.email ?? null;
         if (!userEmail) continue;
 
         try {
+          const amountValue = invoice.total_amount ?? invoice.total ?? 0;
+          const normalizedAmount =
+            typeof amountValue === 'number' ? amountValue : Number(amountValue ?? 0);
+
           const emailHtml = await render(
             InvoiceReminderEmail({
               organizationName: org.name,
               customerName: invoice.clients?.name || 'Customer',
               invoiceNumber: invoice.invoice_number,
-              amount: invoice.total_amount?.toFixed(2) || '0.00',
+              amount: normalizedAmount.toFixed(2),
               currency: org.default_currency || 'USD',
               dueDate: dueDate.toLocaleDateString('en-US', { 
                 year: 'numeric', 
@@ -113,10 +143,11 @@ export async function GET(request: NextRequest) {
       organizations: orgs.length,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error sending invoice reminders:', error);
+    const message = error instanceof Error ? error.message : 'Failed to send invoice reminders';
     return NextResponse.json(
-      { error: error.message || 'Failed to send invoice reminders' },
+      { error: message },
       { status: 500 }
     );
   }

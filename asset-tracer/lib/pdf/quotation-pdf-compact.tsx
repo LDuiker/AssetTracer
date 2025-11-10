@@ -298,7 +298,7 @@ export function QuotationPDFCompact({ quotation, organization }: QuotationPDFCom
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             {organization?.company_logo_url ? (
-              <Image src={organization.company_logo_url} style={styles.logo} />
+              <Image src={organization.company_logo_url} style={styles.logo} alt="Company Logo" />
             ) : (
               <Text style={styles.companyName}>{organization?.name || 'Your Company'}</Text>
             )}

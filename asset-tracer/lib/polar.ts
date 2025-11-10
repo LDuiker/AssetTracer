@@ -25,14 +25,14 @@ export interface PolarSubscription {
   current_period_start: string;
   current_period_end: string;
   cancel_at_period_end: boolean;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface PolarCustomer {
   id: string;
   email: string;
   name?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface PolarWebhookEvent {
@@ -40,9 +40,21 @@ export interface PolarWebhookEvent {
   data: {
     id: string;
     type: string;
-    attributes: Record<string, any>;
+    attributes: Record<string, unknown>;
   };
 }
+
+type PolarCheckoutResponse = {
+  url?: string;
+  checkout_url?: string;
+  id?: string;
+  checkout_id?: string;
+};
+
+type PolarCustomerPortalResponse = {
+  url?: string;
+  portal_url?: string;
+};
 
 class PolarClient {
   private apiKey: string;
@@ -98,7 +110,7 @@ class PolarClient {
   }
 
   // Customer Management
-  async createCustomer(email: string, name?: string, metadata?: Record<string, any>): Promise<PolarCustomer> {
+  async createCustomer(email: string, name?: string, metadata?: Record<string, unknown>): Promise<PolarCustomer> {
     return this.request<PolarCustomer>('/v1/customers', {
       method: 'POST',
       body: JSON.stringify({
@@ -133,7 +145,7 @@ class PolarClient {
   async createSubscription(
     customerId: string,
     productId: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<PolarSubscription> {
     return this.request<PolarSubscription>('/v1/subscriptions', {
       method: 'POST',
@@ -171,10 +183,10 @@ class PolarClient {
     productId: string,
     successUrl: string,
     cancelUrl: string,
-    metadata?: Record<string, any>
-  ): Promise<{ url: string; id?: string }> {
+    metadata?: Record<string, unknown>
+  ): Promise<{ url: string; session_id: string }> {
     // Try /v1/checkouts endpoint (standard checkout creation)
-    const response = await this.request<any>('/v1/checkouts', {
+    const response = await this.request<PolarCheckoutResponse>('/v1/checkouts', {
       method: 'POST',
       body: JSON.stringify({
         product_price_id: productId,
@@ -186,8 +198,8 @@ class PolarClient {
     
     // Return normalized response
     return {
-      url: response.url || response.checkout_url || '',
-      session_id: response.id || response.checkout_id || ''
+      url: response.url ?? response.checkout_url ?? '',
+      session_id: response.id ?? response.checkout_id ?? ''
     };
   }
 
@@ -200,7 +212,7 @@ class PolarClient {
       // Try Polar's customer portal endpoint
       // Note: Polar may not have a customer portal API like Stripe
       // This endpoint may need adjustment based on Polar's actual API
-      const response = await this.request<any>('/v1/customer-portal', {
+      const response = await this.request<PolarCustomerPortalResponse>('/v1/customer-portal', {
         method: 'POST',
         body: JSON.stringify({
           customer_id: customerId,
@@ -209,9 +221,9 @@ class PolarClient {
       });
       
       return {
-        url: response.url || response.portal_url || ''
+        url: response.url ?? response.portal_url ?? ''
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to create customer portal session:', error);
       // Fallback: construct a direct link to Polar dashboard
       // Users will need to log in to Polar directly
@@ -223,6 +235,8 @@ class PolarClient {
 
   // Webhook Verification
   verifyWebhookSignature(payload: string, signature: string): boolean {
+    void payload;
+    void signature;
     // Implementation depends on Polar.sh's webhook signature verification method
     // This is a placeholder - replace with actual verification logic
     return true;

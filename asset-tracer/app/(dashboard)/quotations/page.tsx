@@ -3,8 +3,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { Plus, Search, TrendingUp, FileText, CheckCircle, DollarSign, Filter, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Search, FileText, CheckCircle, DollarSign, Filter, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -19,17 +19,8 @@ import { SubscriptionBadge } from '@/components/subscription';
 import { useCurrency } from '@/lib/context/CurrencyContext';
 import { useSubscription } from '@/lib/context/SubscriptionContext';
 import { toast } from 'sonner';
-import type { Quotation, CreateQuotationInput } from '@/types';
+import type { Quotation, CreateQuotationInput, Invoice } from '@/types';
 import { motion } from 'framer-motion';
-
-const fetcher = async (url: string) => {
-  const res = await fetch(url, { credentials: 'include' });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to fetch');
-  }
-  return res.json();
-};
 
 type QuotationStatus = 'all' | 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'invoiced';
 
@@ -48,18 +39,18 @@ export default function QuotationsPage() {
 
   // Fetch quotations
   const { data, error, mutate, isLoading } = useSWR<{ quotations: Quotation[] }>(
-    '/api/quotations',
-    fetcher
+    '/api/quotations'
   );
 
   // Fetch invoices to check quota
-  const { data: invoicesData } = useSWR<{ invoices: any[] }>(
-    '/api/invoices',
-    fetcher
+  const { data: invoicesData } = useSWR<{ invoices: Invoice[] }>(
+    '/api/invoices'
   );
 
-  const quotations = data?.quotations || [];
-  const invoices = invoicesData?.invoices || [];
+  const quotationsData = data?.quotations;
+  const quotations = useMemo<Quotation[]>(() => quotationsData ?? [], [quotationsData]);
+  const invoicesDataList = invoicesData?.invoices;
+  const invoices = useMemo<Invoice[]>(() => invoicesDataList ?? [], [invoicesDataList]);
 
   // Calculate quotations created this month (using UTC to match backend)
   const quotationsThisMonth = useMemo(() => {
@@ -228,16 +219,19 @@ export default function QuotationsPage() {
    */
   const handleClone = (quotation: Quotation) => {
     // Create a clone without the id and with updated dates
-    const clonedQuotation = {
+    const clonedQuotation: Quotation = {
       ...quotation,
-      id: undefined, // Remove id so it creates a new one
-      quotation_number: undefined, // Will be auto-generated
+      id: '',
+      quotation_number: '',
       status: 'draft' as const,
       issue_date: new Date().toISOString().split('T')[0],
       valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      accepted_date: null,
+      converted_to_invoice_id: null,
+      updated_at: new Date().toISOString(),
     };
 
-    setSelectedQuotation(clonedQuotation as any);
+    setSelectedQuotation(clonedQuotation);
     setViewMode('edit');
 
     toast.info(`Cloning quotation ${quotation.quotation_number}`);
@@ -332,7 +326,7 @@ export default function QuotationsPage() {
         throw new Error(error.error || 'Failed to convert to invoice');
       }
 
-      const { invoice, invoiceId } = await response.json();
+      const { invoice } = await response.json();
 
       toast.dismiss(loadingToast);
       toast.success(`Invoice ${invoice.invoice_number} created successfully!`, {

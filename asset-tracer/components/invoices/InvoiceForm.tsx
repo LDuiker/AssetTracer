@@ -5,7 +5,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import useSWR from 'swr';
-import { Loader2, Plus, Trash2, DollarSign } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,9 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Card, CardContent } from '@/components/ui/card';
-import type { Invoice, Client, InvoiceStatus, CreateInvoiceInput } from '@/types';
-import { useCurrency } from '@/lib/context/CurrencyContext';
+import type { Invoice, Client, CreateInvoiceInput, Asset } from '@/types';
 
 /**
  * Zod schema for line item validation
@@ -75,7 +73,6 @@ const fetcher = async (url: string) => {
  */
 export function InvoiceForm({ invoice, onSubmit, onCancel }: InvoiceFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { formatCurrency, getCurrencySymbol } = useCurrency();
   const isEditMode = !!invoice;
 
   // Fetch clients for dropdown
@@ -83,7 +80,7 @@ export function InvoiceForm({ invoice, onSubmit, onCancel }: InvoiceFormProps) {
   const clients = clientsData?.clients || [];
 
   // Fetch assets for dropdown
-  const { data: assetsData } = useSWR<{ assets: any[] }>('/api/assets', fetcher);
+  const { data: assetsData } = useSWR<{ assets: Asset[] }>('/api/assets', fetcher);
   const assets = assetsData?.assets || [];
 
   // Fetch organization settings for default currency

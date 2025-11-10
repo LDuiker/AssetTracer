@@ -89,7 +89,7 @@ export default function BlogPage() {
             <CardHeader>
               <CardTitle className="text-2xl mb-2">Coming Soon</CardTitle>
               <CardDescription className="text-base">
-                We're working on bringing you valuable content about asset management, invoicing, and growing your business. 
+                We&rsquo;re working on bringing you valuable content about asset management, invoicing, and growing your business. 
                 Check back soon for helpful guides, tips, and insights!
               </CardDescription>
             </CardHeader>

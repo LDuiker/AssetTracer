@@ -45,16 +45,6 @@ export async function GET(request: NextRequest) {
     if (!error && session) {
       // Check if this is a new user (first time signup)
       // We determine this by checking if the user has consent data stored
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id, terms_accepted_at')
-        .eq('id', session.user.id)
-        .single();
-
-      // If user exists but doesn't have terms_accepted_at, it's a new signup
-      // Try to retrieve consent data from client-side storage (we'll need to handle this client-side)
-      // For now, we'll let the client-side handle saving consent after redirect
-
       // Check for plan parameter (from landing page pricing)
       const plan = requestUrl.searchParams.get('plan');
       

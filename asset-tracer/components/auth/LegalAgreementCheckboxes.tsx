@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertCircle } from 'lucide-react';
@@ -40,7 +39,7 @@ export function LegalAgreementCheckboxes({
             htmlFor="terms-accepted"
             className="text-sm leading-relaxed cursor-pointer text-gray-700 dark:text-gray-300"
           >
-            I agree to Asset Tracer's{' '}
+            I agree to Asset Tracer&apos;s{' '}
             <Link
               href="/terms"
               target="_blank"

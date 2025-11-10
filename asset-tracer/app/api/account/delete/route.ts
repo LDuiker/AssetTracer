@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 
 /**
  * Delete user account and all associated data
  * This is a destructive operation and cannot be undone
  */
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
   try {
     const supabase = await createClient();
 
@@ -111,10 +111,11 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: 'Account successfully deleted',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Account deletion error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: message },
       { status: 500 }
     );
   }

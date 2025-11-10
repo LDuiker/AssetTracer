@@ -26,7 +26,6 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
-import { useOrganization } from '@/lib/context/OrganizationContext';
 import { useCurrency } from '@/lib/context/CurrencyContext';
 import type { Expense, CreateExpenseInput, Asset } from '@/types';
 

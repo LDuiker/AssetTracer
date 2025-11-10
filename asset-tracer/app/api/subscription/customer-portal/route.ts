@@ -53,8 +53,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Get return URL from request body
-    const body = await request.json();
-    const returnUrl = body.return_url || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/settings?tab=billing`;
+    const body = (await request.json()) as { return_url?: unknown };
+    const requestedReturnUrl = typeof body.return_url === 'string' ? body.return_url : undefined;
+    const defaultReturnUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/settings?tab=billing`;
+    const returnUrl = requestedReturnUrl ?? defaultReturnUrl;
 
     // Try to create customer portal session
     try {
@@ -66,7 +68,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         url: portalSession.url,
       });
-    } catch (portalError: any) {
+    } catch (portalError: unknown) {
       console.error('Error creating portal session:', portalError);
       
       // Fallback: Return Polar dashboard URL
@@ -77,10 +79,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating customer portal session:', error);
+    const message = error instanceof Error ? error.message : 'Failed to create customer portal session';
     return NextResponse.json(
-      { error: error.message || 'Failed to create customer portal session' },
+      { error: message },
       { status: 500 }
     );
   }

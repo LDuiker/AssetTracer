@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import type { Quotation, QuotationItem, CreateQuotationInput, UpdateQuotationInput } from '@/types';
+import type { Quotation, CreateQuotationInput, UpdateQuotationInput } from '@/types';
 
 /**
  * Generate a unique quotation number per organization
@@ -301,7 +301,7 @@ export async function createQuotation(
 
   // Create quotation items
   if (data.items && data.items.length > 0) {
-    const itemsToInsert = data.items.map((item: any) => {
+    const itemsToInsert = data.items.map((item) => {
       const amount = item.quantity * item.unit_price;
       const tax_amount = (amount * item.tax_rate) / 100;
       return {
@@ -349,7 +349,7 @@ export async function updateQuotation(
   }
 
   // If items are provided, recalculate totals
-  let updateData: any = { ...data };
+  const updateData: Partial<UpdateQuotationInput> = { ...data };
   
   if (data.items) {
     const totals = calculateQuotationTotals(data.items);
@@ -364,7 +364,7 @@ export async function updateQuotation(
       .eq('quotation_id', id);
 
     // Insert new items
-    const itemsToInsert = data.items.map((item: any) => {
+    const itemsToInsert = data.items.map((item) => {
       const amount = item.quantity * item.unit_price;
       const tax_amount = (amount * item.tax_rate) / 100;
       return {
@@ -450,11 +450,8 @@ export async function deleteQuotation(id: string, organizationId: string): Promi
  */
 export async function convertQuotationToInvoice(
   quotationId: string,
-  organizationId: string,
-  userId: string
+  organizationId: string
 ): Promise<string> {
-  const supabase = await createClient();
-
   // Get quotation with items
   const quotation = await getQuotationById(quotationId, organizationId);
   if (!quotation) {

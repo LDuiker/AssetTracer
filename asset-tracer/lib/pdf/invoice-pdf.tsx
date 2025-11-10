@@ -192,17 +192,6 @@ export function InvoicePDF({ invoice, organization }: InvoicePDFProps) {
     });
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      draft: '#6b7280',
-      sent: '#3b82f6',
-      paid: '#10b981',
-      overdue: '#ef4444',
-      cancelled: '#f59e0b',
-    };
-    return colors[status] || '#6b7280';
-  };
-
   // Format address
   const formatAddress = () => {
     const parts = [];
@@ -228,7 +217,7 @@ export function InvoicePDF({ invoice, organization }: InvoicePDFProps) {
         <View style={styles.companyHeader}>
           <View style={styles.companyInfo}>
             {organization?.company_logo_url ? (
-              <Image src={organization.company_logo_url} style={styles.logo} />
+              <Image src={organization.company_logo_url} style={styles.logo} alt="Company Logo" />
             ) : (
               <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1f2937' }}>
                 {organization?.name || 'Your Company'}

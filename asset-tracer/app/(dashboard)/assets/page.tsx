@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { Plus, Search, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Upload, Search, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AssetTable, AssetDialog, AssetListPanel, AssetViewPanel, AssetEditPanel } from '@/components/assets';
+import { AssetTable, AssetDialog, AssetListPanel, AssetViewPanel, AssetEditPanel, AssetImportDialog } from '@/components/assets';
 import { SubscriptionBadge, UsageBadge } from '@/components/subscription';
 import { useSubscription } from '@/lib/context/SubscriptionContext';
 import { toast } from 'sonner';
@@ -29,7 +29,8 @@ export default function AssetsPage() {
     '/api/assets'
   );
 
-  const assets = data?.assets || [];
+  const assetsData = data?.assets;
+  const assets = useMemo<Asset[]>(() => assetsData ?? [], [assetsData]);
 
   // State management
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,6 +40,7 @@ export default function AssetsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCloning, setIsCloning] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   
   // Pagination constants
   const ITEMS_PER_PAGE = 100;
@@ -126,6 +128,22 @@ export default function AssetsPage() {
     }
 
     router.push('/assets/new');
+  };
+
+  const handleImport = () => {
+    if (!canCreateAsset(assets.length)) {
+      toast.error(getUpgradeMessage('assets'), {
+        description: `Free plan allows up to ${limits.maxAssets} assets. You currently have ${assets.length}.`,
+        duration: 5000,
+        action: {
+          label: 'Upgrade',
+          onClick: redirectToUpgrade,
+        },
+      });
+      return;
+    }
+
+    setIsImportDialogOpen(true);
   };
 
   /**
@@ -373,6 +391,7 @@ export default function AssetsPage() {
             selectedAsset={selectedAsset}
             onSelect={handleView}
             onCreate={handleCreate}
+            onImport={handleImport}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             statusFilter={statusFilter}
@@ -432,20 +451,32 @@ export default function AssetsPage() {
             <UsageBadge current={assets.length} max={limits.maxAssets} label="Assets used" />
           </div>
         </div>
-        <Button
-          onClick={handleCreate}
-          className="bg-primary-blue hover:bg-blue-700 w-full md:w-auto"
-          size="lg"
-          disabled={isLoading || !canCreateAsset(assets.length)}
-        >
-          <Plus className="mr-2 h-5 w-5" />
-          Create Asset
-          {!canCreateAsset(assets.length) && (
-            <span className="ml-2 text-xs opacity-75">
-              (Limit reached: {assets.length}/{limits.maxAssets})
-            </span>
-          )}
-        </Button>
+        <div className="flex flex-col gap-2 w-full md:w-auto md:flex-row">
+          <Button
+            onClick={handleImport}
+            variant="outline"
+            className="w-full md:w-auto"
+            size="lg"
+            disabled={isLoading || !canCreateAsset(assets.length)}
+          >
+            <Upload className="mr-2 h-5 w-5" />
+            Import Assets
+          </Button>
+          <Button
+            onClick={handleCreate}
+            className="bg-primary-blue hover:bg-blue-700 w-full md:w-auto"
+            size="lg"
+            disabled={isLoading || !canCreateAsset(assets.length)}
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            Create Asset
+            {!canCreateAsset(assets.length) && (
+              <span className="ml-2 text-xs opacity-75">
+                (Limit reached: {assets.length}/{limits.maxAssets})
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filter Section */}
@@ -690,6 +721,15 @@ export default function AssetsPage() {
         asset={selectedAsset}
         onSave={handleSaveFromDialog}
         isCloning={isCloning}
+      />
+      <AssetImportDialog
+        open={isImportDialogOpen}
+        onOpenChange={setIsImportDialogOpen}
+        onImported={(count) => {
+          if (count > 0) {
+            mutate();
+          }
+        }}
       />
     </div>
   );

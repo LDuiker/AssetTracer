@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { polar } from '@/lib/polar';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const supabase = await createClient();
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     if (orgData.polar_subscription_id) {
       try {
         await polar.cancelSubscription(orgData.polar_subscription_id);
-      } catch (polarError: any) {
+      } catch (polarError: unknown) {
         console.error('Polar cancellation error:', polarError);
         // Continue even if Polar API fails - we'll update our database
       }
@@ -99,10 +99,11 @@ export async function POST(request: NextRequest) {
       access_until: orgData.polar_current_period_end
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error cancelling subscription:', error);
+    const message = error instanceof Error ? error.message : 'Failed to cancel subscription';
     return NextResponse.json(
-      { error: error.message || 'Failed to cancel subscription' },
+      { error: message },
       { status: 500 }
     );
   }

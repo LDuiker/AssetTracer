@@ -1,6 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+type QuotationItemRecord = {
+  id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number | null;
+  amount: number;
+  tax_amount: number | null;
+  total: number;
+  asset_id: string | null;
+};
+
+type QuotationWithItems = {
+  id: string;
+  quotation_number: string;
+  client_id: string;
+  organization_id: string;
+  status: string;
+  currency: string | null;
+  subtotal: number | null;
+  tax_total: number | null;
+  total: number | null;
+  notes: string | null;
+  terms: string | null;
+  converted_to_invoice_id: string | null;
+  items: QuotationItemRecord[] | null;
+};
+
+type OrganizationSubscription = {
+  subscription_tier: string | null;
+};
+
+type InsertedInvoice = {
+  id: string;
+  invoice_number: string;
+  total: number | null;
+};
+
+type InvoiceItemInsert = {
+  invoice_id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number | null;
+  amount: number;
+  tax_amount: number | null;
+  total: number;
+  asset_id?: string | null;
+};
+
 /**
  * POST /api/quotations/[id]/convert-to-invoice
  * Convert an accepted quotation to an invoice
@@ -33,14 +83,37 @@ export async function POST(
     // Fetch the quotation with items
     const { data: quotation, error: quotationError } = await supabase
       .from('quotations')
-      .select(`
-        *,
-        client:clients(id, name, email, company),
-        items:quotation_items(*)
-      `)
+      .select(
+        `
+        id,
+        quotation_number,
+        client_id,
+        organization_id,
+        status,
+        currency,
+        subtotal,
+        tax_total,
+        total,
+        notes,
+        terms,
+        converted_to_invoice_id,
+        items:quotation_items(
+          id,
+          description,
+          quantity,
+          unit_price,
+          tax_rate,
+          amount,
+          tax_amount,
+          total,
+          asset_id
+        )
+      `
+      )
       .eq('id', quotationId)
       .eq('organization_id', userData.organization_id)
-      .single();
+      .single()
+      .returns<QuotationWithItems>();
 
     if (quotationError) {
       console.error('Error fetching quotation:', quotationError);
@@ -64,12 +137,13 @@ export async function POST(
     }
 
     // Check subscription limits - free plan: 5 invoices per month
-    const { data: organization } = await supabase
+    const { data: organizationData } = await supabase
       .from('organizations')
       .select('subscription_tier')
       .eq('id', userData.organization_id)
       .single();
 
+    const organization = organizationData as OrganizationSubscription | null;
     const subscriptionTier = organization?.subscription_tier || 'free';
     
     // Count invoices created this month for free tier
@@ -77,7 +151,7 @@ export async function POST(
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       
-      const { data: monthlyInvoices, error: countError } = await supabase
+      const { count: invoiceCount, error: countError } = await supabase
         .from('invoices')
         .select('id', { count: 'exact', head: true })
         .eq('organization_id', userData.organization_id)
@@ -87,7 +161,7 @@ export async function POST(
         console.error('Error counting monthly invoices:', countError);
       }
 
-      const currentMonthCount = monthlyInvoices?.length || 0;
+      const currentMonthCount = invoiceCount ?? 0;
       const maxAllowed = 5;
 
       if (currentMonthCount >= maxAllowed) {
@@ -128,7 +202,7 @@ export async function POST(
     dueDate.setDate(dueDate.getDate() + 30);
 
     // Create invoice
-    const { data: invoice, error: invoiceError } = await supabase
+    const { data: invoiceData, error: invoiceError } = await supabase
       .from('invoices')
       .insert({
         organization_id: userData.organization_id,
@@ -150,6 +224,8 @@ export async function POST(
       .select()
       .single();
 
+    const invoice = invoiceData as InsertedInvoice & Record<string, unknown>;
+
     if (invoiceError) {
       console.error('Error creating invoice:', invoiceError);
       return NextResponse.json({ error: 'Failed to create invoice' }, { status: 500 });
@@ -158,7 +234,7 @@ export async function POST(
     // Create invoice items from quotation items
     if (quotation.items && quotation.items.length > 0) {
       // Build invoice items - conditionally include asset_id if column exists
-      const baseInvoiceItems = quotation.items.map((item: any) => ({
+      const baseInvoiceItems: InvoiceItemInsert[] = quotation.items.map((item) => ({
         invoice_id: invoice.id,
         description: item.description,
         quantity: item.quantity,
@@ -171,11 +247,11 @@ export async function POST(
 
       // Try to insert with asset_id first, fallback to without if column doesn't exist
       let invoiceItems = baseInvoiceItems;
-      if (quotation.items.some((item: any) => item.asset_id)) {
+      if (quotation.items.some((item) => item.asset_id)) {
         // Only include asset_id if at least one quotation item has it
-        invoiceItems = quotation.items.map((item: any) => ({
-          ...baseInvoiceItems.find((bi: any) => bi.description === item.description),
-          asset_id: item.asset_id || null,
+        invoiceItems = quotation.items.map((item, index) => ({
+          ...baseInvoiceItems[index],
+          asset_id: item.asset_id ?? null,
         }));
       }
 

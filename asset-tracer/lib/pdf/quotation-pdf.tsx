@@ -193,17 +193,6 @@ export function QuotationPDF({ quotation, organization }: QuotationPDFProps) {
     });
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      draft: '#6b7280',
-      sent: '#3b82f6',
-      accepted: '#10b981',
-      rejected: '#ef4444',
-      expired: '#f59e0b',
-    };
-    return colors[status] || '#6b7280';
-  };
-
   // Format address
   const formatAddress = () => {
     const parts = [];
@@ -229,7 +218,7 @@ export function QuotationPDF({ quotation, organization }: QuotationPDFProps) {
         <View style={styles.companyHeader}>
           <View style={styles.companyInfo}>
             {organization?.company_logo_url ? (
-              <Image src={organization.company_logo_url} style={styles.logo} />
+              <Image src={organization.company_logo_url} style={styles.logo} alt="Company Logo" />
             ) : (
               <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1f2937' }}>
                 {organization?.name || 'Your Company'}

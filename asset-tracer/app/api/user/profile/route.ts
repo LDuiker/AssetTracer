@@ -10,6 +10,8 @@ const updateProfileSchema = z.object({
   phone: z.string().optional().nullable(),
 });
 
+type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
 /**
  * GET /api/user/profile
  * Fetch current user's profile information
@@ -88,7 +90,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Parse and validate request body
-    const body = await request.json();
+    const body = (await request.json()) as unknown;
     const validationResult = updateProfileSchema.safeParse(body);
 
     if (!validationResult.success) {
@@ -106,7 +108,7 @@ export async function PATCH(request: NextRequest) {
     const updateData = validationResult.data;
 
     // Build update object, only including fields that have values
-    const updatePayload: any = {
+    const updatePayload: Partial<UpdateProfileInput> & { updated_at: string } = {
       updated_at: new Date().toISOString(),
     };
 

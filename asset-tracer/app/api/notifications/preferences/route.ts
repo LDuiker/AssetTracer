@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient();
 
@@ -48,10 +48,11 @@ export async function GET(request: NextRequest) {
       subscription_tier: orgData.subscription_tier || 'free',
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching notification preferences:', error);
+    const message = error instanceof Error ? error.message : 'Failed to fetch notification preferences';
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch notification preferences' },
+      { error: message },
       { status: 500 }
     );
   }
@@ -108,7 +109,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Get request body
-    const body = await request.json();
+    const body = (await request.json()) as { email_notifications_enabled?: unknown };
     const { email_notifications_enabled } = body;
 
     if (typeof email_notifications_enabled !== 'boolean') {
@@ -139,10 +140,11 @@ export async function PATCH(request: NextRequest) {
       email_notifications_enabled,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating notification preferences:', error);
+    const message = error instanceof Error ? error.message : 'Failed to update notification preferences';
     return NextResponse.json(
-      { error: error.message || 'Failed to update notification preferences' },
+      { error: message },
       { status: 500 }
     );
   }

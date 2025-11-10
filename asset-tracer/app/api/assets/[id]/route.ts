@@ -7,20 +7,34 @@ import type { UpdateAssetInput } from '@/types';
 /**
  * Zod schema for validating asset update input
  */
+<<<<<<< HEAD
 const updateAssetSchema = z
   .object({
     name: z.string().min(2, 'Name must be at least 2 characters').optional(),
     description: z.string().optional().nullable(),
     category: z.string().optional().nullable(),
     purchase_date: z.string().optional().nullable(),
-    purchase_cost: z.coerce.number().min(0, 'Purchase cost must be at least 0').optional(),
-    current_value: z.coerce.number().min(0, 'Current value must be at least 0').optional(),
+    purchase_cost: z
+      .coerce
+      .number()
+      .min(0, 'Purchase cost must be at least 0')
+      .optional(),
+    current_value: z
+      .coerce
+      .number()
+      .min(0, 'Current value must be at least 0')
+      .optional(),
     status: z.enum(['active', 'maintenance', 'retired', 'sold']).optional(),
     location: z.string().optional().nullable(),
     serial_number: z.string().optional().nullable(),
     asset_type: z.enum(['individual', 'group']).optional(),
     quantity: z.coerce.number().int().min(1, 'Quantity must be at least 1').optional(),
-    parent_group_id: z.string().uuid('Parent group must be a valid UUID').optional().nullable(),
+    parent_group_id: z
+      .string()
+      .uuid('Parent group must be a valid UUID')
+      .optional()
+      .nullable(),
+    image_url: z.string().url().nullable().optional(),
   })
   .refine(
     (data) =>
@@ -32,6 +46,23 @@ const updateAssetSchema = z
       message: 'Group assets must have a quantity of at least 1',
     }
   );
+=======
+const updateAssetSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').optional(),
+  description: z.string().optional().nullable(),
+  category: z.string().optional().nullable(),
+  purchase_date: z.string().optional().nullable(),
+  purchase_cost: z.coerce.number().min(0, 'Purchase cost must be at least 0').optional(),
+  current_value: z.coerce.number().min(0, 'Current value must be at least 0').optional(),
+  status: z.enum(['active', 'maintenance', 'retired', 'sold']).optional(),
+  location: z.string().optional().nullable(),
+  serial_number: z.string().optional().nullable(),
+  asset_type: z.enum(['individual', 'group']).optional(),
+  quantity: z.coerce.number().int().min(1).optional(),
+  parent_group_id: z.string().uuid().nullable().optional(),
+  image_url: z.string().url().nullable().optional(),
+});
+>>>>>>> staging
 
 /**
  * Helper function to get organization ID from user session
@@ -152,11 +183,47 @@ export async function PATCH(
       );
     }
 
-    const updateData = validationResult.data as UpdateAssetInput;
+    const validated = validationResult.data;
 
-    // Transform empty strings to null for date fields
-    if (updateData.purchase_date === '') {
-      updateData.purchase_date = null;
+    const updateData: UpdateAssetInput = {};
+
+    if (validated.name !== undefined) updateData.name = validated.name;
+    if (validated.description !== undefined) updateData.description = validated.description;
+    if (validated.category !== undefined) updateData.category = validated.category;
+    if (validated.purchase_date !== undefined) {
+      updateData.purchase_date = validated.purchase_date === '' ? null : validated.purchase_date;
+    }
+    if (validated.purchase_cost !== undefined) updateData.purchase_cost = validated.purchase_cost;
+    if (validated.current_value !== undefined) updateData.current_value = validated.current_value;
+    if (validated.status !== undefined) updateData.status = validated.status;
+    if (validated.location !== undefined) updateData.location = validated.location;
+    if (validated.serial_number !== undefined) updateData.serial_number = validated.serial_number;
+    if (validated.asset_type !== undefined) updateData.asset_type = validated.asset_type;
+
+    if (validated.quantity !== undefined || validated.asset_type !== undefined) {
+      const assetType = validated.asset_type;
+      if (assetType === 'group') {
+        updateData.quantity = validated.quantity ?? 1;
+      } else if (assetType === 'individual') {
+        updateData.quantity = 1;
+      } else if (validated.quantity !== undefined) {
+        updateData.quantity = validated.quantity;
+      }
+    }
+
+    if (validated.parent_group_id !== undefined || validated.asset_type !== undefined) {
+      const assetType = validated.asset_type;
+      if (assetType === 'group') {
+        updateData.parent_group_id = validated.parent_group_id ?? null;
+      } else if (assetType === 'individual') {
+        updateData.parent_group_id = null;
+      } else if (validated.parent_group_id !== undefined) {
+        updateData.parent_group_id = validated.parent_group_id;
+      }
+    }
+
+    if (validated.image_url !== undefined) {
+      updateData.image_url = validated.image_url ?? null;
     }
 
     // Get organization ID

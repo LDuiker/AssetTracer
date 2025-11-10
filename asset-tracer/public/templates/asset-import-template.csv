@@ -1,0 +1,4 @@
+name,description,category,status,purchase_date,purchase_cost,current_value,location,serial_number,asset_type,quantity
+"Dell XPS 15","15"" laptop with 32GB RAM","Electronics","active","2024-01-15",25000,24000,"Head Office","DXPS-001","individual",1
+"Cutlery Set","Stainless steel catering set","Equipment","active","2023-09-01",12000,12000,"Event Storage","CUTLERY-SET-01","group",24
+

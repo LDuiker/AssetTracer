@@ -153,14 +153,22 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
         console.error('⚠️ User profile missing organization_id - this should not happen!');
         setError('User is not associated with an organization.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching organization:', err);
-      
+
+      const message = err instanceof Error ? err.message : '';
+      const status =
+        typeof err === 'object' && err !== null && 'status' in err
+          ? (err as { status?: number }).status
+          : undefined;
+
       // Check if it's an auth error (user deleted but JWT exists)
-      if (err?.message?.includes('User from sub claim in JWT does not exist') ||
-          err?.message?.includes('JWT') ||
-          err?.status === 401 ||
-          err?.status === 403) {
+      if (
+        message.includes('User from sub claim in JWT does not exist') ||
+        message.includes('JWT') ||
+        status === 401 ||
+        status === 403
+      ) {
         console.warn('Auth error in fetch, clearing local session...');
         const supabase = createClient();
         // Use local scope to avoid API call with invalid JWT
@@ -174,7 +182,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
       }
       
       setError(
-        err instanceof Error ? err.message : 'Failed to fetch organization'
+        message || 'Failed to fetch organization'
       );
     } finally {
       setIsLoading(false);

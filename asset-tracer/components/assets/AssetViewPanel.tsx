@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import useSWR from 'swr';
-import { ArrowLeft, Edit, Copy, Trash2, Package, MapPin, Hash, Calendar, DollarSign, TrendingUp, Activity } from 'lucide-react';
+import { ArrowLeft, Edit, Copy, Trash2, MapPin, Hash, Calendar, TrendingUp, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -15,7 +15,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatCurrencyAmount } from '@/lib/utils/currency';
 import { useCurrency } from '@/lib/context/CurrencyContext';
 import { useSubscription } from '@/lib/context/SubscriptionContext';
 import type { Asset } from '@/types';

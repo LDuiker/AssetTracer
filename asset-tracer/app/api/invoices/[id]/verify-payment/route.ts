@@ -30,7 +30,7 @@ export async function POST(
     const supabase = await createClient();
 
     // Get user session (optional - payment verification can work without auth)
-    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.auth.getUser();
 
     // Verify payment with DPO
     const verification = await verifyPaymentToken({ token });
