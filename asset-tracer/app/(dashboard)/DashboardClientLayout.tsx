@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { SWRConfig } from 'swr';
 import { Sidebar, DashboardWrapper } from '@/components/dashboard';
 import { X } from 'lucide-react';
@@ -11,6 +10,7 @@ import { OrganizationProvider } from '@/lib/context/OrganizationContext';
 import { CurrencyProvider } from '@/lib/context/CurrencyContext';
 import { SubscriptionProvider } from '@/lib/context/SubscriptionContext';
 import { swrConfig } from '@/lib/swr-config';
+import { LogoLight } from '@/components/common/Logo';
 
 export default function DashboardClientLayout({
   children,
@@ -65,16 +65,12 @@ export default function DashboardClientLayout({
             <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 md:hidden transform transition-transform duration-300 ease-in-out">
               {/* Mobile Sidebar Header */}
               <div className="h-16 bg-primary-blue flex items-center justify-between px-6">
-                <Link href="/dashboard" className="flex items-center">
-                  <Image
-                    src="/asset-tracer-logo.svg"
-                    alt="Asset Tracer"
-                    width={160}
-                    height={40}
-                    className="h-10 w-auto"
-                    priority
-                  />
-                </Link>
+                <LogoLight
+                  variant="text"
+                  size="md"
+                  href="/dashboard"
+                  className="font-bold"
+                />
                 <Button
                   variant="ghost"
                   size="icon"

@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
@@ -21,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { useSubscription } from '@/lib/context/SubscriptionContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { LogoLight } from '@/components/common/Logo';
 
 interface NavItem {
   label: string;
@@ -111,16 +111,12 @@ export function Sidebar() {
     <aside className="hidden md:flex md:flex-col w-64 h-screen bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 fixed left-0 top-0">
       {/* Logo/Brand Section */}
       <div className="h-16 bg-primary-blue flex items-center justify-center px-6">
-        <Link href="/dashboard" className="flex items-center justify-center">
-          <Image
-            src="/asset-tracer-logo.svg"
-            alt="Asset Tracer"
-            width={160}
-            height={40}
-            className="h-10 w-auto"
-            priority
-          />
-        </Link>
+        <LogoLight
+          variant="text"
+          size="md"
+          href="/dashboard"
+          className="font-bold"
+        />
       </div>
 
       {/* Navigation Items */}
