@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Loader2 } from 'lucide-react';
+import Image from 'next/image';
+import { Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { SignupLegalNote } from '@/components/auth/SignupLegalNote';
 import { MarketingConsentCheckbox } from '@/components/auth/MarketingConsentCheckbox';
@@ -74,9 +75,14 @@ function LoginForm() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
-            <div className="h-16 w-16 bg-primary-blue rounded-lg flex items-center justify-center">
-              <Package className="h-8 w-8 text-white" />
-            </div>
+            <Image
+              src="/asset-tracer-logo.svg"
+              alt="Asset Tracer"
+              width={160}
+              height={40}
+              className="h-10 w-auto"
+              priority
+            />
           </div>
           <CardTitle className="text-2xl font-bold">Welcome to Asset Tracer</CardTitle>
           <CardDescription>
@@ -156,9 +162,14 @@ export default function LoginPage() {
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-4 text-center">
             <div className="flex justify-center">
-              <div className="h-16 w-16 bg-primary-blue rounded-lg flex items-center justify-center">
-                <Package className="h-8 w-8 text-white" />
-              </div>
+              <Image
+                src="/asset-tracer-logo.svg"
+                alt="Asset Tracer"
+                width={160}
+                height={40}
+                className="h-10 w-auto"
+                priority
+              />
             </div>
             <CardTitle className="text-2xl font-bold">Welcome to Asset Tracer</CardTitle>
             <CardDescription>Loading...</CardDescription>

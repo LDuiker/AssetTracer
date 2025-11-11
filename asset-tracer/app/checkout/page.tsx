@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
+import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 function CheckoutForm() {
@@ -129,9 +130,14 @@ function CheckoutForm() {
 
           {/* Icon and Title - Centered */}
           <div className="flex justify-center">
-            <div className="h-16 w-16 bg-primary-blue rounded-lg flex items-center justify-center">
-              <Package className="h-8 w-8 text-white" />
-            </div>
+            <Image
+              src="/asset-tracer-logo.svg"
+              alt="Asset Tracer"
+              width={160}
+              height={40}
+              className="h-10 w-auto"
+              priority
+            />
           </div>
           <div className="text-center">
             <CardTitle className="text-2xl font-bold">
@@ -237,9 +243,14 @@ export default function CheckoutPage() {
         <Card className="w-full max-w-2xl">
           <CardHeader className="space-y-4 text-center">
             <div className="flex justify-center">
-              <div className="h-16 w-16 bg-primary-blue rounded-lg flex items-center justify-center">
-                <Package className="h-8 w-8 text-white" />
-              </div>
+              <Image
+                src="/asset-tracer-logo.svg"
+                alt="Asset Tracer"
+                width={160}
+                height={40}
+                className="h-10 w-auto"
+                priority
+              />
             </div>
             <CardTitle className="text-2xl font-bold">Checkout</CardTitle>
             <CardDescription>Processing your subscription...</CardDescription>
