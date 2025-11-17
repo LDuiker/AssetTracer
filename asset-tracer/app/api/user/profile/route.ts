@@ -53,13 +53,25 @@ export async function GET() {
     // The auth email is the source of truth
     const correctEmail = user.email || userProfile.email;
     
-    // If database email doesn't match auth email, log a warning
-    if (userProfile.email && userProfile.email !== user.email) {
-      console.warn('⚠️ Email mismatch in user profile:', {
+    // If database email doesn't match auth email, fix it
+    if (userProfile.email && userProfile.email !== user.email && user.email) {
+      console.warn('⚠️ Email mismatch in user profile - fixing:', {
         authEmail: user.email,
         dbEmail: userProfile.email,
         userId: user.id,
       });
+      
+      // Update the database email to match auth email
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ email: user.email })
+        .eq('id', user.id);
+      
+      if (updateError) {
+        console.error('❌ Failed to fix email in database:', updateError);
+      } else {
+        console.log('✅ Fixed email in database to match auth email');
+      }
     }
 
     return NextResponse.json({
