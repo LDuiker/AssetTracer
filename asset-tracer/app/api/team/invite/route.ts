@@ -218,7 +218,10 @@ export async function POST(request: NextRequest) {
         });
 
         emailSent = true;
-        console.log(`✅ Team invitation email sent to ${email}`, { emailId: result.id });
+        console.log(`✅ Team invitation email sent to ${email}`, { 
+          emailId: result.data?.id || result.id || 'unknown',
+          fullResponse: JSON.stringify(result, null, 2)
+        });
       } catch (err) {
         emailError = err;
         console.error('❌ Failed to send invitation email:', {
