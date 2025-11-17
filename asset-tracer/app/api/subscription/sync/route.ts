@@ -73,10 +73,19 @@ export async function POST() {
 
     console.log(`🔄 Syncing subscription for customer: ${organization.polar_customer_id}`);
 
+    // Determine API base URL (sandbox vs production)
+    const isSandbox = process.env.NEXT_PUBLIC_POLAR_SANDBOX === 'true' || 
+                      process.env.POLAR_API_KEY?.startsWith('polar_oat_');
+    const polarBaseUrl = isSandbox 
+      ? 'https://sandbox-api.polar.sh' 
+      : 'https://api.polar.sh';
+    
+    console.log(`Using Polar API: ${polarBaseUrl} (sandbox: ${isSandbox})`);
+
     // Fetch subscriptions from Polar
     try {
       const response = await fetch(
-        `https://sandbox-api.polar.sh/v1/subscriptions?customer_id=${organization.polar_customer_id}`,
+        `${polarBaseUrl}/v1/subscriptions?customer_id=${organization.polar_customer_id}`,
         {
           headers: {
             Authorization: `Bearer ${process.env.POLAR_API_KEY}`,
