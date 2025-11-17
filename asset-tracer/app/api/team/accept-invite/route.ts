@@ -136,12 +136,18 @@ export async function POST(request: NextRequest) {
     // Mark invitation as accepted
     const { error: acceptError } = await supabase
       .from('team_invitations')
-      .update({ status: 'accepted' })
+      .update({ 
+        status: 'accepted',
+        updated_at: new Date().toISOString()
+      })
       .eq('id', invitation.id);
 
     if (acceptError) {
       console.error('Error accepting invitation:', acceptError);
-      // Don't fail the request - user is already added
+      console.error('Accept error details:', JSON.stringify(acceptError, null, 2));
+      // Don't fail the request - user is already added, but log the error
+    } else {
+      console.log(`✅ Invitation ${invitation.id} marked as accepted`);
     }
 
     return NextResponse.json({

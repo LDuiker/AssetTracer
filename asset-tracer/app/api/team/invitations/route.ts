@@ -32,7 +32,7 @@ export async function GET() {
       );
     }
 
-    // Get all pending invitations for the organization
+    // Get only pending invitations for the organization
     const { data: invitations, error: invitationsError } = await supabase
       .from('team_invitations')
       .select(`
@@ -46,6 +46,7 @@ export async function GET() {
         inviter:users!team_invitations_invited_by_fkey(email, name)
       `)
       .eq('organization_id', userData.organization_id)
+      .eq('status', 'pending')
       .order('created_at', { ascending: false });
 
     if (invitationsError) {
