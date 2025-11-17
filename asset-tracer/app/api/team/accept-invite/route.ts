@@ -90,16 +90,26 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Log the user's email to ensure we're using the correct one
+    console.log('Accepting invitation:', {
+      userId: user.id,
+      userEmail: user.email,
+      invitationEmail: invitation.email,
+      organizationId: invitation.organization_id,
+    });
+
     // If user has a different organization, they need to leave it first
     // For now, we'll allow them to join (they can have multiple orgs in the future)
     // But for simplicity, let's update their organization_id
     if (existingUser) {
       // Update user's organization and role
+      // IMPORTANT: Only update organization_id and role, preserve email and other fields
       const { error: updateError } = await supabase
         .from('users')
         .update({
           organization_id: invitation.organization_id,
           role: invitation.role,
+          // Explicitly preserve email - don't update it
         })
         .eq('id', user.id);
 
@@ -110,14 +120,34 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
+
+      // Verify the email wasn't changed
+      const { data: updatedUser } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', user.id)
+        .single();
+
+      if (updatedUser && updatedUser.email !== user.email) {
+        console.error('⚠️ Email mismatch after update!', {
+          expected: user.email,
+          actual: updatedUser.email,
+        });
+        // Fix it by updating the email back
+        await supabase
+          .from('users')
+          .update({ email: user.email! })
+          .eq('id', user.id);
+      }
     } else {
       // Create user record if it doesn't exist
+      // Use the signed-in user's email, NOT the invitation email
       const { error: createError } = await supabase
         .from('users')
         .insert([
           {
             id: user.id,
-            email: user.email!,
+            email: user.email!, // Use signed-in user's email
             name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0],
             organization_id: invitation.organization_id,
             role: invitation.role,
