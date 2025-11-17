@@ -121,19 +121,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if there's already a pending invitation
+    // Note: The unique constraint on (organization_id, email) means we can only have one invitation per email per org
+    // So we need to check for ANY existing invitation, not just pending ones
     const { data: existingInvite } = await supabase
       .from('team_invitations')
       .select('id, status')
       .eq('organization_id', userData.organization_id)
       .eq('email', email)
       .maybeSingle();
-
-    if (existingInvite && existingInvite.status === 'pending') {
-      return NextResponse.json(
-        { error: 'An invitation has already been sent to this email' },
-        { status: 400 }
-      );
-    }
 
     // Generate invitation token
     const token = randomBytes(32).toString('hex');
@@ -142,22 +137,87 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    // Create invitation
-    const { data: invitation, error: inviteError } = await supabase
-      .from('team_invitations')
-      .insert([
-        {
-          organization_id: userData.organization_id,
-          email,
-          role,
-          invited_by: user.id,
-          token,
-          expires_at: expiresAt.toISOString(),
-          status: 'pending',
-        },
-      ])
-      .select()
-      .single();
+    let invitation;
+    let inviteError;
+
+    if (existingInvite) {
+      if (existingInvite.status === 'pending') {
+        return NextResponse.json(
+          { error: 'An invitation has already been sent to this email' },
+          { status: 400 }
+        );
+      } else if (existingInvite.status === 'accepted') {
+        // Check if user is already a member
+        const { data: existingMember } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', email)
+          .eq('organization_id', userData.organization_id)
+          .maybeSingle();
+        
+        if (existingMember) {
+          return NextResponse.json(
+            { error: 'This user is already a member of your organization' },
+            { status: 400 }
+          );
+        }
+        // If invitation was accepted but user doesn't exist, update the existing invitation
+        const { data: updatedInvite, error: updateError } = await supabase
+          .from('team_invitations')
+          .update({
+            role,
+            invited_by: user.id,
+            token,
+            expires_at: expiresAt.toISOString(),
+            status: 'pending',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingInvite.id)
+          .select()
+          .single();
+        
+        invitation = updatedInvite;
+        inviteError = updateError;
+      } else {
+        // For expired/declined invitations, update the existing one
+        const { data: updatedInvite, error: updateError } = await supabase
+          .from('team_invitations')
+          .update({
+            role,
+            invited_by: user.id,
+            token,
+            expires_at: expiresAt.toISOString(),
+            status: 'pending',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingInvite.id)
+          .select()
+          .single();
+        
+        invitation = updatedInvite;
+        inviteError = updateError;
+      }
+    } else {
+      // No existing invitation, create a new one
+      const { data: newInvite, error: insertError } = await supabase
+        .from('team_invitations')
+        .insert([
+          {
+            organization_id: userData.organization_id,
+            email,
+            role,
+            invited_by: user.id,
+            token,
+            expires_at: expiresAt.toISOString(),
+            status: 'pending',
+          },
+        ])
+        .select()
+        .single();
+      
+      invitation = newInvite;
+      inviteError = insertError;
+    }
 
     if (inviteError) {
       console.error('Error creating invitation:', {
