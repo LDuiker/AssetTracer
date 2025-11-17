@@ -33,6 +33,7 @@ function AcceptInviteForm() {
   const [status, setStatus] = useState<InvitationStatus>('loading');
   const [invitation, setInvitation] = useState<InvitationData | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [isAccepting, setIsAccepting] = useState(false);
   const token = searchParams.get('token');
   const supabase = createClient();
@@ -42,6 +43,7 @@ function AcceptInviteForm() {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setIsAuthenticated(!!user);
+      setCurrentUserEmail(user?.email || null);
     };
     checkAuth();
   }, [supabase]);
@@ -104,6 +106,10 @@ function AcceptInviteForm() {
           const returnUrl = encodeURIComponent(window.location.href);
           router.push(`/login?returnUrl=${returnUrl}`);
           return;
+        }
+        if (response.status === 403 && data.invitationEmail) {
+          // Email mismatch - show helpful error
+          throw new Error(`This invitation was sent to ${data.invitationEmail}, but you're signed in as ${data.yourEmail}. Please sign out and sign in with the correct email address.`);
         }
         throw new Error(data.error || 'Failed to accept invitation');
       }
@@ -276,14 +282,38 @@ function AcceptInviteForm() {
                 </Alert>
               )}
 
-              {isAuthenticated === true && invitation.email && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    This invitation was sent to <strong>{invitation.email}</strong>. 
-                    Make sure you're signed in with this email address.
-                  </AlertDescription>
-                </Alert>
+              {isAuthenticated === true && invitation.email && currentUserEmail && (
+                invitation.email.toLowerCase() !== currentUserEmail.toLowerCase() ? (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Email Mismatch</strong>
+                      <br />
+                      This invitation was sent to <strong>{invitation.email}</strong>, but you're signed in as <strong>{currentUserEmail}</strong>.
+                      <br />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={async () => {
+                          await supabase.auth.signOut();
+                          const returnUrl = encodeURIComponent(window.location.href);
+                          router.push(`/login?returnUrl=${returnUrl}`);
+                        }}
+                      >
+                        Sign Out and Sign In with {invitation.email}
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      This invitation was sent to <strong>{invitation.email}</strong>. 
+                      You're signed in with the correct email address.
+                    </AlertDescription>
+                  </Alert>
+                )
               )}
 
               <div className="pt-4 space-y-2">
