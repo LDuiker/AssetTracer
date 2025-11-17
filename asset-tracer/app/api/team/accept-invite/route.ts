@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 const acceptInviteSchema = z.object({
@@ -133,8 +133,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Mark invitation as accepted
-    const { error: acceptError } = await supabase
+    // Mark invitation as accepted using admin client (bypasses RLS)
+    // This is needed because the user might not be in the organization yet
+    const adminClient = createAdminClient();
+    const { error: acceptError } = await adminClient
       .from('team_invitations')
       .update({ 
         status: 'accepted',
