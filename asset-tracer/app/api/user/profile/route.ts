@@ -48,11 +48,25 @@ export async function GET() {
       );
     }
 
+    // IMPORTANT: Always use the auth user's email, not the database email
+    // The database email might be outdated or incorrect
+    // The auth email is the source of truth
+    const correctEmail = user.email || userProfile.email;
+    
+    // If database email doesn't match auth email, log a warning
+    if (userProfile.email && userProfile.email !== user.email) {
+      console.warn('⚠️ Email mismatch in user profile:', {
+        authEmail: user.email,
+        dbEmail: userProfile.email,
+        userId: user.id,
+      });
+    }
+
     return NextResponse.json({
       user: {
         id: userProfile.id,
         name: userProfile.name,
-        email: userProfile.email,
+        email: correctEmail, // Use auth email as source of truth
         phone: userProfile.phone || '',
         organization_id: userProfile.organization_id,
         created_at: userProfile.created_at,
