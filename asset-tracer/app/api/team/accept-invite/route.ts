@@ -100,6 +100,23 @@ export async function POST(request: NextRequest) {
       existingUser: existingUser ? { id: existingUser.id, organizationId: existingUser.organization_id } : null,
     });
 
+    // CRITICAL: Check if the user accepting is the invitor
+    // If they're the invitor, they shouldn't accept their own invitation
+    if (invitation.invited_by === user.id) {
+      console.error('❌ User is trying to accept their own invitation:', {
+        userId: user.id,
+        userEmail: user.email,
+        invitationId: invitation.id,
+      });
+      return NextResponse.json(
+        { 
+          error: 'You cannot accept your own invitation. Please sign out and sign in with the invited email address.',
+          isInvitor: true,
+        },
+        { status: 400 }
+      );
+    }
+
     // If user has a different organization, they need to leave it first
     // For now, we'll allow them to join (they can have multiple orgs in the future)
     // But for simplicity, let's update their organization_id
