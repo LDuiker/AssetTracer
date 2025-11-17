@@ -217,9 +217,15 @@ export async function POST(request: NextRequest) {
           html: emailHtml,
         });
 
+        // Check if the response indicates success
+        const emailId = result.data?.id || result.id;
+        if (!emailId) {
+          throw new Error(`Resend API returned no email ID. Response: ${JSON.stringify(result)}`);
+        }
+
         emailSent = true;
         console.log(`✅ Team invitation email sent to ${email}`, { 
-          emailId: result.data?.id || result.id || 'unknown',
+          emailId,
           fullResponse: JSON.stringify(result, null, 2)
         });
       } catch (err) {
