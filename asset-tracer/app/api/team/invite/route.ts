@@ -217,6 +217,11 @@ export async function POST(request: NextRequest) {
           html: emailHtml,
         });
 
+        // Check for errors in the response
+        if (result.error) {
+          throw new Error(`Resend API error: ${result.error.message || JSON.stringify(result.error)}`);
+        }
+
         // Check if the response indicates success
         const emailId = result.data?.id || result.id;
         if (!emailId) {
