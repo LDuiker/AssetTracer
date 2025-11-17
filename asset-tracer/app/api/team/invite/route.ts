@@ -188,8 +188,15 @@ export async function POST(request: NextRequest) {
 
     // Send invitation email
     let emailSent = false;
+    let emailError: any = null;
+    
     if (isResendConfigured()) {
       try {
+        // Check EMAIL_FROM is set
+        if (!EMAIL_FROM) {
+          throw new Error('EMAIL_FROM environment variable is not set');
+        }
+
         const emailHtml = await render(
           TeamInvitationEmail({
             organizationName,
@@ -201,7 +208,9 @@ export async function POST(request: NextRequest) {
           })
         );
 
-        await resend.emails.send({
+        console.log(`📧 Attempting to send invitation email to ${email} from ${EMAIL_FROM}`);
+
+        const result = await resend.emails.send({
           from: EMAIL_FROM,
           to: email,
           subject: `You've been invited to join ${organizationName} on AssetTracer`,
@@ -209,13 +218,19 @@ export async function POST(request: NextRequest) {
         });
 
         emailSent = true;
-        console.log(`✅ Team invitation email sent to ${email}`);
-      } catch (emailError) {
-        console.error('Failed to send invitation email:', emailError);
+        console.log(`✅ Team invitation email sent to ${email}`, { emailId: result.id });
+      } catch (err) {
+        emailError = err;
+        console.error('❌ Failed to send invitation email:', {
+          error: err instanceof Error ? err.message : String(err),
+          email,
+          from: EMAIL_FROM,
+          stack: err instanceof Error ? err.stack : undefined,
+        });
         // Don't fail the request if email fails - invitation is still created
       }
     } else {
-      console.warn('⚠️ Resend not configured - invitation email not sent');
+      console.warn('⚠️ Resend not configured - RESEND_API_KEY is missing');
     }
 
     return NextResponse.json({
@@ -223,9 +238,12 @@ export async function POST(request: NextRequest) {
       invitation,
       inviteLink,
       emailSent,
+      emailError: emailError ? (emailError instanceof Error ? emailError.message : String(emailError)) : null,
       message: emailSent 
         ? 'Invitation sent successfully' 
-        : 'Invitation created, but email could not be sent. Please share the invitation link manually.',
+        : emailError
+          ? `Invitation created, but email failed: ${emailError instanceof Error ? emailError.message : String(emailError)}`
+          : 'Invitation created, but email could not be sent. Please share the invitation link manually.',
     });
   } catch (error) {
     console.error('Invite error:', error);
