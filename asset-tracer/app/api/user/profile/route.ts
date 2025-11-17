@@ -62,11 +62,37 @@ export async function GET() {
       console.log('✅ Fetched user profile using admin client');
     }
 
+    // IMPORTANT: Always use the auth user's email, not the database email
+    // The database email might be outdated or incorrect
+    // The auth email is the source of truth
+    const correctEmail = user.email || userProfile.email;
+    
+    // If database email doesn't match auth email, fix it
+    if (userProfile.email && userProfile.email !== user.email && user.email) {
+      console.warn('⚠️ Email mismatch in user profile - fixing:', {
+        authEmail: user.email,
+        dbEmail: userProfile.email,
+        userId: user.id,
+      });
+      
+      // Update the database email to match auth email
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ email: user.email })
+        .eq('id', user.id);
+      
+      if (updateError) {
+        console.error('❌ Failed to fix email in database:', updateError);
+      } else {
+        console.log('✅ Fixed email in database to match auth email');
+      }
+    }
+
     return NextResponse.json({
       user: {
         id: userProfile.id,
         name: userProfile.name,
-        email: userProfile.email,
+        email: correctEmail, // Use auth email as source of truth
         phone: userProfile.phone || '',
         organization_id: userProfile.organization_id,
         role: userProfile.role || 'member', // Include role

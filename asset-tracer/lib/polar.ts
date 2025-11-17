@@ -185,12 +185,32 @@ class PolarClient {
     cancelUrl: string,
     metadata?: Record<string, unknown>
   ): Promise<{ url: string; session_id: string }> {
+    // Clean URLs - remove any leading/trailing = or whitespace, and ensure valid URL
+    const cleanSuccessUrl = successUrl.trim().replace(/^=+/, '').replace(/=+$/, '').trim();
+    const cleanCancelUrl = cancelUrl.trim().replace(/^=+/, '').replace(/=+$/, '').trim();
+    
+    // Validate URLs start with http:// or https://
+    if (!cleanSuccessUrl.startsWith('http://') && !cleanSuccessUrl.startsWith('https://')) {
+      throw new Error(`Invalid success_url format: ${cleanSuccessUrl}`);
+    }
+    if (!cleanCancelUrl.startsWith('http://') && !cleanCancelUrl.startsWith('https://')) {
+      throw new Error(`Invalid cancel_url format: ${cleanCancelUrl}`);
+    }
+    
+    console.log('Creating checkout session with URLs:', {
+      successUrl: cleanSuccessUrl,
+      cancelUrl: cleanCancelUrl,
+      productPriceId: productId,
+      customerId,
+    });
+    
     // Try /v1/checkouts endpoint (standard checkout creation)
     const response = await this.request<PolarCheckoutResponse>('/v1/checkouts', {
       method: 'POST',
       body: JSON.stringify({
         product_price_id: productId,
-        success_url: successUrl,
+        success_url: cleanSuccessUrl,
+        cancel_url: cleanCancelUrl,
         customer_id: customerId,
         metadata,
       }),

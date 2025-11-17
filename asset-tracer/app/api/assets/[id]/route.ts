@@ -7,21 +7,36 @@ import type { UpdateAssetInput } from '@/types';
 /**
  * Zod schema for validating asset update input
  */
-const updateAssetSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters').optional(),
-  description: z.string().optional().nullable(),
-  category: z.string().optional().nullable(),
-  purchase_date: z.string().optional().nullable(),
-  purchase_cost: z.coerce.number().min(0, 'Purchase cost must be at least 0').optional(),
-  current_value: z.coerce.number().min(0, 'Current value must be at least 0').optional(),
-  status: z.enum(['active', 'maintenance', 'retired', 'sold']).optional(),
-  location: z.string().optional().nullable(),
-  serial_number: z.string().optional().nullable(),
-  asset_type: z.enum(['individual', 'group']).optional(),
-  quantity: z.coerce.number().int().min(1).optional(),
-  parent_group_id: z.string().uuid().nullable().optional(),
-  image_url: z.string().url().nullable().optional(),
-});
+const updateAssetSchema = z
+  .object({
+    name: z.string().min(2, 'Name must be at least 2 characters').optional(),
+    description: z.string().optional().nullable(),
+    category: z.string().optional().nullable(),
+    purchase_date: z.string().optional().nullable(),
+    purchase_cost: z.coerce.number().min(0, 'Purchase cost must be at least 0').optional(),
+    current_value: z.coerce.number().min(0, 'Current value must be at least 0').optional(),
+    status: z.enum(['active', 'maintenance', 'retired', 'sold']).optional(),
+    location: z.string().optional().nullable(),
+    serial_number: z.string().optional().nullable(),
+    asset_type: z.enum(['individual', 'group']).optional(),
+    quantity: z.coerce.number().int().min(1, 'Quantity must be at least 1').optional(),
+    parent_group_id: z
+      .string()
+      .uuid('Parent group must be a valid UUID')
+      .nullable()
+      .optional(),
+    image_url: z.string().url().nullable().optional(),
+  })
+  .refine(
+    (data) =>
+      data.asset_type !== 'group' ||
+      data.quantity === undefined ||
+      data.quantity >= 1,
+    {
+      path: ['quantity'],
+      message: 'Group assets must have a quantity of at least 1',
+    }
+  );
 
 /**
  * Helper function to get organization ID from user session

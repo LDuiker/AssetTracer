@@ -73,10 +73,20 @@ export async function POST() {
 
     console.log(`🔄 Syncing subscription for customer: ${organization.polar_customer_id}`);
 
+    // Determine API base URL (use same logic as Polar client)
+    // Priority: POLAR_BASE_URL env var > NEXT_PUBLIC_POLAR_SANDBOX > default to production
+    const polarBaseUrl = process.env.POLAR_BASE_URL || 
+      (process.env.NEXT_PUBLIC_POLAR_SANDBOX === 'true' 
+        ? 'https://sandbox-api.polar.sh' 
+        : 'https://api.polar.sh');
+    
+    const isSandbox = polarBaseUrl.includes('sandbox');
+    console.log(`Using Polar API: ${polarBaseUrl} (sandbox: ${isSandbox})`);
+
     // Fetch subscriptions from Polar
     try {
       const response = await fetch(
-        `https://sandbox-api.polar.sh/v1/subscriptions?customer_id=${organization.polar_customer_id}`,
+        `${polarBaseUrl}/v1/subscriptions?customer_id=${organization.polar_customer_id}`,
         {
           headers: {
             Authorization: `Bearer ${process.env.POLAR_API_KEY}`,
@@ -98,11 +108,24 @@ export async function POST() {
       );
 
       if (activeSubscription) {
-        // Get tier from metadata
+        // Get tier from metadata, or fallback to product ID mapping
         const metadataTier = activeSubscription.metadata?.tier;
-        const tier = typeof metadataTier === 'string' ? metadataTier : 'free';
         
-        console.log(`✅ Found active subscription: ${activeSubscription.id}, tier: ${tier}`);
+        // Product ID to tier mapping (fallback if metadata is missing)
+        const productIdToTier: Record<string, string> = {
+          'd0ef8f7a-657b-4115-8fb2-7bdfd4af3b18': 'pro', // Pro Monthly product
+          // Add other product IDs here as needed
+        };
+        
+        const tier = typeof metadataTier === 'string' 
+          ? metadataTier 
+          : (activeSubscription.product_id && productIdToTier[activeSubscription.product_id]) || 'free';
+        
+        console.log(`✅ Found active subscription: ${activeSubscription.id}`, {
+          product_id: activeSubscription.product_id,
+          metadata_tier: metadataTier,
+          determined_tier: tier,
+        });
 
         // Update database with Polar subscription data
         const { error: updateError } = await supabase

@@ -105,11 +105,24 @@ async function handleSubscriptionCreated(event: PolarWebhookEvent, supabase: Sup
     return;
   }
 
-  // Get tier from metadata (passed during checkout)
+  // Get tier from metadata, or fallback to product ID mapping
   const metadataTier = subscription.metadata?.tier;
-  const subscriptionTier = typeof metadataTier === 'string' ? metadataTier : 'free';
   
-  console.log(`Updating organization ${org.id} to tier: ${subscriptionTier}`);
+  // Product ID to tier mapping (fallback if metadata is missing)
+  const productIdToTier: Record<string, string> = {
+    'd0ef8f7a-657b-4115-8fb2-7bdfd4af3b18': 'pro', // Pro Monthly product
+    // Add other product IDs here as needed
+  };
+  
+  const subscriptionTier = typeof metadataTier === 'string' 
+    ? metadataTier 
+    : (subscription.product_id && productIdToTier[subscription.product_id]) || 'free';
+  
+  console.log(`Updating organization ${org.id} to tier: ${subscriptionTier}`, {
+    product_id: subscription.product_id,
+    metadata_tier: metadataTier,
+    determined_tier: subscriptionTier,
+  });
 
   // Update organization with subscription details
   await supabase
@@ -146,10 +159,24 @@ async function handleSubscriptionUpdated(event: PolarWebhookEvent, supabase: Sup
     return;
   }
 
-  // Get tier from metadata (passed during checkout)
+  // Get tier from metadata, or fallback to product ID mapping
   const metadataTier = subscription.metadata?.tier;
-  const subscriptionTier =
-    typeof metadataTier === 'string' ? metadataTier : org.subscription_tier || 'free';
+  
+  // Product ID to tier mapping (fallback if metadata is missing)
+  const productIdToTier: Record<string, string> = {
+    'd0ef8f7a-657b-4115-8fb2-7bdfd4af3b18': 'pro', // Pro Monthly product
+    // Add other product IDs here as needed
+  };
+  
+  const subscriptionTier = typeof metadataTier === 'string' 
+    ? metadataTier 
+    : (subscription.product_id && productIdToTier[subscription.product_id]) || org.subscription_tier || 'free';
+  
+  console.log(`Updating subscription for organization ${org.id}`, {
+    product_id: subscription.product_id,
+    metadata_tier: metadataTier,
+    determined_tier: subscriptionTier,
+  });
 
   // Update organization with new subscription details
   await supabase

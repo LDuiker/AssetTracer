@@ -7,7 +7,8 @@ import type { CreateAssetInput } from '@/types';
 /**
  * Zod schema for validating asset creation input
  */
-const createAssetSchema = z.object({
+const createAssetSchema = z
+  .object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   description: z.string().optional().nullable(),
   category: z.string().optional().nullable(),
@@ -21,10 +22,28 @@ const createAssetSchema = z.object({
     .enum(['individual', 'group'])
     .optional()
     .default('individual'),
-  quantity: z.coerce.number().int().min(1).optional().default(1),
-  parent_group_id: z.string().uuid().nullable().optional(),
+  quantity: z
+    .coerce
+    .number()
+    .int()
+    .min(1, 'Quantity must be at least 1')
+    .optional()
+    .default(1),
+  parent_group_id: z
+    .string()
+    .uuid('Parent group must be a valid UUID')
+    .optional()
+    .nullable(),
   image_url: z.string().url().nullable().optional(),
-});
+})
+  .refine(
+    (data) =>
+      data.asset_type === 'group' ? data.quantity !== undefined && data.quantity >= 1 : true,
+    {
+      path: ['quantity'],
+      message: 'Group assets must have a quantity of at least 1',
+    }
+  );
 
 /**
  * GET /api/assets

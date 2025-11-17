@@ -18,7 +18,6 @@ import {
   Laptop,
   Tv,
   ArrowDown,
-  PlayCircle,
   DollarSign,
   Clock,
   Settings,
@@ -249,23 +248,6 @@ function LandingPageContent() {
                   asChild
                 >
                   <Link href="/login">🚀 Start Free</Link>
-                </Button>
-              </motion.div>
-
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="flex items-center justify-center px-8 py-4 border border-white/30 text-white hover:bg-white/10 rounded-xl transition-all"
-                  asChild
-                >
-                  <Link href="#features">
-                    <PlayCircle className="mr-2 w-5 h-5" />
-                    View Demo
-                  </Link>
                 </Button>
               </motion.div>
             </div>
@@ -842,7 +824,7 @@ function LandingPageContent() {
             <Button 
               size="lg" 
               variant="outline" 
-              className="text-lg px-8 py-6 border-2 border-white text-white hover:bg-white/10 rounded-2xl"
+              className="text-lg px-8 py-6 border-2 border-[#2563EB] text-[#2563EB] bg-white hover:bg-[#2563EB] hover:text-white rounded-2xl transition-all"
               asChild
             >
               <Link href="#pricing">See Pricing Plans</Link>

@@ -396,6 +396,67 @@ export function BillingSection() {
         </CardContent>
       </Card>
 
+      {/* Sync Subscription - Always visible for troubleshooting */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Subscription Sync</CardTitle>
+          <CardDescription>
+            Manually sync your subscription status from our payment system
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div>
+              <h4 className="font-medium text-blue-900 dark:text-blue-100 text-sm">Subscription Not Showing?</h4>
+              <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
+                If you just paid but still see Free plan, click here to sync your subscription
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={async () => {
+                try {
+                  setIsUpgrading(true);
+                  setError(null);
+                  const response = await fetch('/api/subscription/sync', {
+                    method: 'POST',
+                  });
+                  const data = await response.json();
+                  
+                  if (data.success && data.subscription?.tier) {
+                    toast.success(`Subscription synced successfully! You're now on ${data.subscription.tier} plan.`);
+                    await refetch();
+                  } else if (data.error) {
+                    toast.error(data.error);
+                    setError(data.error);
+                  } else {
+                    toast.info('No active subscription found in payment system');
+                  }
+                } catch (err) {
+                  const message = err instanceof Error ? err.message : 'Failed to sync subscription';
+                  toast.error(message);
+                  setError(message);
+                } finally {
+                  setIsUpgrading(false);
+                }
+              }}
+              disabled={isUpgrading}
+              className="text-blue-700 hover:text-blue-800 bg-white hover:bg-blue-50 border-blue-300"
+            >
+              {isUpgrading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                'Sync Now'
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Payment & Billing Details */}
       {currentTier !== 'free' && (
         <Card>
@@ -475,52 +536,6 @@ export function BillingSection() {
               </div>
             </div>
 
-            {/* Sync Subscription - Manual sync option */}
-            <Separator />
-            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div>
-                <h4 className="font-medium text-blue-900 dark:text-blue-100 text-sm">Subscription Not Showing?</h4>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
-                  Click here to sync your subscription from our payment system
-                </p>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={async () => {
-                  try {
-                    setIsUpgrading(true);
-                    const response = await fetch('/api/subscription/sync', {
-                      method: 'POST',
-                    });
-                    const data = await response.json();
-                    
-                    if (data.success && data.subscription?.tier) {
-                      toast.success('Subscription synced successfully!');
-                      await refetch();
-                    } else {
-                      toast.info('No active subscription found in payment system');
-                    }
-                  } catch (err) {
-                    const message = err instanceof Error ? err.message : 'Failed to sync subscription';
-                    toast.error(message);
-                  } finally {
-                    setIsUpgrading(false);
-                  }
-                }}
-                disabled={isUpgrading}
-                className="text-blue-700 hover:text-blue-800 bg-white hover:bg-blue-50 border-blue-300"
-              >
-                {isUpgrading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Syncing...
-                  </>
-                ) : (
-                  'Sync Now'
-                )}
-              </Button>
-            </div>
 
             {/* Cancel Subscription - Only show if not already cancelled */}
             {organization?.subscription_status !== 'cancelled' && (
