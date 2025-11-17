@@ -160,9 +160,30 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (inviteError) {
-      console.error('Error creating invitation:', inviteError);
+      console.error('Error creating invitation:', {
+        error: inviteError,
+        details: JSON.stringify(inviteError, null, 2),
+        organizationId: userData.organization_id,
+        email,
+        role,
+        invitedBy: user.id,
+      });
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to create invitation';
+      if (inviteError.code === '23505') { // Unique constraint violation
+        errorMessage = 'An invitation has already been sent to this email address';
+      } else if (inviteError.code === '23503') { // Foreign key violation
+        errorMessage = 'Invalid organization or user reference';
+      } else if (inviteError.message) {
+        errorMessage = inviteError.message;
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to create invitation' },
+        { 
+          error: errorMessage,
+          details: process.env.NODE_ENV === 'development' ? inviteError : undefined
+        },
         { status: 500 }
       );
     }
