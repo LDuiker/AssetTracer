@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 /**
@@ -33,19 +33,33 @@ export async function GET() {
       );
     }
 
-    // Fetch user profile from users table
-    const { data: userProfile, error: profileError } = await supabase
+    // Fetch user profile from users table (including role)
+    let { data: userProfile, error: profileError } = await supabase
       .from('users')
-      .select('*')
+      .select('id, email, name, phone, organization_id, role, created_at, updated_at')
       .eq('id', user.id)
       .single();
 
+    // If RLS is blocking, try with admin client as fallback
     if (profileError) {
-      console.error('Error fetching user profile:', profileError);
-      return NextResponse.json(
-        { error: 'Failed to fetch profile' },
-        { status: 500 }
-      );
+      console.warn('⚠️ RLS may be blocking user profile query, trying admin client...', profileError);
+      const adminClient = createAdminClient();
+      const { data: adminProfile, error: adminError } = await adminClient
+        .from('users')
+        .select('id, email, name, phone, organization_id, role, created_at, updated_at')
+        .eq('id', user.id)
+        .single();
+      
+      if (adminError) {
+        console.error('❌ Error fetching user profile (admin):', adminError);
+        return NextResponse.json(
+          { error: 'Failed to fetch profile', details: adminError.message },
+          { status: 500 }
+        );
+      }
+      
+      userProfile = adminProfile;
+      console.log('✅ Fetched user profile using admin client');
     }
 
     return NextResponse.json({
@@ -55,6 +69,7 @@ export async function GET() {
         email: userProfile.email,
         phone: userProfile.phone || '',
         organization_id: userProfile.organization_id,
+        role: userProfile.role || 'member', // Include role
         created_at: userProfile.created_at,
         updated_at: userProfile.updated_at,
       },

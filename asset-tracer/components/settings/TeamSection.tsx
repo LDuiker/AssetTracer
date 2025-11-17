@@ -44,6 +44,7 @@ export function TeamSection() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [invitations, setInvitations] = useState<TeamInvitation[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [currentUserRole, setCurrentUserRole] = useState<'owner' | 'admin' | 'member' | 'viewer'>('member');
 
   const canInvite = teamMembers.length + invitations.length < limits.maxUsers;
 
@@ -186,7 +187,15 @@ export function TeamSection() {
       const response = await fetch('/api/user/profile');
       if (response.ok) {
         const data = await response.json();
-        setCurrentUserId(data.id || data.user?.id || '');
+        // API returns { user: { id, name, email, role, ... } }
+        const userId = data.user?.id || '';
+        const userRole = data.user?.role || 'member';
+        setCurrentUserId(userId);
+        // Set role directly from profile if available
+        if (userRole && userId) {
+          console.log('🔍 Setting role from profile:', userRole, 'for user:', userId);
+          setCurrentUserRole(userRole as 'owner' | 'admin' | 'member' | 'viewer');
+        }
       }
     } catch (error) {
       console.error('Failed to fetch current user:', error);
@@ -199,6 +208,19 @@ export function TeamSection() {
     fetchTeamMembers();
     fetchInvitations();
   }, []);
+
+  // Update current user's role when both userId and teamMembers are available
+  React.useEffect(() => {
+    if (currentUserId && teamMembers.length > 0) {
+      const currentMember = teamMembers.find((m) => m.id === currentUserId);
+      if (currentMember) {
+        console.log('🔍 Setting current user role:', currentMember.role, 'for user:', currentUserId);
+        setCurrentUserRole(currentMember.role || 'member');
+      } else {
+        console.warn('⚠️ Current user not found in team members list:', currentUserId);
+      }
+    }
+  }, [currentUserId, teamMembers]);
 
   return (
     <div className="space-y-6">
@@ -376,21 +398,37 @@ export function TeamSection() {
                         </>
                       )}
                     </Badge>
-                    {member.role !== 'owner' && member.id !== currentUserId && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleRemoveMember(member.id, member.role)} className="text-red-600">
-                            <UserMinus className="h-4 w-4 mr-2" />
-                            Remove Member
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                    {(() => {
+                      const canRemove = member.role !== 'owner' && 
+                                       member.id !== currentUserId && 
+                                       (currentUserRole === 'owner' || currentUserRole === 'admin');
+                      if (!canRemove) {
+                        console.log('🔍 Remove button hidden for member:', {
+                          memberId: member.id,
+                          memberRole: member.role,
+                          currentUserId,
+                          currentUserRole,
+                          isOwner: member.role === 'owner',
+                          isSelf: member.id === currentUserId,
+                          hasPermission: currentUserRole === 'owner' || currentUserRole === 'admin'
+                        });
+                      }
+                      return canRemove && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleRemoveMember(member.id, member.role)} className="text-red-600">
+                              <UserMinus className="h-4 w-4 mr-2" />
+                              Remove Member
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}
