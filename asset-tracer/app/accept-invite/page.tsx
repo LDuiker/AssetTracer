@@ -284,25 +284,12 @@ function AcceptInviteForm() {
 
               {isAuthenticated === true && invitation.email && currentUserEmail && (
                 invitation.email.toLowerCase() !== currentUserEmail.toLowerCase() ? (
-                  <Alert variant="destructive">
+                  <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                      <strong>Email Mismatch</strong>
-                      <br />
-                      This invitation was sent to <strong>{invitation.email}</strong>, but you're signed in as <strong>{currentUserEmail}</strong>.
-                      <br />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        onClick={async () => {
-                          await supabase.auth.signOut();
-                          const returnUrl = encodeURIComponent(window.location.href);
-                          router.push(`/login?returnUrl=${returnUrl}`);
-                        }}
-                      >
-                        Sign Out and Sign In with {invitation.email}
-                      </Button>
+                      <strong>Note:</strong> This invitation was sent to <strong>{invitation.email}</strong>, 
+                      but you're signed in as <strong>{currentUserEmail}</strong>. 
+                      You can still accept the invitation with your current account.
                     </AlertDescription>
                   </Alert>
                 ) : (
@@ -310,7 +297,7 @@ function AcceptInviteForm() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
                       This invitation was sent to <strong>{invitation.email}</strong>. 
-                      You're signed in with the correct email address.
+                      You're signed in with this email address.
                     </AlertDescription>
                   </Alert>
                 )

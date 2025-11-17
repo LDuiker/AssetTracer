@@ -66,17 +66,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if email matches
-    if (invitation.email.toLowerCase() !== user.email?.toLowerCase()) {
-      return NextResponse.json(
-        { 
-          error: 'This invitation was sent to a different email address',
-          invitationEmail: invitation.email,
-          yourEmail: user.email,
-        },
-        { status: 403 }
-      );
-    }
+    // Note: We allow accepting invitations with any email address
+    // The invitation email is just for reference - users can accept with their preferred email
 
     // Check if user is already in the organization
     const { data: existingUser } = await supabase
