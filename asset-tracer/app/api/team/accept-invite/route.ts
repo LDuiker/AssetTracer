@@ -91,11 +91,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Log the user's email to ensure we're using the correct one
-    console.log('Accepting invitation:', {
+    console.log('🔵 Accepting invitation - START:', {
       userId: user.id,
       userEmail: user.email,
+      userMetadata: user.user_metadata,
       invitationEmail: invitation.email,
       organizationId: invitation.organization_id,
+      existingUser: existingUser ? { id: existingUser.id, organizationId: existingUser.organization_id } : null,
     });
 
     // If user has a different organization, they need to leave it first
@@ -121,12 +123,18 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Verify the email wasn't changed
-      const { data: updatedUser } = await supabase
+      // Verify the email wasn't changed and log the final state
+      const { data: updatedUser, error: verifyError } = await supabase
         .from('users')
-        .select('email')
+        .select('id, email, name, organization_id, role')
         .eq('id', user.id)
         .single();
+
+      console.log('🔵 After updating user organization:', {
+        updatedUser,
+        verifyError,
+        expectedEmail: user.email,
+      });
 
       if (updatedUser && updatedUser.email !== user.email) {
         console.error('⚠️ Email mismatch after update!', {
@@ -134,10 +142,16 @@ export async function POST(request: NextRequest) {
           actual: updatedUser.email,
         });
         // Fix it by updating the email back
-        await supabase
+        const { error: fixError } = await supabase
           .from('users')
           .update({ email: user.email! })
           .eq('id', user.id);
+        
+        if (fixError) {
+          console.error('❌ Failed to fix email:', fixError);
+        } else {
+          console.log('✅ Email fixed back to:', user.email);
+        }
       }
     } else {
       // Create user record if it doesn't exist
@@ -161,6 +175,37 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
+
+      // Verify the user was created correctly
+      const { data: createdUser, error: verifyError } = await supabase
+        .from('users')
+        .select('id, email, name, organization_id, role')
+        .eq('id', user.id)
+        .single();
+
+      console.log('🔵 After creating user:', {
+        createdUser,
+        verifyError,
+        expectedEmail: user.email,
+      });
+
+      if (createdUser && createdUser.email !== user.email) {
+        console.error('⚠️ Email mismatch after create!', {
+          expected: user.email,
+          actual: createdUser.email,
+        });
+        // Fix it by updating the email
+        const { error: fixError } = await supabase
+          .from('users')
+          .update({ email: user.email! })
+          .eq('id', user.id);
+        
+        if (fixError) {
+          console.error('❌ Failed to fix email:', fixError);
+        } else {
+          console.log('✅ Email fixed to:', user.email);
+        }
+      }
     }
 
     // Mark invitation as accepted using admin client (bypasses RLS)
@@ -182,6 +227,19 @@ export async function POST(request: NextRequest) {
       console.log(`✅ Invitation ${invitation.id} marked as accepted`);
     }
 
+    // Final verification - get the user record one more time
+    const { data: finalUser } = await supabase
+      .from('users')
+      .select('id, email, name, organization_id, role')
+      .eq('id', user.id)
+      .single();
+
+    console.log('🔵 Final user state after acceptance:', {
+      finalUser,
+      authUserEmail: user.email,
+      invitationEmail: invitation.email,
+    });
+
     return NextResponse.json({
       success: true,
       message: 'Successfully joined the team!',
@@ -190,6 +248,7 @@ export async function POST(request: NextRequest) {
         name: invitation.organizations?.name,
       },
       role: invitation.role,
+      userEmail: finalUser?.email || user.email,
     });
   } catch (error) {
     console.error('Accept invite error:', error);
