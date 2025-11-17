@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { randomBytes } from 'crypto';
+import { resend, isResendConfigured, EMAIL_FROM } from '@/lib/resend';
+import { render } from '@react-email/render';
+import TeamInvitationEmail from '@/emails/TeamInvitationEmail';
 
 const inviteSchema = z.object({
   email: z.string().email(),
@@ -60,10 +63,10 @@ export async function POST(request: NextRequest) {
 
     const { email, role } = validationResult.data;
 
-    // Get organization details for subscription check
+    // Get organization details for subscription check and email
     const { data: orgData, error: orgError } = await supabase
       .from('organizations')
-      .select('subscription_tier')
+      .select('subscription_tier, name')
       .eq('id', userData.organization_id)
       .single();
 
@@ -164,15 +167,65 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Send invitation email
-    // For now, we'll return the invitation link
+    // Generate invitation link
     const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/accept-invite?token=${token}`;
+
+    // Get inviter details for email
+    const { data: inviterData } = await supabase
+      .from('users')
+      .select('name, email')
+      .eq('id', user.id)
+      .single();
+
+    const inviterName = inviterData?.name || user.user_metadata?.full_name || user.email || 'Team Admin';
+    const inviterEmail = user.email || '';
+    const organizationName = orgData?.name || 'AssetTracer';
+
+    // Format expiration date
+    const expirationDate = new Date(expiresAt);
+    const expiresIn = Math.ceil((expirationDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    const expiresAtText = expiresIn === 1 ? '1 day' : `${expiresIn} days`;
+
+    // Send invitation email
+    let emailSent = false;
+    if (isResendConfigured()) {
+      try {
+        const emailHtml = await render(
+          TeamInvitationEmail({
+            organizationName,
+            inviterName,
+            inviterEmail,
+            role,
+            inviteLink,
+            expiresAt: expiresAtText,
+          })
+        );
+
+        await resend.emails.send({
+          from: EMAIL_FROM,
+          to: email,
+          subject: `You've been invited to join ${organizationName} on AssetTracer`,
+          html: emailHtml,
+        });
+
+        emailSent = true;
+        console.log(`✅ Team invitation email sent to ${email}`);
+      } catch (emailError) {
+        console.error('Failed to send invitation email:', emailError);
+        // Don't fail the request if email fails - invitation is still created
+      }
+    } else {
+      console.warn('⚠️ Resend not configured - invitation email not sent');
+    }
 
     return NextResponse.json({
       success: true,
       invitation,
-      inviteLink, // In production, this would be sent via email
-      message: 'Invitation sent successfully',
+      inviteLink,
+      emailSent,
+      message: emailSent 
+        ? 'Invitation sent successfully' 
+        : 'Invitation created, but email could not be sent. Please share the invitation link manually.',
     });
   } catch (error) {
     console.error('Invite error:', error);
