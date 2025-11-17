@@ -65,17 +65,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Map tier to Polar Price IDs (NOT Product IDs!)
-    const productMapping: Record<string, string> = {
-      pro: '15716604-b369-47b2-bc73-90d452a3c9b7',      // Pro Plan - $19/month
-      business: 'ef965b20-266e-4bad-96d3-387a19f2c7c8', // Business Plan - $39/month
+    // Map tier to Polar Price IDs from environment variables
+    // These should be set in your .env file (POLAR_PRO_PRICE_ID, POLAR_BUSINESS_PRICE_ID)
+    const proPriceId = process.env.POLAR_PRO_PRICE_ID || process.env.NEXT_PUBLIC_POLAR_PRO_PRICE_ID || '';
+    const businessPriceId = process.env.POLAR_BUSINESS_PRICE_ID || process.env.NEXT_PUBLIC_POLAR_BUSINESS_PRICE_ID || '';
+    
+    // CRITICAL DEBUG: Log environment variable status
+    console.error('🔍 PRICE ID DEBUG - Environment Variables:', {
+      'POLAR_PRO_PRICE_ID': process.env.POLAR_PRO_PRICE_ID || 'NOT SET',
+      'NEXT_PUBLIC_POLAR_PRO_PRICE_ID': process.env.NEXT_PUBLIC_POLAR_PRO_PRICE_ID || 'NOT SET',
+      'POLAR_BUSINESS_PRICE_ID': process.env.POLAR_BUSINESS_PRICE_ID || 'NOT SET',
+      'NEXT_PUBLIC_POLAR_BUSINESS_PRICE_ID': process.env.NEXT_PUBLIC_POLAR_BUSINESS_PRICE_ID || 'NOT SET',
+      'Selected proPriceId': proPriceId || 'EMPTY',
+      'Selected businessPriceId': businessPriceId || 'EMPTY',
+      'Requested tier': tier,
+    });
+    
+    const priceIdMapping: Record<string, string> = {
+      pro: proPriceId,
+      business: businessPriceId,
     };
 
-    const productId = productMapping[tier];
-    if (!productId) {
+    // Log what we found for debugging
+    console.error('🔍 PRICE ID DEBUG - Final Mapping:', {
+      tier,
+      proPriceId: proPriceId || 'NOT SET',
+      businessPriceId: businessPriceId || 'NOT SET',
+      selectedPriceId: priceIdMapping[tier] || 'NOT SET',
+      allPolarEnvKeys: Object.keys(process.env).filter(k => k.includes('POLAR')),
+    });
+
+    const priceId = priceIdMapping[tier];
+    if (!priceId) {
+      console.error('Missing Price ID for tier:', tier, {
+        envKeys: Object.keys(process.env).filter(k => k.includes('POLAR') && k.includes('PRICE')),
+        proPriceId,
+        businessPriceId,
+      });
       return NextResponse.json(
-        { error: 'Invalid tier' },
-        { status: 400 }
+        { 
+          error: 'Subscription configuration error',
+          details: `Price ID not configured for ${tier} plan. Please contact support.`
+        },
+        { status: 500 }
       );
     }
 
@@ -113,11 +145,39 @@ export async function POST(request: NextRequest) {
       }
 
       // Create checkout session for subscription
+      // Clean the app URL to remove any leading/trailing = or whitespace
+      let appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').trim();
+      
+      // Remove any = characters from start or end
+      appUrl = appUrl.replace(/^=+/, '').replace(/=+$/, '').trim();
+      
+      if (!appUrl) {
+        console.error('NEXT_PUBLIC_APP_URL is missing or empty:', {
+          raw: process.env.NEXT_PUBLIC_APP_URL,
+          cleaned: appUrl,
+        });
+        throw new Error('NEXT_PUBLIC_APP_URL is not configured');
+      }
+      
+      // Ensure URL doesn't end with /
+      appUrl = appUrl.replace(/\/+$/, '');
+      
+      const successUrl = `${appUrl}/settings?tab=billing&success=true`;
+      const cancelUrl = `${appUrl}/settings?tab=billing&canceled=true`;
+      
+      console.log('Preparing checkout with URLs:', {
+        appUrl,
+        successUrl,
+        cancelUrl,
+        priceId,
+        tier,
+      });
+      
       const checkoutSession = await polar.createCheckoutSession(
         customerId,
-        productId,
-        `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=billing&success=true`,
-        `${process.env.NEXT_PUBLIC_APP_URL}/settings?tab=billing&canceled=true`,
+        priceId,
+        successUrl,
+        cancelUrl,
         {
           organization_id: organization.id,
           tier,
@@ -148,19 +208,46 @@ export async function POST(request: NextRequest) {
       console.error('Error details:', {
         message: polarErrorMessage,
         stack: polarErrorStack,
-        productId,
-        customerId
+        priceId,
+        customerId,
+        tier,
+        organizationId: organization.id,
+        userEmail: user.email,
       });
+      
+      // Provide more helpful error messages
+      let userFriendlyError = 'Failed to create checkout session';
+      if (polarErrorMessage.includes('Price') || polarErrorMessage.includes('price')) {
+        userFriendlyError = 'Invalid subscription plan configuration. Please contact support.';
+      } else if (polarErrorMessage.includes('Customer') || polarErrorMessage.includes('customer')) {
+        userFriendlyError = 'Unable to process payment. Please try again or contact support.';
+      } else if (polarErrorMessage.includes('401') || polarErrorMessage.includes('Unauthorized')) {
+        userFriendlyError = 'Payment service authentication failed. Please contact support.';
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to create checkout session', details: polarErrorMessage },
+        { 
+          error: userFriendlyError, 
+          details: process.env.NODE_ENV === 'development' ? polarErrorMessage : undefined
+        },
         { status: 500 }
       );
     }
   } catch (error: unknown) {
     console.error('Upgrade error:', error);
-    const message = error instanceof Error ? error.message : 'Internal server error';
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error('Unexpected error in upgrade route:', {
+      message: errorMessage,
+      stack: errorStack,
+    });
+    
     return NextResponse.json(
-      { error: message },
+      { 
+        error: 'An unexpected error occurred',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }

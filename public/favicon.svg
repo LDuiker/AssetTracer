@@ -1,0 +1,54 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="faviconOuter" x1="12" y1="8" x2="52" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1D4ED8"/>
+      <stop offset="100%" stop-color="#1E3A8A"/>
+    </linearGradient>
+    <linearGradient id="faviconMid" x1="18" y1="12" x2="46" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E8F1FF"/>
+      <stop offset="100%" stop-color="#BBD8FF"/>
+    </linearGradient>
+    <linearGradient id="faviconLower" x1="12" y1="24" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7AB6FF" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#CFE5FF" stop-opacity="0.4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer hex -->
+  <path
+    d="M32 6L54 17V39L32 50L10 39V17L32 6Z"
+    fill="url(#faviconOuter)"
+  />
+
+  <!-- Middle hex -->
+  <path
+    d="M32 12L48 20V36L32 44L16 36V20L32 12Z"
+    fill="url(#faviconMid)"
+  />
+
+  <!-- Upper detail -->
+  <path
+    d="M32 12V28L16 20"
+    stroke="#1E3A8A"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M32 28L48 20"
+    stroke="#1E3A8A"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Lower highlight -->
+  <path
+    d="M16 36L32 28L48 36"
+    stroke="url(#faviconLower)"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
+

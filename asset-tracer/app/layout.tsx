@@ -17,6 +17,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.asset-tracer.com'),
   
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
+  
   // Primary metadata
   title: {
     default: "AssetTracer - Track Assets, Send Quotes, Know Your Profit",

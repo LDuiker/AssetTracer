@@ -10,6 +10,7 @@ import { OrganizationProvider } from '@/lib/context/OrganizationContext';
 import { CurrencyProvider } from '@/lib/context/CurrencyContext';
 import { SubscriptionProvider } from '@/lib/context/SubscriptionContext';
 import { swrConfig } from '@/lib/swr-config';
+import { LogoLight } from '@/components/common/Logo';
 
 export default function DashboardClientLayout({
   children,
@@ -64,14 +65,12 @@ export default function DashboardClientLayout({
             <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 md:hidden transform transition-transform duration-300 ease-in-out">
               {/* Mobile Sidebar Header */}
               <div className="h-16 bg-primary-blue flex items-center justify-between px-6">
-                <div className="flex items-center space-x-2">
-                  <svg className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                    <line x1="12" y1="22.08" x2="12" y2="12" />
-                  </svg>
-                  <span className="text-xl font-bold text-white">Asset Tracer</span>
-                </div>
+                <LogoLight
+                  variant="text"
+                  size="md"
+                  href="/dashboard"
+                  className="font-bold"
+                />
                 <Button
                   variant="ghost"
                   size="icon"

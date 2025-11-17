@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Package } from 'lucide-react';
+import Image from 'next/image';
 
 interface LogoProps {
   /**
@@ -54,34 +54,31 @@ export function Logo({
   // Size classes
   const sizeClasses = {
     sm: {
-      icon: 'h-6 w-6',
       text: 'text-lg',
-      logo: 'h-8',
+      full: { width: 140, height: 32 },
+      icon: { width: 32, height: 32 },
     },
     md: {
-      icon: 'h-8 w-8',
       text: 'text-xl',
-      logo: 'h-10',
+      full: { width: 180, height: 40 },
+      icon: { width: 40, height: 40 },
     },
     lg: {
-      icon: 'h-12 w-12',
       text: 'text-3xl',
-      logo: 'h-16',
+      full: { width: 240, height: 56 },
+      icon: { width: 52, height: 52 },
     },
   };
 
   // Theme classes
   const themeClasses = {
     light: {
-      icon: 'text-white',
       text: 'text-white',
     },
     dark: {
-      icon: 'text-[#2563EB]',
       text: 'text-[#0B1226]',
     },
     auto: {
-      icon: 'text-[#2563EB] dark:text-white',
       text: 'text-[#0B1226] dark:text-white',
     },
   };
@@ -93,10 +90,16 @@ export function Logo({
   const renderLogoContent = () => {
     switch (variant) {
       case 'icon':
-        // Try to load logo icon, fallback to Package
         return (
           <div className="flex items-center">
-            <Package className={`${currentSize.icon} ${currentTheme.icon}`} />
+            <Image
+              src="/favicon.svg"
+              alt="Asset Tracer"
+              width={currentSize.icon.width}
+              height={currentSize.icon.height}
+              className="h-auto w-auto"
+              priority
+            />
           </div>
         );
 
@@ -109,32 +112,29 @@ export function Logo({
         );
 
       case 'full':
-        // Try to load full logo image with text
-        // If logo.svg exists, use it. Otherwise fallback to icon + text
         return (
-          <div className="flex items-center space-x-2">
-            {/* <Image 
-              src="/logo.svg" 
-              alt="Asset Tracer" 
-              width={40} 
-              height={40}
-              className={currentSize.logo}
-            /> */}
-            <Package className={`${currentSize.icon} ${currentTheme.icon}`} />
-            {showText && (
-              <span className={`${currentSize.text} font-bold ${currentTheme.text}`}>
-                Asset Tracer
-              </span>
-            )}
-          </div>
+          <Image
+            src="/asset-tracer-logo.svg"
+            alt="Asset Tracer"
+            width={currentSize.full.width}
+            height={currentSize.full.height}
+            className="h-auto w-auto"
+            priority
+          />
         );
 
       case 'fallback':
       default:
-        // Package icon + text (current default)
         return (
           <div className="flex items-center space-x-2">
-            <Package className={`${currentSize.icon} ${currentTheme.icon}`} />
+            <Image
+              src="/asset-tracer-logo.svg"
+              alt="Asset Tracer"
+              width={currentSize.full.width}
+              height={currentSize.full.height}
+              className="h-auto w-auto"
+              priority
+            />
             {showText && (
               <span className={`${currentSize.text} font-bold ${currentTheme.text}`}>
                 Asset Tracer

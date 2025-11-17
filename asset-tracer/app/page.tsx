@@ -2,11 +2,11 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
-  Package,
   FileText,
   TrendingUp,
   Check,
@@ -130,8 +130,14 @@ function LandingPageContent() {
             {/* Logo */}
             <div className="flex items-center">
               <Link href="/" className="flex items-center space-x-2">
-                <Package className="h-8 w-8 text-[#2563EB]" />
-                <span className="text-xl font-bold text-[#0B1226]">Asset Tracer</span>
+                <Image
+                  src="/asset-tracer-logo.svg"
+                  alt="Asset Tracer"
+                  width={180}
+                  height={40}
+                  className="h-10 w-auto"
+                  priority
+                />
               </Link>
             </div>
 
@@ -279,10 +285,14 @@ function LandingPageContent() {
                   {/* Mock Dashboard Header */}
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                        <Package className="w-5 h-5 text-white" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-800">Asset Tracer</h3>
+                      <Image
+                        src="/asset-tracer-logo.svg"
+                        alt="Asset Tracer"
+                        width={160}
+                        height={40}
+                        className="h-8 w-auto"
+                        priority
+                      />
                     </div>
                     <div className="flex items-center space-x-2">
                       <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
@@ -851,8 +861,13 @@ function LandingPageContent() {
             {/* Company Info */}
             <div className="md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
-                <Package className="h-8 w-8 text-[#2563EB]" />
-                <span className="text-xl font-bold text-white">Asset Tracer</span>
+                <Image
+                  src="/asset-tracer-logo.svg"
+                  alt="Asset Tracer"
+                  width={180}
+                  height={40}
+                  className="h-10 w-auto"
+                />
               </div>
               <p className="text-gray-400 mb-4 max-w-md">
                 An asset management and invoicing system built for growing businesses. Simple, powerful, and easy to use.
@@ -932,7 +947,13 @@ export default function LandingPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-light-bg flex items-center justify-center">
         <div className="text-center">
-          <Package className="h-16 w-16 mx-auto mb-4 text-primary-blue animate-pulse" />
+          <Image
+            src="/asset-tracer-logo.svg"
+            alt="Asset Tracer"
+            width={160}
+            height={40}
+            className="h-10 w-auto mx-auto mb-4 animate-pulse"
+          />
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
