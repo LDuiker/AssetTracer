@@ -138,15 +138,18 @@ export default async function BlogPostPage({ params }: Props) {
 
             {/* Featured Image */}
             {post.image && (
-              <div className="mb-8 rounded-lg overflow-hidden max-w-2xl mx-auto">
-                <Image
-                  src={post.image}
-                  alt={post.title}
-                  width={800}
-                  height={450}
-                  className="w-full h-auto object-cover"
-                  priority
-                />
+              <div className="mb-8 rounded-lg overflow-hidden max-w-xl mx-auto">
+                <div className="relative w-full" style={{ maxHeight: '350px' }}>
+                  <Image
+                    src={post.image}
+                    alt={post.title}
+                    width={600}
+                    height={350}
+                    className="w-full h-auto object-contain"
+                    priority
+                    style={{ maxHeight: '350px', width: 'auto' }}
+                  />
+                </div>
               </div>
             )}
           </div>
