@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Calendar, Clock, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: post.date,
       authors: post.author ? [post.author] : undefined,
       tags: post.tags,
+      images: post.image ? [`https://www.asset-tracer.com${post.image}`] : undefined,
     },
   };
 }
@@ -53,8 +55,22 @@ export default async function BlogPostPage({ params }: Props) {
   // Parse markdown-style content (simple version)
   const contentSections = post.content
     .split('\n')
-    .filter(line => line.trim() !== '')
-    .map(line => line.trim());
+    .map(line => line.trim())
+    .filter((line, index, arr) => {
+      // Keep empty lines that are horizontal rules
+      if (line === '---') return true;
+      // Remove empty lines but keep structure
+      if (line === '') {
+        // Keep if it's between list items or after headings
+        const prev = arr[index - 1];
+        const next = arr[index + 1];
+        if (prev && (prev.startsWith('- ') || prev.startsWith('* ') || prev.startsWith('#'))) {
+          return false; // Remove empty lines after lists/headings
+        }
+        return false;
+      }
+      return true;
+    });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -119,56 +135,99 @@ export default async function BlogPostPage({ params }: Props) {
                 ))}
               </div>
             )}
+
+            {/* Featured Image */}
+            {post.image && (
+              <div className="mb-8 rounded-lg overflow-hidden">
+                <Image
+                  src={post.image}
+                  alt={post.title}
+                  width={1200}
+                  height={630}
+                  className="w-full h-auto object-cover"
+                  priority
+                />
+              </div>
+            )}
           </div>
 
           {/* Article Content */}
           <div className="prose prose-lg max-w-none">
             <div className="bg-white rounded-lg p-8 shadow-sm">
               {contentSections.map((section, index) => {
-                // Simple markdown parsing
+                // Handle horizontal rules
+                if (section === '---' || section.startsWith('---')) {
+                  return (
+                    <hr key={index} className="my-8 border-gray-200" />
+                  );
+                }
+                // Handle main headings
                 if (section.startsWith('# ')) {
                   return (
                     <h1 key={index} className="text-3xl font-bold text-gray-900 mt-8 mb-4 first:mt-0">
-                      {section.replace('# ', '')}
+                      {section.replace('# ', '').replace(/\*\*/g, '')}
                     </h1>
                   );
                 }
+                // Handle subheadings
                 if (section.startsWith('## ')) {
                   return (
                     <h2 key={index} className="text-2xl font-bold text-gray-900 mt-6 mb-3">
-                      {section.replace('## ', '')}
+                      {section.replace('## ', '').replace(/\*\*/g, '')}
                     </h2>
                   );
                 }
+                // Handle sub-subheadings
                 if (section.startsWith('### ')) {
                   return (
                     <h3 key={index} className="text-xl font-semibold text-gray-900 mt-4 mb-2">
-                      {section.replace('### ', '')}
+                      {section.replace('### ', '').replace(/\*\*/g, '')}
                     </h3>
                   );
                 }
-                if (section.startsWith('**') && section.endsWith('**')) {
+                // Handle bold text (standalone)
+                if (section.startsWith('**') && section.endsWith('**') && section.split('**').length === 3) {
                   return (
                     <p key={index} className="font-semibold text-gray-900 mt-4 mb-2">
                       {section.replace(/\*\*/g, '')}
                     </p>
                   );
                 }
-                if (section.startsWith('- ')) {
+                // Handle list items
+                if (section.startsWith('- ') || section.startsWith('* ')) {
+                  const bullet = section.startsWith('- ') ? '- ' : '* ';
+                  const content = section.replace(bullet, '');
+                  // Handle checkmarks
+                  if (content.startsWith('✔')) {
+                    return (
+                      <li key={index} className="ml-4 mb-2 text-gray-700 flex items-start">
+                        <span className="text-green-600 mr-2">✔</span>
+                        <span>{content.replace('✔', '').trim()}</span>
+                      </li>
+                    );
+                  }
                   return (
                     <li key={index} className="ml-4 mb-2 text-gray-700">
-                      {section.replace('- ', '')}
+                      {content}
                     </li>
                   );
                 }
+                // Handle empty lines
                 if (section.trim() === '') {
                   return null;
                 }
                 
+                // Handle regular paragraphs with inline formatting
+                const processedText = section
+                  .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  .replace(/\*(.*?)\*/g, '<em>$1</em>');
+                
                 return (
-                  <p key={index} className="text-gray-700 mb-4 leading-relaxed">
-                    {section}
-                  </p>
+                  <p 
+                    key={index} 
+                    className="text-gray-700 mb-4 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: processedText }}
+                  />
                 );
               })}
             </div>
