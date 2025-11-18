@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Calendar, Clock, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -133,23 +132,6 @@ export default async function BlogPostPage({ params }: Props) {
                     {tag}
                   </Badge>
                 ))}
-              </div>
-            )}
-
-            {/* Featured Image */}
-            {post.image && (
-              <div className="mb-8 rounded-lg overflow-hidden max-w-xl mx-auto">
-                <div className="relative w-full" style={{ maxHeight: '350px' }}>
-                  <Image
-                    src={post.image}
-                    alt={post.title}
-                    width={600}
-                    height={350}
-                    className="w-full h-auto object-contain"
-                    priority
-                    style={{ maxHeight: '350px', width: 'auto' }}
-                  />
-                </div>
               </div>
             )}
           </div>
