@@ -15,6 +15,7 @@ function CheckoutForm() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [showSyncOption, setShowSyncOption] = useState(false);
   const plan = searchParams.get('plan');
+  const interval = searchParams.get('interval') as 'monthly' | 'yearly' | null;
 
   useEffect(() => {
     const initiateCheckout = async () => {
@@ -33,7 +34,10 @@ function CheckoutForm() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ tier: plan }), // API expects 'tier' not 'plan'
+          body: JSON.stringify({ 
+            tier: plan, // API expects 'tier' not 'plan'
+            interval: interval || 'monthly', // Default to monthly if not specified
+          }),
         });
 
         const data = await response.json();
@@ -75,7 +79,7 @@ function CheckoutForm() {
     };
 
     initiateCheckout();
-  }, [plan]);
+  }, [plan, interval]);
 
   const handleSyncSubscription = async () => {
     try {

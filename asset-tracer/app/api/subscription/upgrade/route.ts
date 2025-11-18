@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 const upgradeSchema = z.object({
   tier: z.enum(['pro', 'business']),
+  interval: z.enum(['monthly', 'yearly']).optional().default('monthly'),
 });
 
 export async function POST(request: NextRequest) {
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { tier } = validationResult.data;
+    const { tier, interval } = validationResult.data;
 
     // Get organization details
     const { data: organization, error: orgError } = await supabase
@@ -65,10 +66,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Map tier to Polar Price IDs from environment variables
-    // These should be set in your .env file (POLAR_PRO_PRICE_ID, POLAR_BUSINESS_PRICE_ID)
-    const proPriceId = process.env.POLAR_PRO_PRICE_ID || process.env.NEXT_PUBLIC_POLAR_PRO_PRICE_ID || '';
-    const businessPriceId = process.env.POLAR_BUSINESS_PRICE_ID || process.env.NEXT_PUBLIC_POLAR_BUSINESS_PRICE_ID || '';
+    // Map tier and interval to Polar Price IDs from environment variables
+    // Monthly Price IDs
+    const proMonthlyPriceId = process.env.POLAR_PRO_PRICE_ID || process.env.NEXT_PUBLIC_POLAR_PRO_PRICE_ID || '';
+    const businessMonthlyPriceId = process.env.POLAR_BUSINESS_PRICE_ID || process.env.NEXT_PUBLIC_POLAR_BUSINESS_PRICE_ID || '';
+    
+    // Yearly Price IDs
+    const proYearlyPriceId = process.env.POLAR_PRO_YEARLY_PRICE_ID || process.env.NEXT_PUBLIC_POLAR_PRO_YEARLY_PRICE_ID || '';
+    const businessYearlyPriceId = process.env.POLAR_BUSINESS_YEARLY_PRICE_ID || process.env.NEXT_PUBLIC_POLAR_BUSINESS_YEARLY_PRICE_ID || '';
     
     // CRITICAL DEBUG: Log environment variable status
     console.error('🔍 PRICE ID DEBUG - Environment Variables:', {
@@ -76,31 +81,44 @@ export async function POST(request: NextRequest) {
       'NEXT_PUBLIC_POLAR_PRO_PRICE_ID': process.env.NEXT_PUBLIC_POLAR_PRO_PRICE_ID || 'NOT SET',
       'POLAR_BUSINESS_PRICE_ID': process.env.POLAR_BUSINESS_PRICE_ID || 'NOT SET',
       'NEXT_PUBLIC_POLAR_BUSINESS_PRICE_ID': process.env.NEXT_PUBLIC_POLAR_BUSINESS_PRICE_ID || 'NOT SET',
-      'Selected proPriceId': proPriceId || 'EMPTY',
-      'Selected businessPriceId': businessPriceId || 'EMPTY',
+      'POLAR_PRO_YEARLY_PRICE_ID': process.env.POLAR_PRO_YEARLY_PRICE_ID || 'NOT SET',
+      'POLAR_BUSINESS_YEARLY_PRICE_ID': process.env.POLAR_BUSINESS_YEARLY_PRICE_ID || 'NOT SET',
       'Requested tier': tier,
+      'Requested interval': interval,
     });
     
-    const priceIdMapping: Record<string, string> = {
-      pro: proPriceId,
-      business: businessPriceId,
+    // Select Price ID based on tier and interval
+    const priceIdMapping: Record<string, Record<string, string>> = {
+      pro: {
+        monthly: proMonthlyPriceId,
+        yearly: proYearlyPriceId,
+      },
+      business: {
+        monthly: businessMonthlyPriceId,
+        yearly: businessYearlyPriceId,
+      },
     };
 
     // Log what we found for debugging
     console.error('🔍 PRICE ID DEBUG - Final Mapping:', {
       tier,
-      proPriceId: proPriceId || 'NOT SET',
-      businessPriceId: businessPriceId || 'NOT SET',
-      selectedPriceId: priceIdMapping[tier] || 'NOT SET',
+      interval,
+      proMonthlyPriceId: proMonthlyPriceId || 'NOT SET',
+      businessMonthlyPriceId: businessMonthlyPriceId || 'NOT SET',
+      proYearlyPriceId: proYearlyPriceId || 'NOT SET',
+      businessYearlyPriceId: businessYearlyPriceId || 'NOT SET',
+      selectedPriceId: priceIdMapping[tier]?.[interval] || 'NOT SET',
       allPolarEnvKeys: Object.keys(process.env).filter(k => k.includes('POLAR')),
     });
 
-    const priceId = priceIdMapping[tier];
+    const priceId = priceIdMapping[tier]?.[interval];
     if (!priceId) {
-      console.error('Missing Price ID for tier:', tier, {
+      console.error('Missing Price ID for tier:', tier, 'interval:', interval, {
         envKeys: Object.keys(process.env).filter(k => k.includes('POLAR') && k.includes('PRICE')),
-        proPriceId,
-        businessPriceId,
+        proMonthlyPriceId,
+        businessMonthlyPriceId,
+        proYearlyPriceId,
+        businessYearlyPriceId,
       });
       return NextResponse.json(
         { 

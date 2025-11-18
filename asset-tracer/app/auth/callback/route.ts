@@ -47,10 +47,14 @@ export async function GET(request: NextRequest) {
       // We determine this by checking if the user has consent data stored
       // Check for plan parameter (from landing page pricing)
       const plan = requestUrl.searchParams.get('plan');
+      const interval = requestUrl.searchParams.get('interval');
       
       if (plan && (plan === 'pro' || plan === 'business')) {
         // Redirect directly to checkout page for immediate upgrade
-        return NextResponse.redirect(`${origin}/checkout?plan=${plan}`);
+        const checkoutUrl = interval 
+          ? `${origin}/checkout?plan=${plan}&interval=${interval}`
+          : `${origin}/checkout?plan=${plan}`;
+        return NextResponse.redirect(checkoutUrl);
       }
       
       // Check for other redirect parameters

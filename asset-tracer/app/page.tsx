@@ -90,6 +90,7 @@ function LandingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
 
   // Show welcome message after account deletion
   useEffect(() => {
@@ -115,9 +116,21 @@ function LandingPageContent() {
       // Free plan - just go to login
       router.push('/login');
     } else {
-      // Pro or Business plan - redirect to login with plan for direct checkout
-      router.push(`/login?plan=${plan}`);
+      // Pro or Business plan - redirect to login with plan and billing interval
+      router.push(`/login?plan=${plan}&interval=${billingInterval}`);
     }
+  };
+
+  // Pricing configuration
+  const pricing = {
+    pro: {
+      monthly: 19,
+      yearly: 182, // 20% off (19 * 12 * 0.8 = 182.4, rounded to 182)
+    },
+    business: {
+      monthly: 39,
+      yearly: 374, // 20% off (39 * 12 * 0.8 = 374.4, rounded to 374)
+    },
   };
 
   return (
@@ -528,9 +541,38 @@ function LandingPageContent() {
             <h2 className="text-3xl sm:text-4xl font-bold text-[#0B1226] mb-4">
               Simple, Transparent Pricing — Start Free. Upgrade Anytime.
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 mb-8">
               No hidden fees. Cancel anytime.
             </p>
+            
+            {/* Billing Interval Toggle */}
+            <div className="flex items-center justify-center gap-4 mb-8">
+              <span className={`text-sm font-medium ${billingInterval === 'monthly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
+                Monthly
+              </span>
+              <button
+                onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  billingInterval === 'yearly' ? 'bg-[#2563EB]' : 'bg-gray-300'
+                }`}
+                role="switch"
+                aria-checked={billingInterval === 'yearly'}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    billingInterval === 'yearly' ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className={`text-sm font-medium ${billingInterval === 'yearly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
+                Yearly
+              </span>
+              {billingInterval === 'yearly' && (
+                <Badge className="bg-green-100 text-green-700 hover:bg-green-100 ml-2">
+                  Save 20%
+                </Badge>
+              )}
+            </div>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -593,8 +635,16 @@ function LandingPageContent() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="text-4xl font-bold text-[#0B1226]">
-                  $19<span className="text-lg font-normal text-gray-500">/month</span>
+                  ${billingInterval === 'monthly' ? pricing.pro.monthly : pricing.pro.yearly}
+                  <span className="text-lg font-normal text-gray-500">
+                    /{billingInterval === 'monthly' ? 'month' : 'year'}
+                  </span>
                 </div>
+                {billingInterval === 'yearly' && (
+                  <p className="text-sm text-gray-500">
+                    ${pricing.pro.monthly}/month billed annually
+                  </p>
+                )}
                 <ul className="space-y-3">
                   <li className="flex items-start">
                     <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
@@ -644,8 +694,16 @@ function LandingPageContent() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="text-4xl font-bold text-[#0B1226]">
-                  $39<span className="text-lg font-normal text-gray-500">/month</span>
+                  ${billingInterval === 'monthly' ? pricing.business.monthly : pricing.business.yearly}
+                  <span className="text-lg font-normal text-gray-500">
+                    /{billingInterval === 'monthly' ? 'month' : 'year'}
+                  </span>
                 </div>
+                {billingInterval === 'yearly' && (
+                  <p className="text-sm text-gray-500">
+                    ${pricing.business.monthly}/month billed annually
+                  </p>
+                )}
                 <ul className="space-y-3">
                   <li className="flex items-start">
                     <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
