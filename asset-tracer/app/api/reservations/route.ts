@@ -176,6 +176,45 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Check subscription limits
+      const { data: organization } = await supabase
+        .from('organizations')
+        .select('subscription_tier')
+        .eq('id', organizationId)
+        .single();
+
+      const subscriptionTier = organization?.subscription_tier || 'free';
+
+      // Check monthly reservation limit
+      if (subscriptionTier !== 'business') {
+        const now = new Date();
+        const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+        const firstDayISO = firstDayOfMonth.toISOString().split('.')[0] + 'Z';
+        
+        const { data: monthlyReservations, error: fetchError } = await supabase
+          .from('reservations')
+          .select('id, created_at')
+          .eq('organization_id', organizationId)
+          .gte('created_at', firstDayISO);
+
+        if (fetchError) {
+          console.error('Error fetching monthly reservations:', fetchError);
+        }
+
+        const currentMonthCount = monthlyReservations?.length || 0;
+        const maxAllowed = subscriptionTier === 'free' ? 10 : 200;
+
+        if (currentMonthCount >= maxAllowed) {
+          return NextResponse.json(
+            {
+              error: 'Monthly reservation limit reached',
+              message: `Your ${subscriptionTier === 'free' ? 'Free' : 'Pro'} plan allows ${maxAllowed} reservations per month. You've created ${currentMonthCount} this month. ${subscriptionTier === 'free' ? 'Upgrade to Pro for 200 reservations/month, or Business for unlimited.' : 'Upgrade to Business for unlimited reservations.'}`,
+            },
+            { status: 403 }
+          );
+        }
+      }
+
       const reservationData: CreateReservationInput = {
         title: validated.title,
         project_name: validated.project_name ?? null,
@@ -200,6 +239,45 @@ export async function POST(request: NextRequest) {
       );
 
       return NextResponse.json({ reservation }, { status: 201 });
+    }
+
+    // Get organization subscription tier
+    const { data: organization } = await supabase
+      .from('organizations')
+      .select('subscription_tier')
+      .eq('id', userProfile.organization_id)
+      .single();
+
+    const subscriptionTier = organization?.subscription_tier || 'free';
+
+    // Check monthly reservation limit
+    if (subscriptionTier !== 'business') {
+      const now = new Date();
+      const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      const firstDayISO = firstDayOfMonth.toISOString().split('.')[0] + 'Z';
+      
+      const { data: monthlyReservations, error: fetchError } = await supabase
+        .from('reservations')
+        .select('id, created_at')
+        .eq('organization_id', userProfile.organization_id)
+        .gte('created_at', firstDayISO);
+
+      if (fetchError) {
+        console.error('Error fetching monthly reservations:', fetchError);
+      }
+
+      const currentMonthCount = monthlyReservations?.length || 0;
+      const maxAllowed = subscriptionTier === 'free' ? 10 : 200;
+
+      if (currentMonthCount >= maxAllowed) {
+        return NextResponse.json(
+          {
+            error: 'Monthly reservation limit reached',
+            message: `Your ${subscriptionTier === 'free' ? 'Free' : 'Pro'} plan allows ${maxAllowed} reservations per month. You've created ${currentMonthCount} this month. ${subscriptionTier === 'free' ? 'Upgrade to Pro for 200 reservations/month, or Business for unlimited.' : 'Upgrade to Business for unlimited reservations.'}`,
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Create reservation

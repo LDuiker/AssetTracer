@@ -30,6 +30,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { AssetKitDialog } from '@/components/asset-kits';
+import { useSubscription } from '@/lib/context/SubscriptionContext';
 import type { Asset, AssetKit } from '@/types';
 import type { Reservation, CreateReservationInput } from '@/types/reservation';
 
@@ -81,9 +82,23 @@ export function ReservationFormDialog({
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [isKitDialogOpen, setIsKitDialogOpen] = useState(false);
 
+  // Subscription limits
+  const { tier, limits, canCreateReservation } = useSubscription();
+
   // Fetch assets
   const { data: assetsData } = useSWR<{ assets: Asset[] }>('/api/assets');
   const assets = assetsData?.assets || [];
+  
+  // Fetch reservations to check monthly count
+  const { data: reservationsData } = useSWR<{ reservations: Reservation[] }>('/api/reservations');
+  const reservations = reservationsData?.reservations || [];
+  
+  // Calculate monthly reservation count
+  const monthlyReservationCount = useMemo(() => {
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    return reservations.filter((r) => new Date(r.created_at) >= firstDayOfMonth).length;
+  }, [reservations]);
 
   // Fetch kits
   const { data: kitsData, mutate: mutateKits } = useSWR<{ kits: AssetKit[] }>('/api/asset-kits');
@@ -389,11 +404,12 @@ export function ReservationFormDialog({
         });
         setSelectedAssets([]);
         setSelectedKits([]);
-        setSelectionMode('assets');
+        // Force assets mode if kits not allowed
+        setSelectionMode(limits.hasKitReservations ? 'assets' : 'assets');
       }
       setAvailabilityResults({});
     }
-  }, [open, reservation, initialDate, reset]);
+  }, [open, reservation, initialDate, reset, limits.hasKitReservations]);
 
   // Check availability when dates or selected assets/kits change
   useEffect(() => {
@@ -488,16 +504,49 @@ export function ReservationFormDialog({
       return;
     }
 
+    // Check monthly reservation limit (for new reservations only)
+    if (!reservation) {
+      if (!canCreateReservation(monthlyReservationCount)) {
+        const maxAllowed = limits.maxReservationsPerMonth;
+        toast.error('Monthly reservation limit reached', {
+          description: `Your ${tier === 'free' ? 'Free' : 'Pro'} plan allows ${maxAllowed} reservations per month. You've created ${monthlyReservationCount} this month. ${tier === 'free' ? 'Upgrade to Pro for 200 reservations/month, or Business for unlimited.' : 'Upgrade to Business for unlimited reservations.'}`,
+          action: {
+            label: 'Upgrade',
+            onClick: () => {
+              window.location.href = '/settings?tab=billing';
+            },
+          },
+        });
+        return;
+      }
+    }
+
     // Check for conflicts
     const hasConflicts = Object.values(availabilityResults).some(
       (result: any) => result && !result.is_available && result.conflicts && Array.isArray(result.conflicts) && result.conflicts.length > 0
     );
 
+    // Enforce conflict override based on subscription tier
     if (hasConflicts) {
-      const confirmed = window.confirm(
-        'Some assets have scheduling conflicts. Do you want to proceed anyway?'
-      );
-      if (!confirmed) return;
+      if (!limits.hasConflictOverride) {
+        // Free and Pro plans cannot override conflicts
+        toast.error('Scheduling conflicts detected', {
+          description: 'Some selected assets have scheduling conflicts. Business plan required to override conflicts.',
+          action: {
+            label: 'Upgrade',
+            onClick: () => {
+              window.location.href = '/settings?tab=billing';
+            },
+          },
+        });
+        return;
+      } else {
+        // Business plan can override, but show confirmation
+        const confirmed = window.confirm(
+          'Some assets have scheduling conflicts. Do you want to proceed anyway?'
+        );
+        if (!confirmed) return;
+      }
     }
 
     try {
@@ -719,7 +768,7 @@ export function ReservationFormDialog({
 
           <Separator />
 
-          {/* Equipment Selection Section */}
+            {/* Equipment Selection Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -739,12 +788,42 @@ export function ReservationFormDialog({
                   type="button"
                   variant={selectionMode === 'kits' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setSelectionMode('kits')}
+                  onClick={() => {
+                    if (!limits.hasKitReservations) {
+                      toast.error('Kit reservations not available', {
+                        description: 'Kit reservations require Pro plan or higher. Upgrade to reserve complete equipment bundles.',
+                        action: {
+                          label: 'Upgrade',
+                          onClick: () => {
+                            window.location.href = '/settings?tab=billing';
+                          },
+                        },
+                      });
+                      return;
+                    }
+                    setSelectionMode('kits');
+                  }}
+                  disabled={!limits.hasKitReservations}
+                  title={!limits.hasKitReservations ? 'Kit reservations require Pro plan or higher' : ''}
                 >
                   Kits
+                  {!limits.hasKitReservations && (
+                    <Badge variant="outline" className="ml-2 text-xs">Pro+</Badge>
+                  )}
                 </Button>
               </div>
             </div>
+            
+            {/* Monthly limit warning */}
+            {!reservation && !canCreateReservation(monthlyReservationCount) && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Monthly reservation limit reached ({monthlyReservationCount}/{limits.maxReservationsPerMonth}). 
+                  {tier === 'free' ? ' Upgrade to Pro for 200/month or Business for unlimited.' : ' Upgrade to Business for unlimited reservations.'}
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Kit Selection */}
             {selectionMode === 'kits' && (

@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ReservationFormDialog } from '@/components/reservations/ReservationFormDialog';
 import { ReservationViewDialog } from '@/components/reservations/ReservationViewDialog';
 import { ReservationsCalendar } from '@/components/reservations/ReservationsCalendar';
+import { useSubscription } from '@/lib/context/SubscriptionContext';
 import type { Reservation } from '@/types/reservation';
 import { toast } from 'sonner';
 
@@ -43,6 +44,16 @@ export default function ReservationsPage() {
 
   const reservationsData = data?.reservations;
   const reservations = useMemo<Reservation[]>(() => reservationsData ?? [], [reservationsData]);
+  
+  // Subscription limits
+  const { tier, limits, canCreateReservation } = useSubscription();
+  
+  // Calculate monthly reservation count
+  const monthlyReservationCount = useMemo(() => {
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    return reservations.filter((r) => new Date(r.created_at) >= firstDayOfMonth).length;
+  }, [reservations]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -78,6 +89,21 @@ export default function ReservationsPage() {
   };
 
   const handleCreate = () => {
+    // Check monthly reservation limit
+    if (!canCreateReservation(monthlyReservationCount)) {
+      const maxAllowed = limits.maxReservationsPerMonth;
+      toast.error('Monthly reservation limit reached', {
+        description: `Your ${tier === 'free' ? 'Free' : 'Pro'} plan allows ${maxAllowed} reservations per month. You've created ${monthlyReservationCount} this month. ${tier === 'free' ? 'Upgrade to Pro for 200 reservations/month, or Business for unlimited.' : 'Upgrade to Business for unlimited reservations.'}`,
+        action: {
+          label: 'Upgrade',
+          onClick: () => {
+            window.location.href = '/settings?tab=billing';
+          },
+        },
+      });
+      return;
+    }
+    
     setSelectedReservation(null);
     setInitialDate(null);
     setIsFormOpen(true);
@@ -239,9 +265,19 @@ export default function ReservationsPage() {
             <FileText className="h-4 w-4" />
             {isExportingPDF ? 'Generating...' : 'Export PDF'}
           </Button>
-          <Button onClick={handleCreate} className="gap-2">
+          <Button 
+            onClick={handleCreate} 
+            className="gap-2"
+            disabled={!canCreateReservation(monthlyReservationCount)}
+            title={!canCreateReservation(monthlyReservationCount) ? `Monthly limit reached (${monthlyReservationCount}/${limits.maxReservationsPerMonth})` : ''}
+          >
             <Plus className="h-4 w-4" />
             New Reservation
+            {!canCreateReservation(monthlyReservationCount) && (
+              <span className="ml-2 text-xs opacity-75">
+                ({monthlyReservationCount}/{limits.maxReservationsPerMonth})
+              </span>
+            )}
           </Button>
         </div>
       </div>

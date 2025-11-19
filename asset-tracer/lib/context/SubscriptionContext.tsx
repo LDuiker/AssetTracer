@@ -15,6 +15,7 @@ interface SubscriptionContextType {
   canCreateAsset: (currentCount: number) => boolean;
   canCreateInvoice: (currentMonthCount: number) => boolean;
   canCreateQuotation: (currentMonthCount: number) => boolean;
+  canCreateReservation: (currentMonthCount: number) => boolean;
   getUpgradeMessage: (feature: string) => string;
   redirectToUpgrade: () => void;
 }
@@ -57,6 +58,10 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     return currentMonthCount < limits.maxQuotationsPerMonth;
   };
 
+  const canCreateReservation = (currentMonthCount: number): boolean => {
+    return currentMonthCount < limits.maxReservationsPerMonth;
+  };
+
   const getUpgradeMessage = (feature: string): string => {
     return `You've reached the limit for ${feature} on the Free plan. Upgrade to Pro for unlimited access.`;
   };
@@ -76,6 +81,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         canCreateAsset,
         canCreateInvoice,
         canCreateQuotation,
+        canCreateReservation,
         getUpgradeMessage,
         redirectToUpgrade,
       }}

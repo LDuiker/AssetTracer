@@ -5,6 +5,7 @@ export interface SubscriptionLimits {
   maxInventoryItems: number;
   maxInvoicesPerMonth: number;
   maxQuotationsPerMonth: number;
+  maxReservationsPerMonth: number;
   maxUsers: number;
   hasAdvancedReporting: boolean;
   hasPDFExport: boolean;
@@ -16,6 +17,9 @@ export interface SubscriptionLimits {
   hasTopPerformersChart: boolean;
   hasGrowthMetrics: boolean;
   hasDateRangeFilter: boolean;
+  hasKitReservations: boolean;
+  hasConflictOverride: boolean;
+  hasLocationReservations: boolean;
 }
 
 export const SUBSCRIPTION_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
@@ -24,6 +28,7 @@ export const SUBSCRIPTION_LIMITS: Record<SubscriptionTier, SubscriptionLimits> =
     maxInventoryItems: 50,
     maxInvoicesPerMonth: 5,
     maxQuotationsPerMonth: 5,
+    maxReservationsPerMonth: 10,
     maxUsers: 1,
     hasAdvancedReporting: false,
     hasPDFExport: true,
@@ -35,12 +40,16 @@ export const SUBSCRIPTION_LIMITS: Record<SubscriptionTier, SubscriptionLimits> =
     hasTopPerformersChart: false,
     hasGrowthMetrics: false,
     hasDateRangeFilter: false,
+    hasKitReservations: false,
+    hasConflictOverride: false,
+    hasLocationReservations: false,
   },
   pro: {
     maxAssets: 500,
     maxInventoryItems: 1000,
     maxInvoicesPerMonth: Infinity,
     maxQuotationsPerMonth: Infinity,
+    maxReservationsPerMonth: 200,
     maxUsers: 5,
     hasAdvancedReporting: true,
     hasPDFExport: true,
@@ -52,12 +61,16 @@ export const SUBSCRIPTION_LIMITS: Record<SubscriptionTier, SubscriptionLimits> =
     hasTopPerformersChart: true,
     hasGrowthMetrics: true,
     hasDateRangeFilter: true,
+    hasKitReservations: true,
+    hasConflictOverride: false,
+    hasLocationReservations: false,
   },
   business: {
     maxAssets: Infinity,
     maxInventoryItems: Infinity,
     maxInvoicesPerMonth: Infinity,
     maxQuotationsPerMonth: Infinity,
+    maxReservationsPerMonth: Infinity,
     maxUsers: 20,
     hasAdvancedReporting: true,
     hasPDFExport: true,
@@ -69,6 +82,9 @@ export const SUBSCRIPTION_LIMITS: Record<SubscriptionTier, SubscriptionLimits> =
     hasTopPerformersChart: true,
     hasGrowthMetrics: true,
     hasDateRangeFilter: true,
+    hasKitReservations: true,
+    hasConflictOverride: true,
+    hasLocationReservations: true,
   },
 };
 
