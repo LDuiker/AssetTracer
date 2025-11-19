@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import useSWR from 'swr';
-import { Plus, Calendar, Search, Filter } from 'lucide-react';
+import { Plus, Calendar, Search, Filter, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,10 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ReservationFormDialog } from '@/components/reservations/ReservationFormDialog';
 import { ReservationViewDialog } from '@/components/reservations/ReservationViewDialog';
+import { ReservationsCalendar } from '@/components/reservations/ReservationsCalendar';
 import type { Reservation } from '@/types/reservation';
 
 const statusColors: Record<string, string> = {
@@ -43,7 +45,9 @@ export default function ReservationsPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [initialDate, setInitialDate] = useState<Date | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
 
@@ -72,6 +76,7 @@ export default function ReservationsPage() {
 
   const handleCreate = () => {
     setSelectedReservation(null);
+    setInitialDate(null);
     setIsFormOpen(true);
   };
 
@@ -89,6 +94,18 @@ export default function ReservationsPage() {
     setIsViewOpen(false);
     setSelectedReservation(null);
     mutate();
+  };
+
+  const handleCalendarDateClick = (date: Date) => {
+    // Open form with pre-filled date
+    setSelectedReservation(null);
+    setInitialDate(date);
+    setIsFormOpen(true);
+  };
+
+  const handleCalendarReservationClick = (reservation: Reservation) => {
+    setSelectedReservation(reservation);
+    setIsViewOpen(true);
   };
 
   if (isLoading) {
@@ -138,35 +155,58 @@ export default function ReservationsPage() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search reservations..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* View Toggle and Filters */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'calendar')}>
+          <TabsList>
+            <TabsTrigger value="list" className="gap-2">
+              <List className="h-4 w-4" />
+              List
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="gap-2">
+              <Calendar className="h-4 w-4" />
+              Calendar
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {viewMode === 'list' && (
+          <>
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search reservations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        )}
       </div>
 
-      {/* Reservations List */}
-      {filteredReservations.length === 0 ? (
+      {/* Reservations View */}
+      {viewMode === 'calendar' ? (
+        <ReservationsCalendar
+          reservations={filteredReservations}
+          onDateClick={handleCalendarDateClick}
+          onReservationClick={handleCalendarReservationClick}
+        />
+      ) : filteredReservations.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
             <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
@@ -243,8 +283,14 @@ export default function ReservationsPage() {
       {/* Dialogs */}
       <ReservationFormDialog
         open={isFormOpen}
-        onOpenChange={setIsFormOpen}
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) {
+            setInitialDate(null);
+          }
+        }}
         reservation={selectedReservation}
+        initialDate={initialDate}
         onSuccess={handleFormSuccess}
       />
 

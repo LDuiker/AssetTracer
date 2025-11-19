@@ -5,6 +5,7 @@ import useSWR from 'swr';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { format } from 'date-fns';
 import { X, Calendar, Clock, MapPin, AlertCircle, CheckCircle2 } from 'lucide-react';
 import {
   Dialog,
@@ -59,6 +60,7 @@ interface ReservationFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   reservation?: Reservation | null;
+  initialDate?: Date | null;
   onSuccess: () => void;
 }
 
@@ -66,6 +68,7 @@ export function ReservationFormDialog({
   open,
   onOpenChange,
   reservation,
+  initialDate,
   onSuccess,
 }: ReservationFormDialogProps) {
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
@@ -131,12 +134,14 @@ export function ReservationFormDialog({
         }
         setSelectedAssets(assetIds);
       } else {
+        // Use initialDate if provided, otherwise use empty strings
+        const dateStr = initialDate ? format(initialDate, 'yyyy-MM-dd') : '';
         reset({
           title: '',
           project_name: '',
           description: '',
-          start_date: '',
-          end_date: '',
+          start_date: dateStr,
+          end_date: dateStr,
           start_time: '',
           end_time: '',
           location: '',
