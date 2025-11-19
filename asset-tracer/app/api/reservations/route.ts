@@ -13,20 +13,30 @@ const createReservationSchema = z.object({
   description: z.string().nullable().optional(),
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
   end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
-  start_time: z.preprocess(
-    (val) => (val === '' || val === undefined || val === null ? null : val),
-    z
-      .union([z.string().regex(/^\d{2}:\d{2}$/), z.null()])
-      .nullable()
-      .optional()
-  ),
-  end_time: z.preprocess(
-    (val) => (val === '' || val === undefined || val === null ? null : val),
-    z
-      .union([z.string().regex(/^\d{2}:\d{2}$/), z.null()])
-      .nullable()
-      .optional()
-  ),
+  start_time: z
+    .any()
+    .optional()
+    .nullable()
+    .transform((val) => {
+      if (val === '' || val === undefined || val === null) return null;
+      if (typeof val === 'string' && /^\d{2}:\d{2}$/.test(val)) return val;
+      return null; // Invalid format, convert to null
+    })
+    .refine((val) => val === null || /^\d{2}:\d{2}$/.test(val), {
+      message: 'Invalid time format. Use HH:mm format or leave empty',
+    }),
+  end_time: z
+    .any()
+    .optional()
+    .nullable()
+    .transform((val) => {
+      if (val === '' || val === undefined || val === null) return null;
+      if (typeof val === 'string' && /^\d{2}:\d{2}$/.test(val)) return val;
+      return null; // Invalid format, convert to null
+    })
+    .refine((val) => val === null || /^\d{2}:\d{2}$/.test(val), {
+      message: 'Invalid time format. Use HH:mm format or leave empty',
+    }),
   location: z.string().nullable().optional(),
   status: z.enum(['pending', 'confirmed', 'active', 'completed', 'cancelled']).optional(),
   team_members: z.array(z.string().uuid()).nullable().optional(),
