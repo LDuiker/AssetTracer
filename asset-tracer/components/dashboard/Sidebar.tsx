@@ -14,7 +14,8 @@ import {
   Settings,
   Crown,
   Zap,
-  Sparkles
+  Sparkles,
+  Calendar
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSubscription } from '@/lib/context/SubscriptionContext';
@@ -38,6 +39,11 @@ const navItems: NavItem[] = [
     label: 'Assets',
     href: '/assets',
     icon: Package,
+  },
+  {
+    label: 'Reservations',
+    href: '/reservations',
+    icon: Calendar,
   },
   {
     label: 'Inventory',
