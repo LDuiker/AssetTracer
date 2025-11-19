@@ -31,7 +31,6 @@ import { toast } from 'sonner';
 import { AssetKitDialog } from '@/components/asset-kits';
 import type { Asset, AssetKit } from '@/types';
 import type { Reservation, CreateReservationInput } from '@/types/reservation';
-import { AssetKitDialog } from '@/components/asset-kits';
 
 const reservationSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -740,10 +739,7 @@ export function ReservationFormDialog({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setEditingKit(null);
-                      setIsKitDialogOpen(true);
-                    }}
+                    onClick={() => setIsKitDialogOpen(true)}
                     className="h-7 text-xs"
                   >
                     <Plus className="h-3 w-3 mr-1" />
@@ -758,10 +754,7 @@ export function ReservationFormDialog({
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          setEditingKit(null);
-                          setIsKitDialogOpen(true);
-                        }}
+                        onClick={() => setIsKitDialogOpen(true)}
                       >
                         <Plus className="h-3 w-3 mr-1" />
                         Create Your First Kit
@@ -916,7 +909,7 @@ export function ReservationFormDialog({
         <AssetKitDialog
           open={isKitDialogOpen}
           onOpenChange={setIsKitDialogOpen}
-          kit={editingKit}
+          kit={null}
           onSuccess={() => {
             mutateKits();
           }}
