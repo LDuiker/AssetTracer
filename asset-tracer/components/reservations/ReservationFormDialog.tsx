@@ -649,7 +649,7 @@ export function ReservationFormDialog({
                     );
                   })}
                 </div>
-              )}
+              ))
             </div>
             {selectedAssets.length === 0 && (
               <p className="text-sm text-red-500 mt-1">Please select at least one asset</p>
