@@ -28,6 +28,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
+import { AssetKitDialog } from '@/components/asset-kits';
 import type { Asset, AssetKit } from '@/types';
 import type { Reservation, CreateReservationInput } from '@/types/reservation';
 
@@ -77,6 +78,8 @@ export function ReservationFormDialog({
   const [availabilityResults, setAvailabilityResults] = useState<Record<string, any>>({});
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [isKitDialogOpen, setIsKitDialogOpen] = useState(false);
+  const [editingKit, setEditingKit] = useState<AssetKit | null>(null);
 
   // Fetch assets
   const { data: assetsData } = useSWR<{ assets: Asset[] }>('/api/assets');
