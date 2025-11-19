@@ -28,7 +28,18 @@ export async function getReservations(organizationId: string): Promise<Reservati
     }
 
     // Fetch assets for all reservations
-    const reservationIds = reservations.map((r) => r.id);
+    const reservationIds = reservations
+      .filter((r) => r && r.id)
+      .map((r) => r.id);
+    
+    if (reservationIds.length === 0) {
+      // No valid reservation IDs, return reservations with empty assets
+      return reservations.map((r) => ({
+        ...r,
+        assets: [],
+      }));
+    }
+
     const { data: reservationAssets, error: assetsError } = await supabase
       .from('reservation_assets')
       .select(`
@@ -40,14 +51,18 @@ export async function getReservations(organizationId: string): Promise<Reservati
 
     if (assetsError) {
       console.error('Error fetching reservation assets:', assetsError);
-      // Don't throw, just return reservations without assets
+      // Return reservations with empty assets arrays
+      return reservations.map((r) => ({
+        ...r,
+        assets: [],
+      }));
     }
 
     // Group assets by reservation_id
     const assetsByReservation = new Map<string, any[]>();
     if (reservationAssets && Array.isArray(reservationAssets)) {
       reservationAssets.forEach((ra) => {
-        if (ra.reservation_id) {
+        if (ra && ra.reservation_id) {
           if (!assetsByReservation.has(ra.reservation_id)) {
             assetsByReservation.set(ra.reservation_id, []);
           }
@@ -56,11 +71,16 @@ export async function getReservations(organizationId: string): Promise<Reservati
       });
     }
 
-    // Attach assets to each reservation
-    return reservations.map((reservation) => ({
-      ...reservation,
-      assets: assetsByReservation.get(reservation.id) || [],
-    }));
+    // Attach assets to each reservation, ensuring assets is always an array
+    return reservations.map((reservation) => {
+      if (!reservation || !reservation.id) {
+        return { ...reservation, assets: [] };
+      }
+      return {
+        ...reservation,
+        assets: assetsByReservation.get(reservation.id) || [],
+      };
+    });
   } catch (error) {
     console.error('Unexpected error in getReservations:', error);
     throw error;

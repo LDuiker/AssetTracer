@@ -135,9 +135,9 @@ export async function PATCH(
     const validationResult = updateReservationSchema.safeParse(body);
 
     if (!validationResult.success) {
-      const errors = validationResult.error.errors.map((err) => ({
-        field: err.path.join('.'),
-        message: err.message,
+      const errors = (validationResult.error?.errors || []).map((err) => ({
+        field: (err.path || []).join('.'),
+        message: err.message || 'Validation error',
       }));
 
       return NextResponse.json(
