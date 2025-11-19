@@ -89,11 +89,8 @@ const styles = StyleSheet.create({
     flex: 3,
   },
   colAvailable: {
-    width: 100,
-    textAlign: 'right',
-  },
-  colType: {
     width: 120,
+    textAlign: 'right',
   },
   subcategory: {
     paddingLeft: 15,
@@ -285,9 +282,6 @@ export function ReservationPackingListTemplate({
                     <Text style={[styles.tableHeaderText, styles.colAvailable]}>
                       Available
                     </Text>
-                    <Text style={[styles.tableHeaderText, styles.colType]}>
-                      Type
-                    </Text>
                   </View>
 
                   {/* Table Rows */}
@@ -295,7 +289,6 @@ export function ReservationPackingListTemplate({
                     const asset = reservationAsset.asset;
                     const assetName = asset?.name || 'Unknown Asset';
                     const quantity = reservationAsset.quantity;
-                    const status = asset?.status || 'Unknown';
                     const location = asset?.location;
 
                     return (
@@ -316,9 +309,6 @@ export function ReservationPackingListTemplate({
                         </Text>
                         <Text style={[styles.tableCell, styles.colAvailable]}>
                           {quantity} {quantity === 1 ? 'Pc' : 'Pcs'}
-                        </Text>
-                        <Text style={[styles.tableCell, styles.colType]}>
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
                         </Text>
                       </View>
                     );
