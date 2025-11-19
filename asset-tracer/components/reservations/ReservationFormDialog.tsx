@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -74,10 +74,40 @@ export function ReservationFormDialog({
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [availabilityResults, setAvailabilityResults] = useState<Record<string, any>>({});
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   // Fetch assets
   const { data: assetsData } = useSWR<{ assets: Asset[] }>('/api/assets');
   const assets = assetsData?.assets || [];
+
+  // Group assets by category
+  const assetsByCategory = useMemo(() => {
+    const grouped: Record<string, Asset[]> = {};
+    assets.forEach((asset) => {
+      const category = asset.category || 'Uncategorized';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push(asset);
+    });
+    return grouped;
+  }, [assets]);
+
+  // Get unique categories
+  const categories = useMemo(() => {
+    const cats = Array.from(new Set(assets.map((a) => a.category || 'Uncategorized').filter(Boolean)));
+    return cats.sort();
+  }, [assets]);
+
+  // Filter assets based on category filter
+  const availableAssets = useMemo(() => {
+    if (categoryFilter === 'all') {
+      return assets.filter((asset) => asset.status === 'active');
+    }
+    return assets.filter(
+      (asset) => asset.status === 'active' && (asset.category || 'Uncategorized') === categoryFilter
+    );
+  }, [assets, categoryFilter]);
 
   const {
     register,
@@ -438,11 +468,137 @@ export function ReservationFormDialog({
 
           {/* Asset Selection */}
           <div>
-            <Label>Select Assets *</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label>Select Assets *</Label>
+              {categories.length > 0 && (
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-48 h-8 text-xs">
+                    <SelectValue placeholder="Filter by category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {/* Category Quick Select */}
+            {categoryFilter === 'all' && categories.length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {categories.map((category) => {
+                  const categoryAssets = assetsByCategory[category] || [];
+                  const activeCount = categoryAssets.filter((a) => a.status === 'active').length;
+                  const isSelected = isCategorySelected(category);
+                  const isPartial = isCategoryPartiallySelected(category);
+
+                  if (activeCount === 0) return null;
+
+                  return (
+                    <Button
+                      key={category}
+                      type="button"
+                      variant={isSelected ? 'default' : isPartial ? 'secondary' : 'outline'}
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={() => toggleCategory(category)}
+                    >
+                      {isPartial && '• '}
+                      {category} ({activeCount})
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+
             <div className="mt-2 border rounded-lg p-4 max-h-64 overflow-y-auto">
               {availableAssets.length === 0 ? (
                 <p className="text-sm text-gray-500">No active assets available</p>
+              ) : categoryFilter === 'all' ? (
+                // Grouped by category view when showing all
+                <div className="space-y-4">
+                  {categories.map((category) => {
+                    const categoryAssets = assetsByCategory[category] || [];
+                    const activeCategoryAssets = categoryAssets.filter((a) => a.status === 'active');
+
+                    if (activeCategoryAssets.length === 0) return null;
+
+                    return (
+                      <div key={category} className="space-y-2">
+                        <div className="flex items-center justify-between pb-2 border-b">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={isCategorySelected(category)}
+                              ref={(el) => {
+                                if (el) {
+                                  el.indeterminate = isCategoryPartiallySelected(category);
+                                }
+                              }}
+                              onChange={() => toggleCategory(category)}
+                              className="rounded"
+                            />
+                            <Label className="font-medium text-sm cursor-pointer">
+                              {category} ({activeCategoryAssets.length})
+                            </Label>
+                          </div>
+                        </div>
+                        <div className="space-y-1 pl-6">
+                          {activeCategoryAssets.map((asset) => {
+                            const isSelected = selectedAssets.includes(asset.id);
+                            const availability = availabilityResults[asset.id];
+                            const hasConflict = availability && !availability.is_available;
+
+                            return (
+                              <div
+                                key={asset.id}
+                                className={`flex items-center justify-between p-2 rounded border ${
+                                  isSelected
+                                    ? hasConflict
+                                      ? 'bg-red-50 border-red-300 dark:bg-red-900/20'
+                                      : 'bg-blue-50 border-blue-300 dark:bg-blue-900/20'
+                                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3 flex-1">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => toggleAsset(asset.id)}
+                                    className="rounded"
+                                  />
+                                  <div className="flex-1">
+                                    <p className="font-medium text-sm">{asset.name}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {asset.location && `Location: ${asset.location}`}
+                                    </p>
+                                  </div>
+                                </div>
+                                {isSelected && availability && (
+                                  <div className="flex items-center gap-2">
+                                    {availability.is_available ? (
+                              <Badge className="bg-green-100 text-green-800">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Available
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-red-100 text-red-800">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                Conflict
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
+                // Simple list view when filtering by category
                 <div className="space-y-2">
                   {availableAssets.map((asset) => {
                     const isSelected = selectedAssets.includes(asset.id);
@@ -470,7 +626,7 @@ export function ReservationFormDialog({
                           <div className="flex-1">
                             <p className="font-medium text-sm">{asset.name}</p>
                             <p className="text-xs text-gray-500">
-                              {asset.category} {asset.location && `• ${asset.location}`}
+                              {asset.location && `Location: ${asset.location}`}
                             </p>
                           </div>
                         </div>
