@@ -153,7 +153,7 @@ export function ReservationFormDialog({
       }
       setAvailabilityResults({});
     }
-  }, [open, reservation, reset]);
+  }, [open, reservation, initialDate, reset]);
 
   // Check availability when dates or selected assets change
   useEffect(() => {
