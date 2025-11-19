@@ -256,7 +256,11 @@ export function ReservationFormDialog({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save reservation');
+        const errorMessage = errorData.details 
+          ? `${errorData.error}: ${errorData.details.map((d: any) => `${d.field}: ${d.message}`).join(', ')}`
+          : errorData.error || 'Failed to save reservation';
+        console.error('Reservation save error:', errorData);
+        throw new Error(errorMessage);
       }
 
       toast.success(reservation ? 'Reservation updated successfully' : 'Reservation created successfully');
