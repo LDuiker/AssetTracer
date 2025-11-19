@@ -80,8 +80,6 @@ export function ReservationFormDialog({
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [isKitDialogOpen, setIsKitDialogOpen] = useState(false);
-  const [isKitDialogOpen, setIsKitDialogOpen] = useState(false);
-  const [editingKit, setEditingKit] = useState<AssetKit | null>(null);
 
   // Fetch assets
   const { data: assetsData } = useSWR<{ assets: Asset[] }>('/api/assets');
