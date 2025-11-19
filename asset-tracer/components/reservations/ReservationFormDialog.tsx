@@ -761,55 +761,56 @@ export function ReservationFormDialog({
                       </Button>
                     </div>
                   ) : (
-                  <div className="space-y-2">
-                    {kits.map((kit) => {
-                      const isSelected = selectedKits.includes(kit.id);
-                      const itemCount = kit.items?.length || 0;
+                    <div className="space-y-2">
+                      {kits.map((kit) => {
+                        const isSelected = selectedKits.includes(kit.id);
+                        const itemCount = kit.items?.length || 0;
 
-                      return (
-                        <div
-                          key={kit.id}
-                          className={`flex items-center justify-between p-3 rounded border ${
-                            isSelected
-                              ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/20'
-                              : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 flex-1">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleKit(kit.id)}
-                              className="rounded"
-                            />
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">{kit.name}</p>
-                              <p className="text-xs text-gray-500">
-                                {itemCount} asset{itemCount !== 1 ? 's' : ''}
-                                {kit.category && ` • ${kit.category}`}
-                              </p>
-                              {kit.description && (
-                                <p className="text-xs text-gray-400 mt-1">{kit.description}</p>
-                              )}
+                        return (
+                          <div
+                            key={kit.id}
+                            className={`flex items-center justify-between p-3 rounded border ${
+                              isSelected
+                                ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/20'
+                                : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleKit(kit.id)}
+                                className="rounded"
+                              />
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">{kit.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  {itemCount} asset{itemCount !== 1 ? 's' : ''}
+                                  {kit.category && ` • ${kit.category}`}
+                                </p>
+                                {kit.description && (
+                                  <p className="text-xs text-gray-400 mt-1">{kit.description}</p>
+                                )}
+                              </div>
                             </div>
+                            {isSelected && kit.items && kit.items.length > 0 && (
+                              <div className="text-xs text-gray-500">
+                                {kit.items.map((item, idx) => {
+                                  const asset = assets.find((a) => a.id === item.asset_id);
+                                  return (
+                                    <div key={idx}>
+                                      {asset?.name} {item.quantity > 1 && `× ${item.quantity}`}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
-                          {isSelected && kit.items && kit.items.length > 0 && (
-                            <div className="text-xs text-gray-500">
-                              {kit.items.map((item, idx) => {
-                                const asset = assets.find((a) => a.id === item.asset_id);
-                                return (
-                                  <div key={idx}>
-                                    {asset?.name} {item.quantity > 1 && `× ${item.quantity}`}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
