@@ -83,16 +83,22 @@ export async function POST(request: NextRequest) {
         .select('id, name')
         .in('id', validated.asset_ids);
 
-      const assetMap = new Map(assets?.map(a => [a.id, a.name]) || []);
+      const assetMap = new Map(
+        (assets && Array.isArray(assets)) 
+          ? assets.map(a => [a.id, a.name]).filter(([id]) => id) 
+          : []
+      );
 
       // Ensure availability is an array
       const availabilityArray = Array.isArray(availability) ? availability : [];
-      const results = availabilityArray.map((item) => ({
-        asset_id: item.asset_id,
-        asset_name: assetMap.get(item.asset_id) || 'Unknown Asset',
-        is_available: item.is_available,
-        conflicts: Array.isArray(item.conflicts) ? item.conflicts : [],
-      }));
+      const results = availabilityArray
+        .filter((item) => item && item.asset_id) // Filter out any undefined/null items
+        .map((item) => ({
+          asset_id: item.asset_id,
+          asset_name: assetMap.get(item.asset_id) || 'Unknown Asset',
+          is_available: item.is_available ?? false,
+          conflicts: Array.isArray(item.conflicts) ? item.conflicts : [],
+        }));
 
       return NextResponse.json({ availability: results }, { status: 200 });
     }
@@ -111,16 +117,22 @@ export async function POST(request: NextRequest) {
       .select('id, name')
       .in('id', validated.asset_ids);
 
-    const assetMap = new Map(assets?.map(a => [a.id, a.name]) || []);
+    const assetMap = new Map(
+      (assets && Array.isArray(assets)) 
+        ? assets.map(a => [a.id, a.name]).filter(([id]) => id) 
+        : []
+    );
 
     // Ensure availability is an array
     const availabilityArray = Array.isArray(availability) ? availability : [];
-    const results = availabilityArray.map((item) => ({
-      asset_id: item.asset_id,
-      asset_name: assetMap.get(item.asset_id) || 'Unknown Asset',
-      is_available: item.is_available,
-      conflicts: Array.isArray(item.conflicts) ? item.conflicts : [],
-    }));
+    const results = availabilityArray
+      .filter((item) => item && item.asset_id) // Filter out any undefined/null items
+      .map((item) => ({
+        asset_id: item.asset_id,
+        asset_name: assetMap.get(item.asset_id) || 'Unknown Asset',
+        is_available: item.is_available ?? false,
+        conflicts: Array.isArray(item.conflicts) ? item.conflicts : [],
+      }));
 
     return NextResponse.json({ availability: results }, { status: 200 });
   } catch (error) {

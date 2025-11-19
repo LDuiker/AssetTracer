@@ -120,11 +120,16 @@ export function ReservationFormDialog({
           priority: (reservation.priority as any) || 'normal',
           notes: reservation.notes || '',
         });
-        setSelectedAssets(
-          reservation.assets && Array.isArray(reservation.assets)
-            ? reservation.assets.map(a => a.asset_id)
-            : []
-        );
+        // Safely extract asset IDs from reservation assets
+        const assetIds: string[] = [];
+        if (reservation.assets && Array.isArray(reservation.assets)) {
+          reservation.assets.forEach((asset: any) => {
+            if (asset && (asset.asset_id || asset.id)) {
+              assetIds.push(asset.asset_id || asset.id);
+            }
+          });
+        }
+        setSelectedAssets(assetIds);
       } else {
         reset({
           title: '',
@@ -175,13 +180,18 @@ export function ReservationFormDialog({
         const results: Record<string, any> = {};
         data.availability.forEach((item: any) => {
           if (item && item.asset_id) {
-            results[item.asset_id] = item;
+            results[item.asset_id] = {
+              is_available: item.is_available ?? false,
+              conflicts: Array.isArray(item.conflicts) ? item.conflicts : [],
+              asset_name: item.asset_name || 'Unknown Asset',
+            };
           }
         });
         setAvailabilityResults(results);
-      } else if (!response.ok) {
+      } else {
+        // If API call failed or returned unexpected data, reset availability results
         console.error('Availability check failed:', data);
-        // Don't set availability results on error, just log it
+        setAvailabilityResults({});
       }
     } catch (error) {
       console.error('Error checking availability:', error);
@@ -204,7 +214,7 @@ export function ReservationFormDialog({
 
     // Check for conflicts
     const hasConflicts = Object.values(availabilityResults).some(
-      (result: any) => !result.is_available && result.conflicts.length > 0
+      (result: any) => result && !result.is_available && result.conflicts && Array.isArray(result.conflicts) && result.conflicts.length > 0
     );
 
     if (hasConflicts) {
@@ -480,7 +490,7 @@ export function ReservationFormDialog({
 
           {/* Availability Warnings */}
           {Object.values(availabilityResults).some(
-            (result: any) => !result.is_available && result.conflicts.length > 0
+            (result: any) => result && !result.is_available && result.conflicts && Array.isArray(result.conflicts) && result.conflicts.length > 0
           ) && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
