@@ -78,9 +78,12 @@ export async function getReservationById(
       // Don't throw, just return reservation without assets
     }
 
+    // Ensure assets is always an array
+    const reservationAssets = Array.isArray(assets) ? assets : [];
+
     return {
       ...reservation,
-      assets: assets || [],
+      assets: reservationAssets,
     };
   } catch (error) {
     console.error('Unexpected error in getReservationById:', error);
@@ -302,29 +305,49 @@ export async function checkAssetAvailability(
     // Use the database function to check availability
     const results = await Promise.all(
       assetIds.map(async (assetId) => {
-        const { data, error } = await supabase.rpc('check_asset_availability', {
-          p_asset_id: assetId,
-          p_start_date: startDate,
-          p_end_date: endDate,
-          p_exclude_reservation_id: excludeReservationId || null,
-        });
+        try {
+          const { data, error } = await supabase.rpc('check_asset_availability', {
+            p_asset_id: assetId,
+            p_start_date: startDate,
+            p_end_date: endDate,
+            p_exclude_reservation_id: excludeReservationId || null,
+          });
 
-        if (error) {
-          console.error(`Error checking availability for asset ${assetId}:`, error);
+          if (error) {
+            console.error(`Error checking availability for asset ${assetId}:`, error);
+            return {
+              asset_id: assetId,
+              is_available: false,
+              conflicts: [],
+            };
+          }
+
+          // The function returns a JSONB object directly (not an array)
+          // Supabase RPC returns the result directly
+          const result = data as any;
+          
+          // Handle case where data might be null or undefined
+          if (!result || typeof result !== 'object') {
+            return {
+              asset_id: assetId,
+              is_available: false,
+              conflicts: [],
+            };
+          }
+
+          return {
+            asset_id: assetId,
+            is_available: result.is_available === true,
+            conflicts: Array.isArray(result.conflicts) ? result.conflicts : [],
+          };
+        } catch (err) {
+          console.error(`Exception checking availability for asset ${assetId}:`, err);
           return {
             asset_id: assetId,
             is_available: false,
             conflicts: [],
           };
         }
-
-        // The function returns a JSONB object
-        const result = data as any;
-        return {
-          asset_id: assetId,
-          is_available: result?.is_available ?? false,
-          conflicts: result?.conflicts ?? [],
-        };
       })
     );
 

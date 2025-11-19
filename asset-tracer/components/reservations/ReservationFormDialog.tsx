@@ -120,7 +120,11 @@ export function ReservationFormDialog({
           priority: (reservation.priority as any) || 'normal',
           notes: reservation.notes || '',
         });
-        setSelectedAssets(reservation.assets?.map(a => a.asset_id) || []);
+        setSelectedAssets(
+          reservation.assets && Array.isArray(reservation.assets)
+            ? reservation.assets.map(a => a.asset_id)
+            : []
+        );
       } else {
         reset({
           title: '',
@@ -167,12 +171,17 @@ export function ReservationFormDialog({
       });
 
       const data = await response.json();
-      if (response.ok) {
+      if (response.ok && data.availability && Array.isArray(data.availability)) {
         const results: Record<string, any> = {};
         data.availability.forEach((item: any) => {
-          results[item.asset_id] = item;
+          if (item && item.asset_id) {
+            results[item.asset_id] = item;
+          }
         });
         setAvailabilityResults(results);
+      } else if (!response.ok) {
+        console.error('Availability check failed:', data);
+        // Don't set availability results on error, just log it
       }
     } catch (error) {
       console.error('Error checking availability:', error);

@@ -85,11 +85,13 @@ export async function POST(request: NextRequest) {
 
       const assetMap = new Map(assets?.map(a => [a.id, a.name]) || []);
 
-      const results = availability.map((item) => ({
+      // Ensure availability is an array
+      const availabilityArray = Array.isArray(availability) ? availability : [];
+      const results = availabilityArray.map((item) => ({
         asset_id: item.asset_id,
         asset_name: assetMap.get(item.asset_id) || 'Unknown Asset',
         is_available: item.is_available,
-        conflicts: item.conflicts,
+        conflicts: Array.isArray(item.conflicts) ? item.conflicts : [],
       }));
 
       return NextResponse.json({ availability: results }, { status: 200 });
@@ -111,11 +113,13 @@ export async function POST(request: NextRequest) {
 
     const assetMap = new Map(assets?.map(a => [a.id, a.name]) || []);
 
-    const results = availability.map((item) => ({
+    // Ensure availability is an array
+    const availabilityArray = Array.isArray(availability) ? availability : [];
+    const results = availabilityArray.map((item) => ({
       asset_id: item.asset_id,
       asset_name: assetMap.get(item.asset_id) || 'Unknown Asset',
       is_available: item.is_available,
-      conflicts: item.conflicts,
+      conflicts: Array.isArray(item.conflicts) ? item.conflicts : [],
     }));
 
     return NextResponse.json({ availability: results }, { status: 200 });
