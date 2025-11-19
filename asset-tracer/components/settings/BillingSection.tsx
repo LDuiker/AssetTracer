@@ -398,6 +398,37 @@ export function BillingSection() {
                   </div>
                 </div>
               )}
+              {/* Billing Interval Toggle for Business Upgrade */}
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Upgrade to Business:</p>
+                <div className="flex items-center justify-start gap-4">
+                  <span className={`text-sm font-medium ${billingInterval === 'monthly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
+                    Monthly
+                  </span>
+                  <button
+                    onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      billingInterval === 'yearly' ? 'bg-[#2563EB]' : 'bg-gray-300'
+                    }`}
+                    role="switch"
+                    aria-checked={billingInterval === 'yearly'}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        billingInterval === 'yearly' ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  <span className={`text-sm font-medium ${billingInterval === 'yearly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
+                    Yearly
+                  </span>
+                  {billingInterval === 'yearly' && (
+                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 ml-2">
+                      Save 20%
+                    </Badge>
+                  )}
+                </div>
+              </div>
               <div className="flex justify-between items-center">
                 <Button onClick={() => handleUpgrade('business', billingInterval)} disabled={isUpgrading} className="gap-2">
                   {isUpgrading ? (
@@ -459,19 +490,52 @@ export function BillingSection() {
                   </div>
                 </div>
               )}
+              {/* Billing Interval Toggle for Pro Downgrade */}
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Switch to Pro:</p>
+                <div className="flex items-center justify-start gap-4">
+                  <span className={`text-sm font-medium ${billingInterval === 'monthly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
+                    Monthly
+                  </span>
+                  <button
+                    onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      billingInterval === 'yearly' ? 'bg-[#2563EB]' : 'bg-gray-300'
+                    }`}
+                    role="switch"
+                    aria-checked={billingInterval === 'yearly'}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        billingInterval === 'yearly' ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  <span className={`text-sm font-medium ${billingInterval === 'yearly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
+                    Yearly
+                  </span>
+                  {billingInterval === 'yearly' && (
+                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 ml-2">
+                      Save 20%
+                    </Badge>
+                  )}
+                </div>
+              </div>
               <div className="flex justify-between items-center">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Need to change your plan?
                 </p>
                 <div className="flex gap-2">
-                  <Button onClick={() => handleDowngrade('pro')} disabled={isUpgrading} variant="outline">
+                  <Button onClick={() => handleUpgrade('pro', billingInterval)} disabled={isUpgrading} variant="outline" className="gap-2">
                     {isUpgrading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         Processing...
                       </>
                     ) : (
-                      'Downgrade to Pro'
+                      <>
+                        Switch to Pro ({billingInterval === 'yearly' ? '$182/year' : '$19/month'})
+                      </>
                     )}
                   </Button>
                   <Button onClick={() => handleDowngrade('free')} disabled={isUpgrading} variant="outline">
@@ -824,6 +888,37 @@ export function BillingSection() {
               </Alert>
             )}
 
+            {/* Billing Interval Toggle for Business Upgrade */}
+            <div className="mb-4">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Switch to Business:</p>
+              <div className="flex items-center justify-center gap-4">
+                <span className={`text-sm font-medium ${billingInterval === 'monthly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
+                  Monthly
+                </span>
+                <button
+                  onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    billingInterval === 'yearly' ? 'bg-[#2563EB]' : 'bg-gray-300'
+                  }`}
+                  role="switch"
+                  aria-checked={billingInterval === 'yearly'}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      billingInterval === 'yearly' ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className={`text-sm font-medium ${billingInterval === 'yearly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
+                  Yearly
+                </span>
+                {billingInterval === 'yearly' && (
+                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 ml-2">
+                    Save 20%
+                  </Badge>
+                )}
+              </div>
+            </div>
             <div className="flex justify-center pt-2">
               <Button onClick={() => handleUpgrade('business', billingInterval)} disabled={isUpgrading} className="gap-2">
                 {isUpgrading ? (
