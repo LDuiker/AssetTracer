@@ -4,4 +4,5 @@
 
 export * from './invoice-template';
 export * from './reservation-pdf';
+export * from './reservation-packing-list';
 

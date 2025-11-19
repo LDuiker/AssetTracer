@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Clock, MapPin, Package, Edit, Trash2, X } from 'lucide-react';
+import { Calendar, Clock, MapPin, Package, Edit, Trash2, X, Download } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -49,6 +49,7 @@ export function ReservationViewDialog({
 }: ReservationViewDialogProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -95,6 +96,40 @@ export function ReservationViewDialog({
     }
   };
 
+  const handleDownloadPackingList = async () => {
+    try {
+      setIsDownloading(true);
+      toast.loading('Generating packing list...');
+
+      const response = await fetch(`/api/reservations/${reservation.id}/packing-list`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate packing list');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `packing-list-${reservation.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.dismiss();
+      toast.success('Packing list downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading packing list:', error);
+      toast.dismiss();
+      toast.error('Failed to download packing list');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <>
       <Dialog open={open && !isEditOpen} onOpenChange={onOpenChange}>
@@ -118,6 +153,16 @@ export function ReservationViewDialog({
                 )}
               </div>
               <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadPackingList}
+                  disabled={isDownloading || !reservation.assets || reservation.assets.length === 0}
+                  title="Download packing list"
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  {isDownloading ? 'Generating...' : 'Packing List'}
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
