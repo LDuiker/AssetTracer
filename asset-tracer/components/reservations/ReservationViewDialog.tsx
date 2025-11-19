@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Clock, MapPin, Package, Edit, Trash2, X, Download } from 'lucide-react';
+import { Calendar, Clock, MapPin, Package, Edit, Trash2, Download, User, FileText } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { ReservationFormDialog } from './ReservationFormDialog';
 import type { Reservation } from '@/types/reservation';
@@ -53,10 +52,9 @@ export function ReservationViewDialog({
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
+      year: 'numeric',
     });
   };
 
@@ -130,15 +128,37 @@ export function ReservationViewDialog({
     }
   };
 
+  // Group assets by category
+  const assetsByCategory = (reservation.assets || []).reduce(
+    (acc, reservationAsset) => {
+      const category = reservationAsset.asset?.category || 'Other';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(reservationAsset);
+      return acc;
+    },
+    {} as Record<string, typeof reservation.assets>
+  );
+
+  const sortedCategories = Object.keys(assetsByCategory).sort((a, b) => {
+    if (a === 'Other') return 1;
+    if (b === 'Other') return -1;
+    return a.localeCompare(b);
+  });
+
   return (
     <>
       <Dialog open={open && !isEditOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <DialogTitle className="flex items-center gap-2 mb-2">
-                  {reservation.title}
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {/* Header */}
+          <DialogHeader className="pb-4 border-b">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <DialogTitle className="text-2xl font-semibold truncate">
+                    {reservation.title}
+                  </DialogTitle>
                   <Badge className={statusColors[reservation.status]}>
                     {reservation.status}
                   </Badge>
@@ -147,164 +167,205 @@ export function ReservationViewDialog({
                       {reservation.priority}
                     </Badge>
                   )}
-                </DialogTitle>
+                </div>
                 {reservation.project_name && (
-                  <DialogDescription>Project: {reservation.project_name}</DialogDescription>
+                  <DialogDescription className="text-base">
+                    {reservation.project_name}
+                  </DialogDescription>
                 )}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownloadPackingList}
-                  disabled={isDownloading || !reservation.assets || reservation.assets.length === 0}
-                  title="Download packing list"
-                >
-                  <Download className="h-4 w-4 mr-1" />
-                  {isDownloading ? 'Generating...' : 'Packing List'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEditOpen(true)}
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  {isDeleting ? 'Deleting...' : 'Delete'}
-                </Button>
               </div>
             </div>
           </DialogHeader>
 
-          <div className="space-y-6">
-            {/* Dates and Times */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <Calendar className="h-5 w-5 text-gray-400 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Dates</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {formatDate(reservation.start_date)} - {formatDate(reservation.end_date)}
-                  </p>
+          <div className="space-y-6 py-4">
+            {/* Key Information Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <Calendar className="h-4 w-4" />
+                  <span>Start Date</span>
                 </div>
+                <p className="text-sm font-medium">
+                  {formatDate(reservation.start_date)}
+                  {reservation.start_time && (
+                    <span className="text-gray-500 ml-1">
+                      {formatTime(reservation.start_time)}
+                    </span>
+                  )}
+                </p>
               </div>
 
-              {(reservation.start_time || reservation.end_time) && (
-                <div className="flex items-start gap-3">
-                  <Clock className="h-5 w-5 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Times</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {formatTime(reservation.start_time) || 'Not set'} -{' '}
-                      {formatTime(reservation.end_time) || 'Not set'}
-                    </p>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <Calendar className="h-4 w-4" />
+                  <span>End Date</span>
+                </div>
+                <p className="text-sm font-medium">
+                  {formatDate(reservation.end_date)}
+                  {reservation.end_time && (
+                    <span className="text-gray-500 ml-1">
+                      {formatTime(reservation.end_time)}
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              {reservation.location && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    <MapPin className="h-4 w-4" />
+                    <span>Location</span>
                   </div>
+                  <p className="text-sm font-medium">{reservation.location}</p>
                 </div>
               )}
 
-              {reservation.location && (
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Location</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {reservation.location}
-                    </p>
+              {reservation.reserved_by_user && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    <User className="h-4 w-4" />
+                    <span>Reserved By</span>
                   </div>
+                  <p className="text-sm font-medium">{reservation.reserved_by_user.name}</p>
                 </div>
               )}
             </div>
 
             <Separator />
 
-            {/* Reserved Assets */}
+            {/* Equipment List */}
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Package className="h-5 w-5 text-gray-400" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Reserved Assets ({reservation.assets?.length || 0})
-                </h3>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-gray-500" />
+                  <h3 className="text-lg font-semibold">
+                    Equipment ({reservation.assets?.length || 0})
+                  </h3>
+                </div>
+                {reservation.assets && reservation.assets.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadPackingList}
+                    disabled={isDownloading}
+                    className="gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    {isDownloading ? 'Generating...' : 'Packing List'}
+                  </Button>
+                )}
               </div>
+
               {reservation.assets && reservation.assets.length > 0 ? (
-                <div className="space-y-2">
-                  {reservation.assets.map((reservationAsset) => (
-                    <div
-                      key={reservationAsset.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                    >
-                      <div>
-                        <p className="font-medium text-sm">
-                          {reservationAsset.asset?.name || 'Unknown Asset'}
-                        </p>
-                        {reservationAsset.asset?.category && (
-                          <p className="text-xs text-gray-500">
-                            {reservationAsset.asset.category}
-                            {reservationAsset.asset.location && ` • ${reservationAsset.asset.location}`}
-                          </p>
-                        )}
+                <div className="space-y-4">
+                  {sortedCategories.map((category) => {
+                    const assets = assetsByCategory[category] || [];
+                    return (
+                      <div key={category} className="border rounded-lg overflow-hidden">
+                        <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b">
+                          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            {category}
+                          </h4>
+                        </div>
+                        <div className="divide-y">
+                          {assets.map((reservationAsset, index) => (
+                            <div
+                              key={reservationAsset.id || index}
+                              className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm">
+                                    {reservationAsset.asset?.name || 'Unknown Asset'}
+                                  </p>
+                                  {reservationAsset.asset?.location && (
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                      {reservationAsset.asset.location}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="ml-4">
+                                  <Badge variant="outline" className="font-medium">
+                                    {reservationAsset.quantity} {reservationAsset.quantity === 1 ? 'unit' : 'units'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      {reservationAsset.quantity > 1 && (
-                        <Badge variant="outline">Qty: {reservationAsset.quantity}</Badge>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">No assets reserved</p>
+                <div className="text-center py-8 text-gray-500">
+                  <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No equipment reserved</p>
+                </div>
               )}
             </div>
 
-            {/* Description */}
-            {reservation.description && (
+            {/* Additional Information */}
+            {(reservation.description || reservation.notes) && (
               <>
                 <Separator />
-                <div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    Description
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {reservation.description}
-                  </p>
-                </div>
-              </>
-            )}
+                <div className="space-y-4">
+                  {reservation.description && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="h-4 w-4 text-gray-500" />
+                        <h3 className="text-sm font-semibold">Description</h3>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                        {reservation.description}
+                      </p>
+                    </div>
+                  )}
 
-            {/* Notes */}
-            {reservation.notes && (
-              <>
-                <Separator />
-                <div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    Notes
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{reservation.notes}</p>
+                  {reservation.notes && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="h-4 w-4 text-gray-500" />
+                        <h3 className="text-sm font-semibold">Notes</h3>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                        {reservation.notes}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </>
             )}
+          </div>
 
-            {/* Reserved By */}
-            {reservation.reserved_by_user && (
-              <>
-                <Separator />
-                <div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                    Reserved By
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {reservation.reserved_by_user.name} ({reservation.reserved_by_user.email})
-                  </p>
-                </div>
-              </>
-            )}
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-2 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={handleDownloadPackingList}
+              disabled={isDownloading || !reservation.assets || reservation.assets.length === 0}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              {isDownloading ? 'Generating...' : 'Download Packing List'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditOpen(true)}
+              className="gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -322,4 +383,3 @@ export function ReservationViewDialog({
     </>
   );
 }
-
