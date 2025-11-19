@@ -522,137 +522,133 @@ export function ReservationFormDialog({
                 categoryFilter === 'all' ? (
                   // Grouped by category view when showing all
                   <div className="space-y-4">
-                    {categories.map((category) => {
-                      const categoryAssets = assetsByCategory[category] || [];
-                      const activeCategoryAssets = categoryAssets.filter((a) => a.status === 'active');
+                  {categories.map((category) => {
+                    const categoryAssets = assetsByCategory[category] || [];
+                    const activeCategoryAssets = categoryAssets.filter((a) => a.status === 'active');
 
-                      if (activeCategoryAssets.length === 0) return null;
+                    if (activeCategoryAssets.length === 0) return null;
 
-                      return (
-                        <div key={category} className="space-y-2">
-                          <div className="flex items-center justify-between pb-2 border-b">
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={isCategorySelected(category)}
-                                ref={(el) => {
-                                  if (el) {
-                                    el.indeterminate = isCategoryPartiallySelected(category);
-                                  }
-                                }}
-                                onChange={() => toggleCategory(category)}
-                                className="rounded"
-                              />
-                              <Label className="font-medium text-sm cursor-pointer">
-                                {category} ({activeCategoryAssets.length})
-                              </Label>
-                            </div>
-                          </div>
-                          <div className="space-y-1 pl-6">
-                            {activeCategoryAssets.map((asset) => {
-                              const isSelected = selectedAssets.includes(asset.id);
-                              const availability = availabilityResults[asset.id];
-                              const hasConflict = availability && !availability.is_available;
-
-                              return (
-                                <div
-                                  key={asset.id}
-                                  className={`flex items-center justify-between p-2 rounded border ${
-                                    isSelected
-                                      ? hasConflict
-                                        ? 'bg-red-50 border-red-300 dark:bg-red-900/20'
-                                        : 'bg-blue-50 border-blue-300 dark:bg-blue-900/20'
-                                      : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3 flex-1">
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelected}
-                                      onChange={() => toggleAsset(asset.id)}
-                                      className="rounded"
-                                    />
-                                    <div className="flex-1">
-                                      <p className="font-medium text-sm">{asset.name}</p>
-                                      <p className="text-xs text-gray-500">
-                                        {asset.location && `Location: ${asset.location}`}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  {isSelected && availability && (
-                                    <div className="flex items-center gap-2">
-                                      {availability.is_available ? (
-                                        <Badge className="bg-green-100 text-green-800">
-                                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                                          Available
-                                        </Badge>
-                                      ) : (
-                                        <Badge className="bg-red-100 text-red-800">
-                                          <AlertCircle className="h-3 w-3 mr-1" />
-                                          Conflict
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
+                    return (
+                      <div key={category} className="space-y-2">
+                        <div className="flex items-center justify-between pb-2 border-b">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={isCategorySelected(category)}
+                              ref={(el) => {
+                                if (el) {
+                                  el.indeterminate = isCategoryPartiallySelected(category);
+                                }
+                              }}
+                              onChange={() => toggleCategory(category)}
+                              className="rounded"
+                            />
+                            <Label className="font-medium text-sm cursor-pointer">
+                              {category} ({activeCategoryAssets.length})
+                            </Label>
                           </div>
                         </div>
-                      );
-                    })}
+                        <div className="space-y-1 pl-6">
+                          {activeCategoryAssets.map((asset) => {
+                            const isSelected = selectedAssets.includes(asset.id);
+                            const availability = availabilityResults[asset.id];
+                            const hasConflict = availability && !availability.is_available;
+
+                            return (
+                              <div
+                                key={asset.id}
+                                className={`flex items-center justify-between p-2 rounded border ${
+                                  isSelected
+                                    ? hasConflict
+                                      ? 'bg-red-50 border-red-300 dark:bg-red-900/20'
+                                      : 'bg-blue-50 border-blue-300 dark:bg-blue-900/20'
+                                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3 flex-1">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => toggleAsset(asset.id)}
+                                    className="rounded"
+                                  />
+                                  <div className="flex-1">
+                                    <p className="font-medium text-sm">{asset.name}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {asset.location && `Location: ${asset.location}`}
+                                    </p>
+                                  </div>
+                                </div>
+                                {isSelected && availability && (
+                                  <div className="flex items-center gap-2">
+                                    {availability.is_available ? (
+                              <Badge className="bg-green-100 text-green-800">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Available
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-red-100 text-red-800">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                Conflict
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                   </div>
                 ) : (
                   // Simple list view when filtering by category
                   <div className="space-y-2">
-                    {availableAssets.map((asset) => {
-                      const isSelected = selectedAssets.includes(asset.id);
-                      const availability = availabilityResults[asset.id];
-                      const hasConflict = availability && !availability.is_available;
+                  {availableAssets.map((asset) => {
+                    const isSelected = selectedAssets.includes(asset.id);
+                    const availability = availabilityResults[asset.id];
+                    const hasConflict = availability && !availability.is_available;
 
-                      return (
-                        <div
-                          key={asset.id}
-                          className={`flex items-center justify-between p-2 rounded border ${
-                            isSelected
-                              ? hasConflict
-                                ? 'bg-red-50 border-red-300 dark:bg-red-900/20'
-                                : 'bg-blue-50 border-blue-300 dark:bg-blue-900/20'
-                              : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 flex-1">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleAsset(asset.id)}
-                              className="rounded"
-                            />
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">{asset.name}</p>
-                              <p className="text-xs text-gray-500">
-                                {asset.location && `Location: ${asset.location}`}
-                              </p>
-                            </div>
+                    return (
+                      <div
+                        key={asset.id}
+                        className={`flex items-center justify-between p-2 rounded border ${
+                          isSelected
+                            ? hasConflict
+                              ? 'bg-red-50 border-red-300 dark:bg-red-900/20'
+                              : 'bg-blue-50 border-blue-300 dark:bg-blue-900/20'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleAsset(asset.id)}
+                            className="rounded"
+                          />
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{asset.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {asset.location && `Location: ${asset.location}`}
+                            </p>
                           </div>
-                          {isSelected && availability && (
-                            <div className="flex items-center gap-2">
-                              {availability.is_available ? (
-                                <Badge className="bg-green-100 text-green-800">
-                                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                                  Available
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-red-100 text-red-800">
-                                  <AlertCircle className="h-3 w-3 mr-1" />
-                                  Conflict
-                                </Badge>
-                              )}
-                            </div>
-                          )}
                         </div>
-                      );
-                    })}
+                        {isSelected && availability && (
+                          <div className="flex items-center gap-2">
+                            {availability.is_available ? (
+                              <Badge className="bg-green-100 text-green-800">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Available
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-red-100 text-red-800">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                Conflict
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                   </div>
                 )
               )}
