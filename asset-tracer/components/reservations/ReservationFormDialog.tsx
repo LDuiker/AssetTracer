@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 import { AssetKitDialog } from '@/components/asset-kits';
 import type { Asset, AssetKit } from '@/types';
 import type { Reservation, CreateReservationInput } from '@/types/reservation';
+import { AssetKitDialog } from '@/components/asset-kits';
 
 const reservationSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -78,6 +79,7 @@ export function ReservationFormDialog({
   const [availabilityResults, setAvailabilityResults] = useState<Record<string, any>>({});
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [isKitDialogOpen, setIsKitDialogOpen] = useState(false);
   const [isKitDialogOpen, setIsKitDialogOpen] = useState(false);
   const [editingKit, setEditingKit] = useState<AssetKit | null>(null);
 
@@ -911,6 +913,16 @@ export function ReservationFormDialog({
             </Button>
           </div>
         </form>
+
+        {/* Kit Management Dialog */}
+        <AssetKitDialog
+          open={isKitDialogOpen}
+          onOpenChange={setIsKitDialogOpen}
+          kit={editingKit}
+          onSuccess={() => {
+            mutateKits();
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
