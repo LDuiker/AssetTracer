@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { X, Calendar, Clock, MapPin, AlertCircle, CheckCircle2, Plus } from 'lucide-react';
+import { Calendar, Clock, MapPin, AlertCircle, CheckCircle2, Plus, Package, FileText } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { AssetKitDialog } from '@/components/asset-kits';
 import type { Asset, AssetKit } from '@/types';
@@ -550,171 +551,187 @@ export function ReservationFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
+        <DialogHeader className="pb-4 border-b">
+          <DialogTitle className="text-2xl">
             {reservation ? 'Edit Reservation' : 'New Reservation'}
           </DialogTitle>
           <DialogDescription>
-            Create a new equipment reservation for your project
+            {reservation ? 'Update reservation details' : 'Create a new equipment reservation'}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Basic Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                {...register('title')}
-                placeholder="Commercial Shoot - Client ABC"
-              />
-              {errors.title && (
-                <p className="text-sm text-red-500 mt-1">{errors.title.message as string}</p>
-              )}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
+          {/* Basic Information Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="h-4 w-4 text-gray-500" />
+              <h3 className="text-sm font-semibold">Basic Information</h3>
             </div>
-
-            <div>
-              <Label htmlFor="project_name">Project Name</Label>
-              <Input
-                id="project_name"
-                {...register('project_name')}
-                placeholder="Optional project name"
-              />
-            </div>
-          </div>
-
-          {/* Dates */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="start_date">Start Date *</Label>
-              <Input
-                id="start_date"
-                type="date"
-                {...register('start_date')}
-              />
-              {errors.start_date && (
-                <p className="text-sm text-red-500 mt-1">{errors.start_date.message as string}</p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="end_date">End Date *</Label>
-              <Input
-                id="end_date"
-                type="date"
-                {...register('end_date')}
-              />
-              {errors.end_date && (
-                <p className="text-sm text-red-500 mt-1">{errors.end_date.message as string}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Times (Optional) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="start_time">Start Time (Optional)</Label>
-              <Input
-                id="start_time"
-                type="time"
-                {...register('start_time')}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="end_time">End Time (Optional)</Label>
-              <Input
-                id="end_time"
-                type="time"
-                {...register('end_time')}
-              />
-            </div>
-          </div>
-
-          {/* Location and Status */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                {...register('location')}
-                placeholder="Studio A, On-location, etc."
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={watch('status')}
-                  onValueChange={(value) => setValue('status', value as any)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  {...register('title')}
+                  placeholder="e.g., Commercial Shoot - Client ABC"
+                />
+                {errors.title && (
+                  <p className="text-sm text-red-500 mt-1">{errors.title.message as string}</p>
+                )}
               </div>
-
               <div>
-                <Label htmlFor="priority">Priority</Label>
-                <Select
-                  value={watch('priority')}
-                  onValueChange={(value) => setValue('priority', value as any)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="critical">Critical</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="project_name">Project Name</Label>
+                <Input
+                  id="project_name"
+                  {...register('project_name')}
+                  placeholder="Optional"
+                />
               </div>
             </div>
           </div>
 
-          {/* Description and Notes */}
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              {...register('description')}
-              placeholder="Additional details about this reservation"
-              rows={3}
-            />
+          <Separator />
+
+          {/* Schedule Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar className="h-4 w-4 text-gray-500" />
+              <h3 className="text-sm font-semibold">Schedule</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="start_date">Start Date *</Label>
+                <Input
+                  id="start_date"
+                  type="date"
+                  {...register('start_date')}
+                />
+                {errors.start_date && (
+                  <p className="text-sm text-red-500 mt-1">{errors.start_date.message as string}</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="end_date">End Date *</Label>
+                <Input
+                  id="end_date"
+                  type="date"
+                  {...register('end_date')}
+                />
+                {errors.end_date && (
+                  <p className="text-sm text-red-500 mt-1">{errors.end_date.message as string}</p>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="start_time">Start Time</Label>
+                <Input
+                  id="start_time"
+                  type="time"
+                  {...register('start_time')}
+                />
+              </div>
+              <div>
+                <Label htmlFor="end_time">End Time</Label>
+                <Input
+                  id="end_time"
+                  type="time"
+                  {...register('end_time')}
+                />
+              </div>
+            </div>
           </div>
 
-          <div>
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              {...register('notes')}
-              placeholder="Internal notes (not visible to clients)"
-              rows={2}
-            />
+          <Separator />
+
+          {/* Details Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-3">
+              <MapPin className="h-4 w-4 text-gray-500" />
+              <h3 className="text-sm font-semibold">Details</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  {...register('location')}
+                  placeholder="e.g., Studio A, On-location"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={watch('status')}
+                    onValueChange={(value) => setValue('status', value as any)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="priority">Priority</Label>
+                  <Select
+                    value={watch('priority')}
+                    onValueChange={(value) => setValue('priority', value as any)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                {...register('description')}
+                placeholder="Additional details about this reservation"
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label htmlFor="notes">Internal Notes</Label>
+              <Textarea
+                id="notes"
+                {...register('notes')}
+                placeholder="Internal notes (not visible to clients)"
+                rows={2}
+              />
+            </div>
           </div>
 
-          {/* Asset/Kit Selection */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <Label>Select Assets or Kits *</Label>
+          <Separator />
+
+          {/* Equipment Selection Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-gray-500" />
+                <h3 className="text-sm font-semibold">Equipment Selection *</h3>
+              </div>
               <div className="flex gap-2">
                 <Button
                   type="button"
                   variant={selectionMode === 'assets' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setSelectionMode('assets')}
-                  className="h-7 text-xs"
                 >
                   Assets
                 </Button>
@@ -723,7 +740,6 @@ export function ReservationFormDialog({
                   variant={selectionMode === 'kits' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setSelectionMode('kits')}
-                  className="h-7 text-xs"
                 >
                   Kits
                 </Button>
@@ -732,21 +748,21 @@ export function ReservationFormDialog({
 
             {/* Kit Selection */}
             {selectionMode === 'kits' && (
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <Label>Available Kits</Label>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-gray-600">Available Kits</Label>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => setIsKitDialogOpen(true)}
-                    className="h-7 text-xs"
+                    className="gap-2"
                   >
-                    <Plus className="h-3 w-3 mr-1" />
+                    <Plus className="h-4 w-4" />
                     Create Kit
                   </Button>
                 </div>
-                <div className="border rounded-lg p-4 max-h-64 overflow-y-auto">
+                <div className="border rounded-lg p-4 max-h-64 overflow-y-auto bg-gray-50 dark:bg-gray-900/50">
                   {kits.length === 0 ? (
                     <div className="text-center py-8">
                       <p className="text-sm text-gray-500 mb-2">No kits available.</p>
@@ -816,11 +832,11 @@ export function ReservationFormDialog({
 
             {/* Asset Selection */}
             {selectionMode === 'assets' && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  {categories.length > 0 && (
+              <div className="space-y-3">
+                {categories.length > 0 && (
+                  <div className="flex items-center gap-2">
                     <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                      <SelectTrigger className="w-48 h-8 text-xs">
+                      <SelectTrigger className="w-48">
                         <SelectValue placeholder="Filter by category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -832,12 +848,12 @@ export function ReservationFormDialog({
                         ))}
                       </SelectContent>
                     </Select>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Category Quick Select */}
                 {categoryFilter === 'all' && categories.length > 0 && (
-                  <div className="mb-3 flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {categories.map((category) => {
                       const categoryAssets = assetsByCategory[category] || [];
                       const activeCount = categoryAssets.filter((a) => a.status === 'active').length;
@@ -852,7 +868,6 @@ export function ReservationFormDialog({
                           type="button"
                           variant={isSelected ? 'default' : isPartial ? 'secondary' : 'outline'}
                           size="sm"
-                          className="text-xs h-7"
                           onClick={() => toggleCategory(category)}
                         >
                           {isPartial && '• '}
@@ -863,23 +878,31 @@ export function ReservationFormDialog({
                   </div>
                 )}
 
-                <div className="mt-2 border rounded-lg p-4 max-h-64 overflow-y-auto">
+                <div className="border rounded-lg p-4 max-h-64 overflow-y-auto bg-gray-50 dark:bg-gray-900/50">
                   {renderAssetList()}
                 </div>
-                {selectedAssets.length === 0 && (
-                  <p className="text-sm text-red-500 mt-1">Please select at least one asset</p>
-                )}
               </div>
             )}
-            {selectionMode === 'kits' && selectedKits.length === 0 && (
-              <p className="text-sm text-red-500 mt-1">Please select at least one kit</p>
-            )}
-            {(selectedAssets.length > 0 || selectedKits.length > 0) && (
-              <p className="text-sm text-gray-500 mt-1">
-                {getAllSelectedAssetIds.length} asset{getAllSelectedAssetIds.length !== 1 ? 's' : ''} selected
-                {selectedKits.length > 0 && ` (from ${selectedKits.length} kit${selectedKits.length !== 1 ? 's' : ''})`}
-              </p>
-            )}
+
+            {/* Selection Summary */}
+            <div className="flex items-center justify-between pt-2 border-t">
+              <div>
+                {selectionMode === 'assets' && selectedAssets.length === 0 && (
+                  <p className="text-sm text-red-500">Please select at least one asset</p>
+                )}
+                {selectionMode === 'kits' && selectedKits.length === 0 && (
+                  <p className="text-sm text-red-500">Please select at least one kit</p>
+                )}
+                {(selectedAssets.length > 0 || selectedKits.length > 0) && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <span className="font-medium">{getAllSelectedAssetIds.length}</span> asset{getAllSelectedAssetIds.length !== 1 ? 's' : ''} selected
+                    {selectedKits.length > 0 && (
+                      <span className="text-gray-500"> • {selectedKits.length} kit{selectedKits.length !== 1 ? 's' : ''}</span>
+                    )}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Availability Warnings */}
@@ -889,19 +912,18 @@ export function ReservationFormDialog({
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Some selected assets have scheduling conflicts. Please review the conflicts before
-                proceeding.
+                Some selected assets have scheduling conflicts. Please review before proceeding.
               </AlertDescription>
             </Alert>
           )}
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2">
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-2 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || isCheckingAvailability}>
-              {isSubmitting ? 'Saving...' : reservation ? 'Update' : 'Create'} Reservation
+              {isSubmitting ? 'Saving...' : reservation ? 'Update Reservation' : 'Create Reservation'}
             </Button>
           </div>
         </form>
