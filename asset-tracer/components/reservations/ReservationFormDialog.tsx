@@ -225,6 +225,9 @@ export function ReservationFormDialog({
     }
 
     try {
+      // Ensure selectedAssets is always an array
+      const assetIds = Array.isArray(selectedAssets) ? selectedAssets : [];
+      
       const payload: CreateReservationInput = {
         title: data.title,
         project_name: data.project_name || null,
@@ -237,7 +240,7 @@ export function ReservationFormDialog({
         status: data.status,
         priority: data.priority,
         notes: data.notes || null,
-        asset_ids: selectedAssets,
+        asset_ids: assetIds,
       };
 
       const url = reservation
