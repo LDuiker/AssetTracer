@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Check, Zap, Crown, Loader2, AlertCircle, Calendar, CreditCard, Mail } from 'lucide-react';
+import { Check, Zap, Crown, Loader2, AlertCircle, Calendar, CreditCard, Mail, RefreshCw, ChevronRight } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 
@@ -72,7 +72,6 @@ export function BillingSection() {
   const TierIcon = tierInfo.icon;
   
   // Determine current billing interval from organization metadata or default to monthly
-  // TODO: Store billing_interval in database when subscription is created
   const currentBillingInterval = (organization?.metadata as { billing_interval?: 'monthly' | 'yearly' })?.billing_interval || 'monthly';
 
   // Format date helper
@@ -116,7 +115,7 @@ export function BillingSection() {
         },
         body: JSON.stringify({
           tier: targetTier,
-          interval: selectedInterval, // Use 'interval' not 'billing_cycle'
+          interval: selectedInterval,
         }),
       });
 
@@ -190,10 +189,7 @@ export function BillingSection() {
         throw new Error(errorData.error || 'Failed to downgrade subscription');
       }
 
-      // Refetch organization to get updated tier
       await refetch();
-
-      // Show success message
       alert(`Successfully downgraded to ${tierName} plan.`);
     } catch (err) {
       console.error('Downgrade error:', err);
@@ -226,11 +222,7 @@ export function BillingSection() {
       }
 
       const data = (await response.json()) as { message?: string };
-
-      // Refetch organization to get updated status
       await refetch();
-
-      // Show success message with date
       alert(data.message || 'Your subscription has been cancelled. You will retain access until the end of your billing period.');
     } catch (err) {
       console.error('Cancel subscription error:', err);
@@ -241,9 +233,44 @@ export function BillingSection() {
     }
   };
 
+  const handleSync = async () => {
+    try {
+      setIsUpgrading(true);
+      setError(null);
+      const response = await fetch('/api/subscription/sync', {
+        method: 'POST',
+      });
+      const data = await response.json();
+      
+      if (data.success && data.subscription?.tier) {
+        toast.success(`Subscription synced successfully! You're now on ${data.subscription.tier} plan.`);
+        await refetch();
+      } else if (data.error) {
+        toast.error(data.error);
+        setError(data.error);
+      } else {
+        toast.info('No active subscription found in payment system');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to sync subscription';
+      toast.error(message);
+      setError(message);
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Current Plan */}
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Current Plan Card - Clean and Focused */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -252,23 +279,18 @@ export function BillingSection() {
                 <TierIcon className={`h-5 w-5 ${tierInfo.color}`} />
                 Current Plan
               </CardTitle>
-              <CardDescription>
-                Your current subscription tier and usage
+              <CardDescription className="mt-1">
+                {currentTier === 'free' 
+                  ? 'You\'re on the free plan. Upgrade to unlock more features.'
+                  : `Active ${currentBillingInterval === 'yearly' ? 'yearly' : 'monthly'} subscription`}
               </CardDescription>
             </div>
-            <Badge variant={tierInfo.badgeVariant} className="text-base px-4 py-1">
+            <Badge variant={tierInfo.badgeVariant} className="text-base px-4 py-1.5">
               {tierInfo.name}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
+        <CardContent className="space-y-6">
           {/* Cancelled Subscription Notice */}
           {organization?.subscription_status === 'cancelled' && currentTier !== 'free' && nextPaymentDate && (
             <Alert className="bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800">
@@ -276,23 +298,47 @@ export function BillingSection() {
               <AlertDescription className="text-orange-800 dark:text-orange-200">
                 <strong>Subscription Cancelled</strong> — Access until {nextPaymentDate}
                 <p className="text-sm mt-1.5">
-                  To resume: Check your email for the Polar subscription link and click &quot;Resume Subscription&quot;.
+                  Check your email for the Polar subscription link to resume.
                 </p>
               </AlertDescription>
             </Alert>
           )}
 
-          <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-bold">{tierInfo.price}</span>
-            {currentTier !== 'free' && (
-              <span className="text-gray-500">per month</span>
+          {/* Plan Price & Billing Info */}
+          <div className="flex items-baseline justify-between">
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold">{tierInfo.price}</span>
+                {currentTier !== 'free' && (
+                  <span className="text-sm text-gray-500">
+                    /{currentBillingInterval === 'yearly' ? 'year' : 'month'}
+                  </span>
+                )}
+              </div>
+              {currentTier !== 'free' && currentBillingInterval === 'yearly' && (
+                <p className="text-sm text-gray-500 mt-1">
+                  {currentTier === 'pro' ? '$15.17' : '$31.17'}/month billed annually
+                </p>
+              )}
+            </div>
+            {currentTier !== 'free' && nextPaymentDate && (
+              <div className="text-right">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Next Payment</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{nextPaymentDate}</p>
+                {nextPaymentAmount && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{nextPaymentAmount}</p>
+                )}
+              </div>
             )}
           </div>
 
           <Separator />
 
+          {/* Plan Features - Compact Grid */}
           <div>
-            <h4 className="font-medium mb-3 text-sm text-gray-600 dark:text-gray-400 uppercase tracking-wide">Plan Includes</h4>
+            <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+              What's Included
+            </h4>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {tierInfo.features.map((feature, index) => (
                 <li key={index} className="flex items-start gap-2">
@@ -302,367 +348,337 @@ export function BillingSection() {
               ))}
             </ul>
           </div>
+        </CardContent>
+      </Card>
 
-          {currentTier === 'free' && (
-            <>
-              <Separator />
-              {/* Billing Interval Toggle */}
+      {/* Change Plan Section - Consolidated */}
+      {currentTier === 'free' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Upgrade Your Plan</CardTitle>
+            <CardDescription>
+              Choose a plan that fits your needs
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Billing Interval Toggle */}
+            <div className="flex items-center justify-center gap-4 py-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+              <span className={`text-sm font-medium ${billingInterval === 'monthly' ? 'text-[#0B1226] dark:text-gray-100' : 'text-gray-500'}`}>
+                Monthly
+              </span>
+              <button
+                onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  billingInterval === 'yearly' ? 'bg-[#2563EB]' : 'bg-gray-300'
+                }`}
+                role="switch"
+                aria-checked={billingInterval === 'yearly'}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    billingInterval === 'yearly' ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className={`text-sm font-medium ${billingInterval === 'yearly' ? 'text-[#0B1226] dark:text-gray-100' : 'text-gray-500'}`}>
+                Yearly
+              </span>
+              {billingInterval === 'yearly' && (
+                <Badge className="bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900 dark:text-green-100">
+                  Save 20%
+                </Badge>
+              )}
+            </div>
+
+            {/* Upgrade Buttons */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Button 
+                onClick={() => handleUpgrade('pro', billingInterval)} 
+                disabled={isUpgrading} 
+                className="w-full h-auto py-4 flex-col gap-2"
+              >
+                <div className="flex items-center gap-2">
+                  <Crown className="h-4 w-4" />
+                  <span className="font-semibold">Pro Plan</span>
+                </div>
+                <span className="text-sm font-normal opacity-90">
+                  {billingInterval === 'yearly' ? '$182/year' : '$19/month'}
+                </span>
+              </Button>
+              <Button 
+                onClick={() => handleUpgrade('business', billingInterval)} 
+                disabled={isUpgrading} 
+                variant="outline" 
+                className="w-full h-auto py-4 flex-col gap-2"
+              >
+                <div className="flex items-center gap-2">
+                  <Crown className="h-4 w-4" />
+                  <span className="font-semibold">Business Plan</span>
+                </div>
+                <span className="text-sm font-normal opacity-90">
+                  {billingInterval === 'yearly' ? '$374/year' : '$39/month'}
+                </span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pro Plan Actions */}
+      {currentTier === 'pro' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Change Plan</CardTitle>
+            <CardDescription>
+              Switch to yearly billing or upgrade to Business
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Switch to Yearly Banner */}
+            {currentBillingInterval === 'monthly' && (
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-blue-900 dark:text-blue-100 text-sm mb-1">
+                      Switch to Yearly and Save 20%
+                    </h4>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      Pay $182/year instead of $228/year (save $46)
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => handleUpgrade('pro', 'yearly')} 
+                    disabled={isUpgrading} 
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {isUpgrading ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Switch to Yearly'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Upgrade to Business */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-sm mb-1">Upgrade to Business</h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Unlimited resources and up to 20 team members
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => handleUpgrade('business', billingInterval)} 
+                  disabled={isUpgrading} 
+                  size="sm"
+                  variant="outline"
+                >
+                  {isUpgrading ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      Upgrade <ChevronRight className="h-3 w-3 ml-1" />
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Billing Interval Toggle for Business Upgrade */}
               <div className="flex items-center justify-center gap-4 py-2">
-                <span className={`text-sm font-medium ${billingInterval === 'monthly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
+                <span className={`text-xs font-medium ${billingInterval === 'monthly' ? 'text-[#0B1226] dark:text-gray-100' : 'text-gray-500'}`}>
                   Monthly
                 </span>
                 <button
                   onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                     billingInterval === 'yearly' ? 'bg-[#2563EB]' : 'bg-gray-300'
                   }`}
                   role="switch"
                   aria-checked={billingInterval === 'yearly'}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      billingInterval === 'yearly' ? 'translate-x-6' : 'translate-x-1'
+                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                      billingInterval === 'yearly' ? 'translate-x-5' : 'translate-x-0.5'
                     }`}
                   />
                 </button>
-                <span className={`text-sm font-medium ${billingInterval === 'yearly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
+                <span className={`text-xs font-medium ${billingInterval === 'yearly' ? 'text-[#0B1226] dark:text-gray-100' : 'text-gray-500'}`}>
                   Yearly
                 </span>
                 {billingInterval === 'yearly' && (
-                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 ml-2">
+                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900 dark:text-green-100 text-xs">
                     Save 20%
                   </Badge>
                 )}
               </div>
-              <div className="flex justify-end gap-2">
-                <Button onClick={() => handleUpgrade('pro', billingInterval)} disabled={isUpgrading} className="gap-2">
-                  {isUpgrading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Upgrading...
-                    </>
-                  ) : (
-                    <>
-                      <Crown className="h-4 w-4" />
-                      Upgrade to Pro ({billingInterval === 'yearly' ? '$182/year' : '$19/month'})
-                    </>
-                  )}
-                </Button>
-                <Button onClick={() => handleUpgrade('business', billingInterval)} disabled={isUpgrading} variant="outline" className="gap-2">
-                  {isUpgrading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Upgrading...
-                    </>
-                  ) : (
-                    <>
-                      <Crown className="h-4 w-4" />
-                      Upgrade to Business ({billingInterval === 'yearly' ? '$374/year' : '$39/month'})
-                    </>
-                  )}
-                </Button>
-              </div>
-            </>
-          )}
+            </div>
 
-          {currentTier === 'pro' && (
-            <>
-              <Separator />
-              {/* Switch to Yearly Option */}
-              {currentBillingInterval === 'monthly' && (
-                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-blue-900 dark:text-blue-100 text-sm mb-1">
-                        Switch to Yearly and Save 20%
-                      </h4>
-                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                        Pay $182/year instead of $228/year (save $46)
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={() => handleUpgrade('pro', 'yearly')} 
-                      disabled={isUpgrading} 
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      {isUpgrading ? (
-                        <>
-                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                          Processing...
-                        </>
-                      ) : (
-                        'Switch to Yearly'
-                      )}
-                    </Button>
+            {/* Downgrade Option */}
+            <Separator />
+            <Button 
+              onClick={() => handleDowngrade('free')} 
+              disabled={isUpgrading} 
+              variant="ghost" 
+              className="w-full text-gray-600 hover:text-gray-900"
+            >
+              Downgrade to Free Plan
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Business Plan Actions */}
+      {currentTier === 'business' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Change Plan</CardTitle>
+            <CardDescription>
+              Switch to yearly billing or change your plan
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Switch to Yearly Banner */}
+            {currentBillingInterval === 'monthly' && (
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-blue-900 dark:text-blue-100 text-sm mb-1">
+                      Switch to Yearly and Save 20%
+                    </h4>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      Pay $374/year instead of $468/year (save $94)
+                    </p>
                   </div>
-                </div>
-              )}
-              {/* Billing Interval Toggle for Business Upgrade */}
-              <div className="mb-4">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Upgrade to Business:</p>
-                <div className="flex items-center justify-start gap-4">
-                  <span className={`text-sm font-medium ${billingInterval === 'monthly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
-                    Monthly
-                  </span>
-                  <button
-                    onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      billingInterval === 'yearly' ? 'bg-[#2563EB]' : 'bg-gray-300'
-                    }`}
-                    role="switch"
-                    aria-checked={billingInterval === 'yearly'}
+                  <Button 
+                    onClick={() => handleUpgrade('business', 'yearly')} 
+                    disabled={isUpgrading} 
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        billingInterval === 'yearly' ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                  <span className={`text-sm font-medium ${billingInterval === 'yearly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
-                    Yearly
-                  </span>
-                  {billingInterval === 'yearly' && (
-                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 ml-2">
-                      Save 20%
-                    </Badge>
-                  )}
+                    {isUpgrading ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Switch to Yearly'
+                    )}
+                  </Button>
                 </div>
               </div>
-              <div className="flex justify-between items-center">
-                <Button onClick={() => handleUpgrade('business', billingInterval)} disabled={isUpgrading} className="gap-2">
+            )}
+
+            {/* Switch to Pro */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <div>
+                  <h4 className="font-medium text-sm mb-1">Switch to Pro</h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Up to 500 assets and 5 team members
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => handleUpgrade('pro', billingInterval)} 
+                  disabled={isUpgrading} 
+                  size="sm"
+                  variant="outline"
+                >
                   {isUpgrading ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Upgrading...
-                    </>
-                  ) : (
-                    <>
-                      <Crown className="h-4 w-4" />
-                      Upgrade to Business ({billingInterval === 'yearly' ? '$374/year' : '$39/month'})
-                    </>
-                  )}
-                </Button>
-                <Button onClick={() => handleDowngrade('free')} disabled={isUpgrading} variant="outline">
-                  {isUpgrading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
                       Processing...
                     </>
                   ) : (
-                    'Downgrade to Free'
+                    <>
+                      Switch <ChevronRight className="h-3 w-3 ml-1" />
+                    </>
                   )}
                 </Button>
               </div>
-            </>
-          )}
 
-          {currentTier === 'business' && (
-            <>
-              <Separator />
-              {/* Switch to Yearly Option */}
-              {currentBillingInterval === 'monthly' && (
-                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-blue-900 dark:text-blue-100 text-sm mb-1">
-                        Switch to Yearly and Save 20%
-                      </h4>
-                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                        Pay $374/year instead of $468/year (save $94)
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={() => handleUpgrade('business', 'yearly')} 
-                      disabled={isUpgrading} 
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      {isUpgrading ? (
-                        <>
-                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                          Processing...
-                        </>
-                      ) : (
-                        'Switch to Yearly'
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
-              {/* Billing Interval Toggle for Pro Downgrade */}
-              <div className="mb-4">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Switch to Pro:</p>
-                <div className="flex items-center justify-start gap-4">
-                  <span className={`text-sm font-medium ${billingInterval === 'monthly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
-                    Monthly
-                  </span>
-                  <button
-                    onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      billingInterval === 'yearly' ? 'bg-[#2563EB]' : 'bg-gray-300'
+              {/* Billing Interval Toggle for Pro Switch */}
+              <div className="flex items-center justify-center gap-4 py-2">
+                <span className={`text-xs font-medium ${billingInterval === 'monthly' ? 'text-[#0B1226] dark:text-gray-100' : 'text-gray-500'}`}>
+                  Monthly
+                </span>
+                <button
+                  onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    billingInterval === 'yearly' ? 'bg-[#2563EB]' : 'bg-gray-300'
+                  }`}
+                  role="switch"
+                  aria-checked={billingInterval === 'yearly'}
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                      billingInterval === 'yearly' ? 'translate-x-5' : 'translate-x-0.5'
                     }`}
-                    role="switch"
-                    aria-checked={billingInterval === 'yearly'}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        billingInterval === 'yearly' ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                  <span className={`text-sm font-medium ${billingInterval === 'yearly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
-                    Yearly
-                  </span>
-                  {billingInterval === 'yearly' && (
-                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 ml-2">
-                      Save 20%
-                    </Badge>
-                  )}
-                </div>
+                  />
+                </button>
+                <span className={`text-xs font-medium ${billingInterval === 'yearly' ? 'text-[#0B1226] dark:text-gray-100' : 'text-gray-500'}`}>
+                  Yearly
+                </span>
+                {billingInterval === 'yearly' && (
+                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900 dark:text-green-100 text-xs">
+                    Save 20%
+                  </Badge>
+                )}
               </div>
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Need to change your plan?
-                </p>
-                <div className="flex gap-2">
-                  <Button onClick={() => handleUpgrade('pro', billingInterval)} disabled={isUpgrading} variant="outline" className="gap-2">
-                    {isUpgrading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        Switch to Pro ({billingInterval === 'yearly' ? '$182/year' : '$19/month'})
-                      </>
-                    )}
-                  </Button>
-                  <Button onClick={() => handleDowngrade('free')} disabled={isUpgrading} variant="outline">
-                    {isUpgrading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Processing...
-                      </>
-                    ) : (
-                      'Downgrade to Free'
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Sync Subscription - Always visible for troubleshooting */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Subscription Sync</CardTitle>
-          <CardDescription>
-            Manually sync your subscription status from our payment system
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div>
-              <h4 className="font-medium text-blue-900 dark:text-blue-100 text-sm">Subscription Not Showing?</h4>
-              <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
-                If you just paid but still see Free plan, click here to sync your subscription
-              </p>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={async () => {
-                try {
-                  setIsUpgrading(true);
-                  setError(null);
-                  const response = await fetch('/api/subscription/sync', {
-                    method: 'POST',
-                  });
-                  const data = await response.json();
-                  
-                  if (data.success && data.subscription?.tier) {
-                    toast.success(`Subscription synced successfully! You're now on ${data.subscription.tier} plan.`);
-                    await refetch();
-                  } else if (data.error) {
-                    toast.error(data.error);
-                    setError(data.error);
-                  } else {
-                    toast.info('No active subscription found in payment system');
-                  }
-                } catch (err) {
-                  const message = err instanceof Error ? err.message : 'Failed to sync subscription';
-                  toast.error(message);
-                  setError(message);
-                } finally {
-                  setIsUpgrading(false);
-                }
-              }}
-              disabled={isUpgrading}
-              className="text-blue-700 hover:text-blue-800 bg-white hover:bg-blue-50 border-blue-300"
-            >
-              {isUpgrading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Syncing...
-                </>
-              ) : (
-                'Sync Now'
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Payment & Billing Details */}
+            {/* Downgrade Option */}
+            <Separator />
+            <Button 
+              onClick={() => handleDowngrade('free')} 
+              disabled={isUpgrading} 
+              variant="ghost" 
+              className="w-full text-gray-600 hover:text-gray-900"
+            >
+              Downgrade to Free Plan
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Payment & Billing Details - Only for Paid Plans */}
       {currentTier !== 'free' && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-gray-600" />
-              Payment & Billing
+              Billing Details
             </CardTitle>
             <CardDescription>
-              Manage your payment method and view billing history
+              Subscription information and payment management
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Next Payment */}
-            {nextPaymentDate && nextPaymentAmount && (
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Next Payment</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{nextPaymentDate}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{nextPaymentAmount}</p>
-                </div>
-              </div>
-            )}
-
-            <Separator />
-
-            {/* Subscription Info */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            {/* Subscription Info Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Plan</p>
-                <p className="font-medium text-gray-900 dark:text-gray-100">{tierInfo.name}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{tierInfo.name}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Billing</p>
-                <p className="font-medium text-gray-900 dark:text-gray-100 capitalize">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Billing Cycle</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">
                   {currentBillingInterval === 'yearly' ? 'Yearly' : 'Monthly'}
                 </p>
               </div>
               {subscriptionStartDate && (
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Member Since</p>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">{subscriptionStartDate}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{subscriptionStartDate}</p>
                 </div>
               )}
               <div>
@@ -681,30 +697,26 @@ export function BillingSection() {
 
             <Separator />
 
-            {/* Payment Method Management */}
-            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <CreditCard className="h-5 w-5 text-blue-600 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                    Payment Method
-                  </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Securely managed by Polar.sh. Check your email for the &quot;Manage Subscription&quot; link to update payment details.
-                  </p>
-                </div>
-                <Mail className="h-5 w-5 text-gray-400" />
+            {/* Payment Method */}
+            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+              <CreditCard className="h-5 w-5 text-gray-400 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">
+                  Payment Method
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Managed by Polar.sh. Check your email for the &quot;Manage Subscription&quot; link to update payment details.
+                </p>
               </div>
             </div>
 
-
-            {/* Cancel Subscription - Only show if not already cancelled */}
+            {/* Cancel Subscription */}
             {organization?.subscription_status !== 'cancelled' && (
               <>
                 <Separator />
                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                   <div>
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm">Cancel Subscription</h4>
+                    <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100">Cancel Subscription</h4>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                       Access retained until billing period ends
                     </p>
@@ -732,261 +744,38 @@ export function BillingSection() {
         </Card>
       )}
 
-      {/* Plan Comparison */}
-      {currentTier === 'free' && (
-        <Card className="border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/50 dark:to-indigo-950/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Crown className="h-5 w-5 text-blue-600" />
-              Upgrade Your Plan
-            </CardTitle>
-            <CardDescription>
-              Unlock advanced features and higher limits
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400">Free Plan (Current)</h4>
-                <ul className="space-y-1.5 text-xs">
-                  {TIER_DETAILS.free.features.slice(0, 3).map((feature, index) => (
-                    <li key={index} className="flex items-start gap-1.5 text-gray-600 dark:text-gray-400">
-                      <Check className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="space-y-2 border-l border-blue-200 dark:border-blue-800 pl-4">
-                <h4 className="text-sm font-semibold text-blue-600">Pro - $19/mo</h4>
-                <ul className="space-y-1.5 text-xs">
-                  {TIER_DETAILS.pro.features.slice(0, 4).map((feature, index) => (
-                    <li key={index} className="flex items-start gap-1.5">
-                      <Check className="h-3.5 w-3.5 text-green-500 flex-shrink-0 mt-0.5" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="space-y-2 border-l border-purple-200 dark:border-purple-800 pl-4">
-                <h4 className="text-sm font-semibold text-purple-600">Business - $39/mo</h4>
-                <ul className="space-y-1.5 text-xs">
-                  {TIER_DETAILS.business.features.slice(0, 4).map((feature, index) => (
-                    <li key={index} className="flex items-start gap-1.5">
-                      <Check className="h-3.5 w-3.5 text-green-500 flex-shrink-0 mt-0.5" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
+      {/* Sync Subscription - Compact */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-3">
+              <RefreshCw className="h-4 w-4 text-blue-600" />
+              <div>
+                <h4 className="font-medium text-sm text-blue-900 dark:text-blue-100">Subscription Not Showing?</h4>
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  Sync your subscription status from our payment system
+                </p>
               </div>
             </div>
-
-            {/* Billing Interval Toggle */}
-            <div className="flex items-center justify-center gap-4 py-2">
-              <span className={`text-sm font-medium ${billingInterval === 'monthly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
-                Monthly
-              </span>
-              <button
-                onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  billingInterval === 'yearly' ? 'bg-[#2563EB]' : 'bg-gray-300'
-                }`}
-                role="switch"
-                aria-checked={billingInterval === 'yearly'}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    billingInterval === 'yearly' ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-              <span className={`text-sm font-medium ${billingInterval === 'yearly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
-                Yearly
-              </span>
-              {billingInterval === 'yearly' && (
-                <Badge className="bg-green-100 text-green-700 hover:bg-green-100 ml-2">
-                  Save 20%
-                </Badge>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleSync}
+              disabled={isUpgrading}
+              className="text-blue-700 hover:text-blue-800 bg-white hover:bg-blue-50 border-blue-300 dark:bg-blue-900 dark:text-blue-100"
+            >
+              {isUpgrading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                'Sync Now'
               )}
-            </div>
-            <div className="flex justify-center gap-3 pt-2">
-              <Button onClick={() => handleUpgrade('pro', billingInterval)} disabled={isUpgrading} className="gap-2">
-                {isUpgrading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Upgrading...
-                  </>
-                ) : (
-                  <>
-                    <Crown className="h-4 w-4" />
-                    Upgrade to Pro ({billingInterval === 'yearly' ? '$182/year' : '$19/month'})
-                  </>
-                )}
-              </Button>
-              <Button onClick={() => handleUpgrade('business', billingInterval)} disabled={isUpgrading} variant="outline" className="gap-2">
-                {isUpgrading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Upgrading...
-                  </>
-                ) : (
-                  <>
-                    <Crown className="h-4 w-4" />
-                    Upgrade to Business ({billingInterval === 'yearly' ? '$374/year' : '$39/month'})
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Pro Plan Upgrade to Business */}
-      {currentTier === 'pro' && (
-        <Card className="border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50/50 to-indigo-50/50 dark:from-purple-950/50 dark:to-indigo-950/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Crown className="h-5 w-5 text-purple-600" />
-              Scale to Business
-            </CardTitle>
-            <CardDescription>
-              Unlimited resources and up to 20 team members
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-blue-600">Pro - $19/mo (Current)</h4>
-                <ul className="space-y-1.5 text-xs">
-                  {TIER_DETAILS.pro.features.slice(0, 4).map((feature, index) => (
-                    <li key={index} className="flex items-start gap-1.5 text-gray-600 dark:text-gray-400">
-                      <Check className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="space-y-2 border-l border-purple-200 dark:border-purple-800 pl-4">
-                <h4 className="text-sm font-semibold text-purple-600">Business - $39/mo</h4>
-                <ul className="space-y-1.5 text-xs">
-                  {TIER_DETAILS.business.features.slice(0, 4).map((feature, index) => (
-                    <li key={index} className="flex items-start gap-1.5">
-                      <Check className="h-3.5 w-3.5 text-green-500 flex-shrink-0 mt-0.5" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {organization?.subscription_status !== 'cancelled' && (
-              <Alert className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800">
-                <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                <AlertDescription className="text-xs text-yellow-800 dark:text-yellow-300">
-                  <strong>Plan Change Process:</strong> To switch from Pro to Business, you&apos;ll need to cancel your current Pro plan first. After cancellation, you&apos;ll retain Pro access until the end of your billing period, then you can subscribe to Business.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Billing Interval Toggle for Business Upgrade */}
-            <div className="mb-4">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Switch to Business:</p>
-              <div className="flex items-center justify-center gap-4">
-                <span className={`text-sm font-medium ${billingInterval === 'monthly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
-                  Monthly
-                </span>
-                <button
-                  onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    billingInterval === 'yearly' ? 'bg-[#2563EB]' : 'bg-gray-300'
-                  }`}
-                  role="switch"
-                  aria-checked={billingInterval === 'yearly'}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      billingInterval === 'yearly' ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-                <span className={`text-sm font-medium ${billingInterval === 'yearly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
-                  Yearly
-                </span>
-                {billingInterval === 'yearly' && (
-                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 ml-2">
-                    Save 20%
-                  </Badge>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-center pt-2">
-              <Button onClick={() => handleUpgrade('business', billingInterval)} disabled={isUpgrading} className="gap-2">
-                {isUpgrading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Crown className="h-4 w-4" />
-                    Switch to Business ({billingInterval === 'yearly' ? '$374/year' : '$39/month'})
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Business Plan Downgrade Options */}
-      {currentTier === 'business' && (
-        <Card className="border-gray-200">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Other Plans</CardTitle>
-            <CardDescription>
-              Compare what&apos;s included in each plan
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400">Free - $0/mo</h4>
-                <ul className="space-y-1.5 text-xs">
-                  {TIER_DETAILS.free.features.slice(0, 3).map((feature, index) => (
-                    <li key={index} className="flex items-start gap-1.5 text-gray-600 dark:text-gray-400">
-                      <Check className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-blue-600">Pro - $19/mo</h4>
-                <ul className="space-y-1.5 text-xs">
-                  {TIER_DETAILS.pro.features.slice(0, 4).map((feature, index) => (
-                    <li key={index} className="flex items-start gap-1.5">
-                      <Check className="h-3.5 w-3.5 text-green-500 flex-shrink-0 mt-0.5" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-purple-600">Business - $39/mo (Current)</h4>
-                <ul className="space-y-1.5 text-xs">
-                  {TIER_DETAILS.business.features.slice(0, 4).map((feature, index) => (
-                    <li key={index} className="flex items-start gap-1.5 text-gray-600 dark:text-gray-400">
-                      <Check className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-
