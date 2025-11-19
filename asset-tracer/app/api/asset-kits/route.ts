@@ -1,0 +1,147 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { getAssetKits, createAssetKit } from '@/lib/db';
+import { z } from 'zod';
+
+/**
+ * Zod schema for validating asset kit creation input
+ */
+const createAssetKitSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().optional().nullable(),
+  category: z.string().optional().nullable(),
+  asset_ids: z
+    .array(
+      z.object({
+        asset_id: z.string().uuid('Asset ID must be a valid UUID'),
+        quantity: z.number().int().min(1, 'Quantity must be at least 1').default(1),
+      })
+    )
+    .min(1, 'At least one asset is required'),
+});
+
+/**
+ * GET /api/asset-kits
+ * Fetch all asset kits for the authenticated user's organization
+ */
+export async function GET() {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      return NextResponse.json({ error: 'Unauthorized. Please sign in.' }, { status: 401 });
+    }
+
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users')
+      .select('organization_id')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profileError || !userProfile?.organization_id) {
+      return NextResponse.json(
+        { error: 'Organization not found. Please complete your profile.' },
+        { status: 403 }
+      );
+    }
+
+    const kits = await getAssetKits(userProfile.organization_id);
+
+    return NextResponse.json({ kits }, { status: 200 });
+  } catch (error) {
+    console.error('Error in GET /api/asset-kits:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch asset kits' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/asset-kits
+ * Create a new asset kit
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      return NextResponse.json({ error: 'Unauthorized. Please sign in.' }, { status: 401 });
+    }
+
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users')
+      .select('organization_id')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profileError || !userProfile?.organization_id) {
+      return NextResponse.json(
+        { error: 'Organization not found. Please complete your profile.' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const validatedData = createAssetKitSchema.parse(body);
+
+    // Verify all assets belong to the organization
+    const assetIds = validatedData.asset_ids.map((item) => item.asset_id);
+    const { data: assets, error: assetsError } = await supabase
+      .from('assets')
+      .select('id')
+      .in('id', assetIds)
+      .eq('organization_id', userProfile.organization_id);
+
+    if (assetsError) {
+      return NextResponse.json(
+        { error: 'Failed to verify assets' },
+        { status: 500 }
+      );
+    }
+
+    if (!assets || assets.length !== assetIds.length) {
+      return NextResponse.json(
+        { error: 'One or more assets not found or access denied' },
+        { status: 400 }
+      );
+    }
+
+    const kit = await createAssetKit(
+      validatedData,
+      userProfile.organization_id,
+      session.user.id
+    );
+
+    return NextResponse.json({ kit }, { status: 201 });
+  } catch (error) {
+    console.error('Error in POST /api/asset-kits:', error);
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Validation failed',
+          details: error.errors.map((e) => ({
+            field: e.path.join('.'),
+            message: e.message,
+          })),
+        },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to create asset kit' },
+      { status: 500 }
+    );
+  }
+}
+

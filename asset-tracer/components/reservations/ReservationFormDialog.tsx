@@ -28,7 +28,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import type { Asset } from '@/types';
+import type { Asset, AssetKit } from '@/types';
 import type { Reservation, CreateReservationInput } from '@/types/reservation';
 
 const reservationSchema = z.object({
@@ -72,6 +72,8 @@ export function ReservationFormDialog({
   onSuccess,
 }: ReservationFormDialogProps) {
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+  const [selectedKits, setSelectedKits] = useState<string[]>([]);
+  const [selectionMode, setSelectionMode] = useState<'assets' | 'kits'>('assets');
   const [availabilityResults, setAvailabilityResults] = useState<Record<string, any>>({});
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -79,6 +81,10 @@ export function ReservationFormDialog({
   // Fetch assets
   const { data: assetsData } = useSWR<{ assets: Asset[] }>('/api/assets');
   const assets = assetsData?.assets || [];
+
+  // Fetch kits
+  const { data: kitsData } = useSWR<{ kits: AssetKit[] }>('/api/asset-kits');
+  const kits = kitsData?.kits || [];
 
   // Group assets by category
   const assetsByCategory = useMemo(() => {
@@ -360,6 +366,8 @@ export function ReservationFormDialog({
           });
         }
         setSelectedAssets(assetIds);
+        setSelectedKits([]);
+        setSelectionMode('assets');
       } else {
         // Use initialDate if provided, otherwise use empty strings
         const dateStr = initialDate ? format(initialDate, 'yyyy-MM-dd') : '';
@@ -377,22 +385,25 @@ export function ReservationFormDialog({
           notes: '',
         });
         setSelectedAssets([]);
+        setSelectedKits([]);
+        setSelectionMode('assets');
       }
       setAvailabilityResults({});
     }
   }, [open, reservation, initialDate, reset]);
 
-  // Check availability when dates or selected assets change
+  // Check availability when dates or selected assets/kits change
   useEffect(() => {
-    if (startDate && endDate && selectedAssets.length > 0) {
-      checkAvailability();
+    const allAssetIds = getAllSelectedAssetIds;
+    if (startDate && endDate && allAssetIds.length > 0) {
+      checkAvailability(allAssetIds);
     } else {
       setAvailabilityResults({});
     }
-  }, [startDate, endDate, selectedAssets]);
+  }, [startDate, endDate, selectedAssets, selectedKits, kits]);
 
-  const checkAvailability = async () => {
-    if (!startDate || !endDate || selectedAssets.length === 0) return;
+  const checkAvailability = async (assetIds: string[] = getAllSelectedAssetIds) => {
+    if (!startDate || !endDate || assetIds.length === 0) return;
 
     setIsCheckingAvailability(true);
     try {
@@ -400,7 +411,7 @@ export function ReservationFormDialog({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          asset_ids: selectedAssets,
+          asset_ids: assetIds,
           start_date: startDate,
           end_date: endDate,
           exclude_reservation_id: reservation?.id || null,
@@ -438,9 +449,39 @@ export function ReservationFormDialog({
     );
   };
 
+  // Expand selected kits into asset IDs
+  const getAllSelectedAssetIds = useMemo(() => {
+    const assetIds = [...selectedAssets];
+    
+    // Add assets from selected kits
+    selectedKits.forEach((kitId) => {
+      const kit = kits.find((k) => k.id === kitId);
+      if (kit && kit.items) {
+        kit.items.forEach((item) => {
+          // Add each asset the number of times specified by quantity
+          for (let i = 0; i < item.quantity; i++) {
+            if (!assetIds.includes(item.asset_id)) {
+              assetIds.push(item.asset_id);
+            }
+          }
+        });
+      }
+    });
+    
+    return assetIds;
+  }, [selectedAssets, selectedKits, kits]);
+
+  const toggleKit = (kitId: string) => {
+    setSelectedKits((prev) =>
+      prev.includes(kitId) ? prev.filter((id) => id !== kitId) : [...prev, kitId]
+    );
+  };
+
   const onSubmit = async (data: any) => {
-    if (selectedAssets.length === 0) {
-      toast.error('Please select at least one asset');
+    const allAssetIds = getAllSelectedAssetIds;
+    
+    if (allAssetIds.length === 0) {
+      toast.error('Please select at least one asset or kit');
       return;
     }
 
@@ -457,8 +498,8 @@ export function ReservationFormDialog({
     }
 
     try {
-      // Ensure selectedAssets is always an array
-      const assetIds = Array.isArray(selectedAssets) ? selectedAssets : [];
+      // Use expanded asset IDs (from both individual assets and kits)
+      const assetIds = allAssetIds;
       
       const payload: CreateReservationInput = {
         title: data.title,
@@ -661,10 +702,93 @@ export function ReservationFormDialog({
             />
           </div>
 
-          {/* Asset Selection */}
+          {/* Asset/Kit Selection */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <Label>Select Assets *</Label>
+              <Label>Select Assets or Kits *</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={selectionMode === 'assets' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectionMode('assets')}
+                  className="h-7 text-xs"
+                >
+                  Assets
+                </Button>
+                <Button
+                  type="button"
+                  variant={selectionMode === 'kits' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectionMode('kits')}
+                  className="h-7 text-xs"
+                >
+                  Kits
+                </Button>
+              </div>
+            </div>
+
+            {/* Kit Selection */}
+            {selectionMode === 'kits' && (
+              <div className="mb-4 border rounded-lg p-4 max-h-64 overflow-y-auto">
+                {kits.length === 0 ? (
+                  <p className="text-sm text-gray-500">No kits available. Create kits to reserve multiple assets together.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {kits.map((kit) => {
+                      const isSelected = selectedKits.includes(kit.id);
+                      const itemCount = kit.items?.length || 0;
+
+                      return (
+                        <div
+                          key={kit.id}
+                          className={`flex items-center justify-between p-3 rounded border ${
+                            isSelected
+                              ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/20'
+                              : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleKit(kit.id)}
+                              className="rounded"
+                            />
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{kit.name}</p>
+                              <p className="text-xs text-gray-500">
+                                {itemCount} asset{itemCount !== 1 ? 's' : ''}
+                                {kit.category && ` • ${kit.category}`}
+                              </p>
+                              {kit.description && (
+                                <p className="text-xs text-gray-400 mt-1">{kit.description}</p>
+                              )}
+                            </div>
+                          </div>
+                          {isSelected && kit.items && kit.items.length > 0 && (
+                            <div className="text-xs text-gray-500">
+                              {kit.items.map((item, idx) => {
+                                const asset = assets.find((a) => a.id === item.asset_id);
+                                return (
+                                  <div key={idx}>
+                                    {asset?.name} {item.quantity > 1 && `× ${item.quantity}`}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Asset Selection */}
+            {selectionMode === 'assets' && (
+              <div>
               {categories.length > 0 && (
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                   <SelectTrigger className="w-48 h-8 text-xs">
@@ -711,10 +835,21 @@ export function ReservationFormDialog({
             )}
 
             <div className="mt-2 border rounded-lg p-4 max-h-64 overflow-y-auto">
-              {renderAssetList()}
+                {renderAssetList()}
+              </div>
+              {selectedAssets.length === 0 && (
+                <p className="text-sm text-red-500 mt-1">Please select at least one asset</p>
+              )}
             </div>
-            {selectedAssets.length === 0 && (
-              <p className="text-sm text-red-500 mt-1">Please select at least one asset</p>
+            )}
+            {selectionMode === 'kits' && selectedKits.length === 0 && (
+              <p className="text-sm text-red-500 mt-1">Please select at least one kit</p>
+            )}
+            {(selectedAssets.length > 0 || selectedKits.length > 0) && (
+              <p className="text-sm text-gray-500 mt-1">
+                {getAllSelectedAssetIds.length} asset{getAllSelectedAssetIds.length !== 1 ? 's' : ''} selected
+                {selectedKits.length > 0 && ` (from ${selectedKits.length} kit${selectedKits.length !== 1 ? 's' : ''})`}
+              </p>
             )}
           </div>
 

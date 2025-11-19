@@ -8,4 +8,6 @@ export * from './invoices';
 export * from './quotations';
 export * from './expenses';
 export * from './financials';
+export * from './reservations';
+export * from './asset-kits';
 
