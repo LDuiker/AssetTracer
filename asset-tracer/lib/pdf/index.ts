@@ -3,4 +3,5 @@
  */
 
 export * from './invoice-template';
+export * from './reservation-pdf';
 

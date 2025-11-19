@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import useSWR from 'swr';
-import { Plus, Calendar, Search, Filter, List } from 'lucide-react';
+import { Plus, Calendar, Search, Filter, List, Download, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -19,6 +19,7 @@ import { ReservationFormDialog } from '@/components/reservations/ReservationForm
 import { ReservationViewDialog } from '@/components/reservations/ReservationViewDialog';
 import { ReservationsCalendar } from '@/components/reservations/ReservationsCalendar';
 import type { Reservation } from '@/types/reservation';
+import { toast } from 'sonner';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
@@ -50,6 +51,8 @@ export default function ReservationsPage() {
   const [initialDate, setInitialDate] = useState<Date | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isExportingCSV, setIsExportingCSV] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   const filteredReservations = useMemo(() => {
     return reservations.filter((reservation) => {
@@ -108,6 +111,74 @@ export default function ReservationsPage() {
     setIsViewOpen(true);
   };
 
+  const handleExportCSV = async () => {
+    try {
+      setIsExportingCSV(true);
+      toast.loading('Exporting reservations to CSV...');
+
+      const response = await fetch('/api/reservations/export/csv', {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to export CSV');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reservations-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.dismiss();
+      toast.success('Reservations exported to CSV successfully');
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      toast.dismiss();
+      toast.error('Failed to export reservations to CSV');
+    } finally {
+      setIsExportingCSV(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      setIsExportingPDF(true);
+      toast.loading('Generating PDF...');
+
+      const response = await fetch('/api/reservations/export/pdf', {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to export PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reservations-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.dismiss();
+      toast.success('Reservations exported to PDF successfully');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast.dismiss();
+      toast.error('Failed to export reservations to PDF');
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-8">
@@ -149,10 +220,30 @@ export default function ReservationsPage() {
             Manage equipment reservations for your projects
           </p>
         </div>
-        <Button onClick={handleCreate} className="gap-2">
-          <Plus className="h-4 w-4" />
-          New Reservation
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleExportCSV}
+            variant="outline"
+            disabled={isExportingCSV || isExportingPDF || isLoading || reservations.length === 0}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            {isExportingCSV ? 'Exporting...' : 'Export CSV'}
+          </Button>
+          <Button
+            onClick={handleExportPDF}
+            variant="outline"
+            disabled={isExportingCSV || isExportingPDF || isLoading || reservations.length === 0}
+            className="gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            {isExportingPDF ? 'Generating...' : 'Export PDF'}
+          </Button>
+          <Button onClick={handleCreate} className="gap-2">
+            <Plus className="h-4 w-4" />
+            New Reservation
+          </Button>
+        </div>
       </div>
 
       {/* View Toggle and Filters */}
