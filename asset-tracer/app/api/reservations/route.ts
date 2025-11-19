@@ -13,8 +13,14 @@ const createReservationSchema = z.object({
   description: z.string().nullable().optional(),
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
   end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
-  start_time: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
-  end_time: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+  start_time: z
+    .union([z.string().regex(/^\d{2}:\d{2}$/), z.string().length(0), z.null()])
+    .transform((val) => (val === '' ? null : val))
+    .optional(),
+  end_time: z
+    .union([z.string().regex(/^\d{2}:\d{2}$/), z.string().length(0), z.null()])
+    .transform((val) => (val === '' ? null : val))
+    .optional(),
   location: z.string().nullable().optional(),
   status: z.enum(['pending', 'confirmed', 'active', 'completed', 'cancelled']).optional(),
   team_members: z.array(z.string().uuid()).nullable().optional(),
