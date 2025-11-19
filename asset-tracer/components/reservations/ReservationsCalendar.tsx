@@ -28,6 +28,16 @@ export function ReservationsCalendar({
   onReservationClick,
 }: ReservationsCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Get all days in the current month view (including previous/next month days for full weeks)
   const monthStart = startOfMonth(currentMonth);
@@ -76,21 +86,21 @@ export function ReservationsCalendar({
     <Card>
       <CardContent className="p-6">
         {/* Calendar Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Button variant="outline" size="icon" onClick={previousMonth}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white min-w-[200px] text-center">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white min-w-[160px] sm:min-w-[200px] text-center">
               {format(currentMonth, 'MMMM yyyy')}
             </h2>
             <Button variant="outline" size="icon" onClick={nextMonth}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <Button variant="outline" onClick={goToToday} className="gap-2">
+          <Button variant="outline" onClick={goToToday} className="gap-2 text-sm">
             <CalendarIcon className="h-4 w-4" />
-            Today
+            <span className="hidden sm:inline">Today</span>
           </Button>
         </div>
 
@@ -100,9 +110,10 @@ export function ReservationsCalendar({
           {weekDays.map((day) => (
             <div
               key={day}
-              className="p-2 text-center text-sm font-medium text-gray-500 dark:text-gray-400"
+              className="p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400"
             >
-              {day}
+              <span className="hidden sm:inline">{day}</span>
+              <span className="sm:hidden">{day.substring(0, 1)}</span>
             </div>
           ))}
 
@@ -117,7 +128,7 @@ export function ReservationsCalendar({
               <div
                 key={dateKey}
                 className={`
-                  min-h-[100px] border rounded-lg p-2
+                  min-h-[60px] sm:min-h-[100px] border rounded-lg p-1 sm:p-2
                   ${isCurrentMonth ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'}
                   ${isToday ? 'ring-2 ring-blue-500 dark:ring-blue-400' : ''}
                   ${isCurrentMonth ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : 'opacity-50'}
@@ -127,19 +138,19 @@ export function ReservationsCalendar({
               >
                 <div
                   className={`
-                    text-sm font-medium mb-1
+                    text-xs sm:text-sm font-medium mb-0.5 sm:mb-1
                     ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}
                     ${!isCurrentMonth ? 'text-gray-400 dark:text-gray-600' : ''}
                   `}
                 >
                   {format(day, 'd')}
                 </div>
-                <div className="space-y-1">
-                  {dayReservations.slice(0, 3).map((reservation) => (
+                <div className="space-y-0.5 sm:space-y-1">
+                  {dayReservations.slice(0, isMobile ? 1 : 3).map((reservation) => (
                     <div
                       key={reservation.id}
                       className={`
-                        text-xs px-1.5 py-0.5 rounded border truncate
+                        text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded border truncate
                         ${statusColors[reservation.status] || statusColors.pending}
                         cursor-pointer hover:opacity-80
                       `}
@@ -149,12 +160,13 @@ export function ReservationsCalendar({
                       }}
                       title={reservation.title}
                     >
-                      {reservation.title}
+                      <span className="hidden sm:inline">{reservation.title}</span>
+                      <span className="sm:hidden">•</span>
                     </div>
                   ))}
-                  {dayReservations.length > 3 && (
-                    <div className="text-xs text-gray-500 dark:text-gray-400 px-1.5">
-                      +{dayReservations.length - 3} more
+                  {dayReservations.length > (isMobile ? 1 : 3) && (
+                    <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 px-1 sm:px-1.5">
+                      +{dayReservations.length - (isMobile ? 1 : 3)} more
                     </div>
                   )}
                 </div>
@@ -164,12 +176,12 @@ export function ReservationsCalendar({
         </div>
 
         {/* Legend */}
-        <div className="mt-6 pt-4 border-t flex flex-wrap gap-4 items-center">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</span>
+        <div className="mt-4 sm:mt-6 pt-4 border-t flex flex-wrap gap-2 sm:gap-4 items-center">
+          <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Status:</span>
           {Object.entries(statusColors).map(([status, className]) => (
-            <div key={status} className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded border ${className.split(' ')[0]}`} />
-              <span className="text-xs text-gray-600 dark:text-gray-400 capitalize">{status}</span>
+            <div key={status} className="flex items-center gap-1.5 sm:gap-2">
+              <div className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded border ${className.split(' ')[0]}`} />
+              <span className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 capitalize">{status}</span>
             </div>
           ))}
         </div>
