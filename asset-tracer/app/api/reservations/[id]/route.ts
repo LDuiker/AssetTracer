@@ -141,14 +141,19 @@ export async function PATCH(
     const validationResult = updateReservationSchema.safeParse(body);
 
     if (!validationResult.success) {
+      // Zod errors are in `issues`, not `errors`
+      const issues = validationResult.error?.issues || [];
+      
       console.error('Validation failed:', {
-        errors: validationResult.error.errors,
+        issues: issues,
         body: JSON.stringify(body, null, 2),
+        errorFormat: validationResult.error.format(),
       });
       
-      const errors = (validationResult.error?.errors || []).map((err) => ({
-        field: (err.path || []).join('.'),
-        message: err.message || 'Validation error',
+      const errors = issues.map((issue) => ({
+        field: (issue.path || []).join('.') || 'root',
+        message: issue.message || 'Validation error',
+        code: issue.code,
       }));
 
       return NextResponse.json(

@@ -120,9 +120,18 @@ export async function POST(request: NextRequest) {
     const validationResult = createReservationSchema.safeParse(body);
 
     if (!validationResult.success) {
-      const errors = validationResult.error.errors.map((err) => ({
-        field: err.path.join('.'),
-        message: err.message,
+      // Zod errors are in `issues`, not `errors`
+      const issues = validationResult.error?.issues || [];
+      
+      console.error('Validation failed:', {
+        issues: issues,
+        body: JSON.stringify(validated, null, 2),
+      });
+      
+      const errors = issues.map((issue) => ({
+        field: (issue.path || []).join('.') || 'root',
+        message: issue.message || 'Validation error',
+        code: issue.code,
       }));
 
       return NextResponse.json(
