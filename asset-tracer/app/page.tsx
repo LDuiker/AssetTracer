@@ -126,10 +126,12 @@ function LandingPageContent() {
     pro: {
       monthly: 19,
       yearly: 182, // 20% off (19 * 12 * 0.8 = 182.4, rounded to 182)
+      yearlyMonthlyEquivalent: 15.17, // 182 / 12 = 15.17 (discounted monthly rate)
     },
     business: {
       monthly: 39,
       yearly: 374, // 20% off (39 * 12 * 0.8 = 374.4, rounded to 374)
+      yearlyMonthlyEquivalent: 31.17, // 374 / 12 = 31.17 (discounted monthly rate)
     },
   };
 
@@ -642,7 +644,7 @@ function LandingPageContent() {
                 </div>
                 {billingInterval === 'yearly' && (
                   <p className="text-sm text-gray-500">
-                    ${pricing.pro.monthly}/month billed annually
+                    ${pricing.pro.yearlyMonthlyEquivalent.toFixed(2)}/month billed annually
                   </p>
                 )}
                 <ul className="space-y-3">
@@ -701,7 +703,7 @@ function LandingPageContent() {
                 </div>
                 {billingInterval === 'yearly' && (
                   <p className="text-sm text-gray-500">
-                    ${pricing.business.monthly}/month billed annually
+                    ${pricing.business.yearlyMonthlyEquivalent.toFixed(2)}/month billed annually
                   </p>
                 )}
                 <ul className="space-y-3">
