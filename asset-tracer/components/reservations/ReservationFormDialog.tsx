@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { X, Calendar, Clock, MapPin, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, AlertCircle, CheckCircle2, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -86,7 +86,7 @@ export function ReservationFormDialog({
   const assets = assetsData?.assets || [];
 
   // Fetch kits
-  const { data: kitsData } = useSWR<{ kits: AssetKit[] }>('/api/asset-kits');
+  const { data: kitsData, mutate: mutateKits } = useSWR<{ kits: AssetKit[] }>('/api/asset-kits');
   const kits = kitsData?.kits || [];
 
   // Group assets by category
@@ -733,10 +733,41 @@ export function ReservationFormDialog({
 
             {/* Kit Selection */}
             {selectionMode === 'kits' && (
-              <div className="mb-4 border rounded-lg p-4 max-h-64 overflow-y-auto">
-                {kits.length === 0 ? (
-                  <p className="text-sm text-gray-500">No kits available. Create kits to reserve multiple assets together.</p>
-                ) : (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Available Kits</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditingKit(null);
+                      setIsKitDialogOpen(true);
+                    }}
+                    className="h-7 text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Create Kit
+                  </Button>
+                </div>
+                <div className="border rounded-lg p-4 max-h-64 overflow-y-auto">
+                  {kits.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-sm text-gray-500 mb-2">No kits available.</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingKit(null);
+                          setIsKitDialogOpen(true);
+                        }}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Create Your First Kit
+                      </Button>
+                    </div>
+                  ) : (
                   <div className="space-y-2">
                     {kits.map((kit) => {
                       const isSelected = selectedKits.includes(kit.id);
