@@ -235,25 +235,11 @@ export function ReservationViewDialog({
 
             {/* Equipment List */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-gray-500" />
-                  <h3 className="text-lg font-semibold">
-                    Equipment ({reservation.assets?.length || 0})
-                  </h3>
-                </div>
-                {reservation.assets && reservation.assets.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownloadPackingList}
-                    disabled={isDownloading}
-                    className="gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    {isDownloading ? 'Generating...' : 'Packing List'}
-                  </Button>
-                )}
+              <div className="flex items-center gap-2 mb-4">
+                <Package className="h-5 w-5 text-gray-500" />
+                <h3 className="text-lg font-semibold">
+                  Equipment ({reservation.assets?.length || 0})
+                </h3>
               </div>
 
               {reservation.assets && reservation.assets.length > 0 ? (
