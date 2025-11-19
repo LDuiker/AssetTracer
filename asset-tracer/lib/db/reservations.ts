@@ -8,7 +8,7 @@ export async function getReservations(organizationId: string): Promise<Reservati
   try {
     const supabase = await createClient();
 
-    const { data, error } = await supabase
+    const { data: reservations, error } = await supabase
       .from('reservations')
       .select(`
         *,
@@ -23,7 +23,44 @@ export async function getReservations(organizationId: string): Promise<Reservati
       throw new Error(`Failed to fetch reservations: ${error.message}`);
     }
 
-    return data || [];
+    if (!reservations || reservations.length === 0) {
+      return [];
+    }
+
+    // Fetch assets for all reservations
+    const reservationIds = reservations.map((r) => r.id);
+    const { data: reservationAssets, error: assetsError } = await supabase
+      .from('reservation_assets')
+      .select(`
+        *,
+        asset:assets(id, name, category, status, location)
+      `)
+      .in('reservation_id', reservationIds)
+      .order('created_at', { ascending: true });
+
+    if (assetsError) {
+      console.error('Error fetching reservation assets:', assetsError);
+      // Don't throw, just return reservations without assets
+    }
+
+    // Group assets by reservation_id
+    const assetsByReservation = new Map<string, any[]>();
+    if (reservationAssets && Array.isArray(reservationAssets)) {
+      reservationAssets.forEach((ra) => {
+        if (ra.reservation_id) {
+          if (!assetsByReservation.has(ra.reservation_id)) {
+            assetsByReservation.set(ra.reservation_id, []);
+          }
+          assetsByReservation.get(ra.reservation_id)!.push(ra);
+        }
+      });
+    }
+
+    // Attach assets to each reservation
+    return reservations.map((reservation) => ({
+      ...reservation,
+      assets: assetsByReservation.get(reservation.id) || [],
+    }));
   } catch (error) {
     console.error('Unexpected error in getReservations:', error);
     throw error;
