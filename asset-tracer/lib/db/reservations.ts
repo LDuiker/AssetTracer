@@ -112,11 +112,17 @@ export async function getReservationById(
 
     if (assetsError) {
       console.error('Error fetching reservation assets:', assetsError);
-      // Don't throw, just return reservation without assets
+      // Return reservation with empty assets array
+      return {
+        ...reservation,
+        assets: [],
+      };
     }
 
-    // Ensure assets is always an array
-    const reservationAssets = Array.isArray(assets) ? assets : [];
+    // Ensure assets is always an array and filter out any invalid entries
+    const reservationAssets = Array.isArray(assets) 
+      ? assets.filter((ra: any) => ra && (ra.asset_id || ra.id))
+      : [];
 
     return {
       ...reservation,
@@ -242,6 +248,16 @@ export async function updateReservation(
     if (data.priority !== undefined) updateData.priority = data.priority;
     if (data.notes !== undefined) updateData.notes = data.notes;
 
+    // Only update if there's actual data to update
+    if (Object.keys(updateData).length === 0) {
+      // No fields to update, just fetch and return the existing reservation
+      const existingReservation = await getReservationById(id, organizationId);
+      if (!existingReservation) {
+        throw new Error('Reservation not found');
+      }
+      return existingReservation;
+    }
+
     const { data: updatedReservation, error: updateError } = await supabase
       .from('reservations')
       .update(updateData)
@@ -253,6 +269,10 @@ export async function updateReservation(
     if (updateError) {
       console.error('Error updating reservation:', updateError);
       throw new Error(`Failed to update reservation: ${updateError.message}`);
+    }
+
+    if (!updatedReservation) {
+      throw new Error('Reservation update returned no data');
     }
 
     // Update assets if provided
