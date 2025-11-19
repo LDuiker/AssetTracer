@@ -789,58 +789,59 @@ export function ReservationFormDialog({
             {/* Asset Selection */}
             {selectionMode === 'assets' && (
               <div>
-              {categories.length > 0 && (
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-48 h-8 text-xs">
-                    <SelectValue placeholder="Filter by category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
+                <div className="flex items-center justify-between mb-2">
+                  {categories.length > 0 && (
+                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                      <SelectTrigger className="w-48 h-8 text-xs">
+                        <SelectValue placeholder="Filter by category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
 
-            {/* Category Quick Select */}
-            {categoryFilter === 'all' && categories.length > 0 && (
-              <div className="mb-3 flex flex-wrap gap-2">
-                {categories.map((category) => {
-                  const categoryAssets = assetsByCategory[category] || [];
-                  const activeCount = categoryAssets.filter((a) => a.status === 'active').length;
-                  const isSelected = isCategorySelected(category);
-                  const isPartial = isCategoryPartiallySelected(category);
+                {/* Category Quick Select */}
+                {categoryFilter === 'all' && categories.length > 0 && (
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {categories.map((category) => {
+                      const categoryAssets = assetsByCategory[category] || [];
+                      const activeCount = categoryAssets.filter((a) => a.status === 'active').length;
+                      const isSelected = isCategorySelected(category);
+                      const isPartial = isCategoryPartiallySelected(category);
 
-                  if (activeCount === 0) return null;
+                      if (activeCount === 0) return null;
 
-                  return (
-                    <Button
-                      key={category}
-                      type="button"
-                      variant={isSelected ? 'default' : isPartial ? 'secondary' : 'outline'}
-                      size="sm"
-                      className="text-xs h-7"
-                      onClick={() => toggleCategory(category)}
-                    >
-                      {isPartial && '• '}
-                      {category} ({activeCount})
-                    </Button>
-                  );
-                })}
+                      return (
+                        <Button
+                          key={category}
+                          type="button"
+                          variant={isSelected ? 'default' : isPartial ? 'secondary' : 'outline'}
+                          size="sm"
+                          className="text-xs h-7"
+                          onClick={() => toggleCategory(category)}
+                        >
+                          {isPartial && '• '}
+                          {category} ({activeCount})
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="mt-2 border rounded-lg p-4 max-h-64 overflow-y-auto">
+                  {renderAssetList()}
+                </div>
+                {selectedAssets.length === 0 && (
+                  <p className="text-sm text-red-500 mt-1">Please select at least one asset</p>
+                )}
               </div>
-            )}
-
-            <div className="mt-2 border rounded-lg p-4 max-h-64 overflow-y-auto">
-                {renderAssetList()}
-              </div>
-              {selectedAssets.length === 0 && (
-                <p className="text-sm text-red-500 mt-1">Please select at least one asset</p>
-              )}
-            </div>
             )}
             {selectionMode === 'kits' && selectedKits.length === 0 && (
               <p className="text-sm text-red-500 mt-1">Please select at least one kit</p>
