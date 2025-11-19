@@ -455,8 +455,6 @@ export function ReservationFormDialog({
     }
   };
 
-  const availableAssets = assets.filter(a => a.status === 'active');
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
