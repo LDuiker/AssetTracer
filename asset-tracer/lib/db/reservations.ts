@@ -136,12 +136,14 @@ export async function createReservation(
     }
 
     // Add assets to reservation
-    if (data.asset_ids && data.asset_ids.length > 0) {
-      const reservationAssets = data.asset_ids.map((assetId) => ({
-        reservation_id: reservation.id,
-        asset_id: assetId,
-        quantity: data.quantities?.[assetId] || 1,
-      }));
+    if (data.asset_ids && Array.isArray(data.asset_ids) && data.asset_ids.length > 0) {
+      const reservationAssets = data.asset_ids
+        .filter((assetId) => assetId && typeof assetId === 'string') // Filter out invalid IDs
+        .map((assetId) => ({
+          reservation_id: reservation.id,
+          asset_id: assetId,
+          quantity: data.quantities?.[assetId] || 1,
+        }));
 
       const { error: assetsError } = await supabase
         .from('reservation_assets')
@@ -217,28 +219,32 @@ export async function updateReservation(
     }
 
     // Update assets if provided
-    if (data.asset_ids !== undefined) {
+    if (data.asset_ids !== undefined && data.asset_ids !== null) {
       // Delete existing reservation assets
       await supabase
         .from('reservation_assets')
         .delete()
         .eq('reservation_id', id);
 
-      // Insert new reservation assets
-      if (data.asset_ids.length > 0) {
-        const reservationAssets = data.asset_ids.map((assetId) => ({
-          reservation_id: id,
-          asset_id: assetId,
-          quantity: data.quantities?.[assetId] || 1,
-        }));
+      // Insert new reservation assets (only if asset_ids is a non-empty array)
+      if (Array.isArray(data.asset_ids) && data.asset_ids.length > 0) {
+        const reservationAssets = data.asset_ids
+          .filter((assetId) => assetId && typeof assetId === 'string') // Filter out invalid IDs
+          .map((assetId) => ({
+            reservation_id: id,
+            asset_id: assetId,
+            quantity: data.quantities?.[assetId] || 1,
+          }));
 
-        const { error: assetsError } = await supabase
-          .from('reservation_assets')
-          .insert(reservationAssets);
+        if (reservationAssets.length > 0) {
+          const { error: assetsError } = await supabase
+            .from('reservation_assets')
+            .insert(reservationAssets);
 
-        if (assetsError) {
-          console.error('Error updating reservation assets:', assetsError);
-          throw new Error(`Failed to update reservation assets: ${assetsError.message}`);
+          if (assetsError) {
+            console.error('Error updating reservation assets:', assetsError);
+            throw new Error(`Failed to update reservation assets: ${assetsError.message}`);
+          }
         }
       }
     }
