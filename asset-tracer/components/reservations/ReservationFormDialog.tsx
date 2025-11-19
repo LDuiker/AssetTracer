@@ -1,0 +1,499 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import useSWR from 'swr';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { X, Calendar, Clock, MapPin, AlertCircle, CheckCircle2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
+import type { Asset } from '@/types';
+import type { Reservation, CreateReservationInput } from '@/types/reservation';
+
+const reservationSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  project_name: z.string().optional(),
+  description: z.string().optional(),
+  start_date: z.string().min(1, 'Start date is required'),
+  end_date: z.string().min(1, 'End date is required'),
+  start_time: z.string().optional(),
+  end_time: z.string().optional(),
+  location: z.string().optional(),
+  status: z.enum(['pending', 'confirmed', 'active', 'completed', 'cancelled']).optional(),
+  priority: z.enum(['low', 'normal', 'high', 'critical']).optional(),
+  notes: z.string().optional(),
+}).refine(
+  (data) => {
+    if (data.start_date && data.end_date) {
+      return new Date(data.end_date) >= new Date(data.start_date);
+    }
+    return true;
+  },
+  {
+    message: 'End date must be on or after start date',
+    path: ['end_date'],
+  }
+);
+
+interface ReservationFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  reservation?: Reservation | null;
+  onSuccess: () => void;
+}
+
+export function ReservationFormDialog({
+  open,
+  onOpenChange,
+  reservation,
+  onSuccess,
+}: ReservationFormDialogProps) {
+  const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+  const [availabilityResults, setAvailabilityResults] = useState<Record<string, any>>({});
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+
+  // Fetch assets
+  const { data: assetsData } = useSWR<{ assets: Asset[] }>('/api/assets');
+  const assets = assetsData?.assets || [];
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+    watch,
+    setValue,
+  } = useForm({
+    resolver: zodResolver(reservationSchema),
+    defaultValues: {
+      title: reservation?.title || '',
+      project_name: reservation?.project_name || '',
+      description: reservation?.description || '',
+      start_date: reservation?.start_date || '',
+      end_date: reservation?.end_date || '',
+      start_time: reservation?.start_time || '',
+      end_time: reservation?.end_time || '',
+      location: reservation?.location || '',
+      status: (reservation?.status as any) || 'pending',
+      priority: (reservation?.priority as any) || 'normal',
+      notes: reservation?.notes || '',
+    },
+  });
+
+  const startDate = watch('start_date');
+  const endDate = watch('end_date');
+
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      if (reservation) {
+        reset({
+          title: reservation.title,
+          project_name: reservation.project_name || '',
+          description: reservation.description || '',
+          start_date: reservation.start_date,
+          end_date: reservation.end_date,
+          start_time: reservation.start_time || '',
+          end_time: reservation.end_time || '',
+          location: reservation.location || '',
+          status: (reservation.status as any) || 'pending',
+          priority: (reservation.priority as any) || 'normal',
+          notes: reservation.notes || '',
+        });
+        setSelectedAssets(reservation.assets?.map(a => a.asset_id) || []);
+      } else {
+        reset({
+          title: '',
+          project_name: '',
+          description: '',
+          start_date: '',
+          end_date: '',
+          start_time: '',
+          end_time: '',
+          location: '',
+          status: 'pending',
+          priority: 'normal',
+          notes: '',
+        });
+        setSelectedAssets([]);
+      }
+      setAvailabilityResults({});
+    }
+  }, [open, reservation, reset]);
+
+  // Check availability when dates or selected assets change
+  useEffect(() => {
+    if (startDate && endDate && selectedAssets.length > 0) {
+      checkAvailability();
+    } else {
+      setAvailabilityResults({});
+    }
+  }, [startDate, endDate, selectedAssets]);
+
+  const checkAvailability = async () => {
+    if (!startDate || !endDate || selectedAssets.length === 0) return;
+
+    setIsCheckingAvailability(true);
+    try {
+      const response = await fetch('/api/reservations/check-availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          asset_ids: selectedAssets,
+          start_date: startDate,
+          end_date: endDate,
+          exclude_reservation_id: reservation?.id || null,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        const results: Record<string, any> = {};
+        data.availability.forEach((item: any) => {
+          results[item.asset_id] = item;
+        });
+        setAvailabilityResults(results);
+      }
+    } catch (error) {
+      console.error('Error checking availability:', error);
+    } finally {
+      setIsCheckingAvailability(false);
+    }
+  };
+
+  const toggleAsset = (assetId: string) => {
+    setSelectedAssets((prev) =>
+      prev.includes(assetId) ? prev.filter((id) => id !== assetId) : [...prev, assetId]
+    );
+  };
+
+  const onSubmit = async (data: any) => {
+    if (selectedAssets.length === 0) {
+      toast.error('Please select at least one asset');
+      return;
+    }
+
+    // Check for conflicts
+    const hasConflicts = Object.values(availabilityResults).some(
+      (result: any) => !result.is_available && result.conflicts.length > 0
+    );
+
+    if (hasConflicts) {
+      const confirmed = window.confirm(
+        'Some assets have scheduling conflicts. Do you want to proceed anyway?'
+      );
+      if (!confirmed) return;
+    }
+
+    try {
+      const payload: CreateReservationInput = {
+        title: data.title,
+        project_name: data.project_name || null,
+        description: data.description || null,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        start_time: data.start_time || null,
+        end_time: data.end_time || null,
+        location: data.location || null,
+        status: data.status,
+        priority: data.priority,
+        notes: data.notes || null,
+        asset_ids: selectedAssets,
+      };
+
+      const url = reservation
+        ? `/api/reservations/${reservation.id}`
+        : '/api/reservations';
+      const method = reservation ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save reservation');
+      }
+
+      toast.success(reservation ? 'Reservation updated successfully' : 'Reservation created successfully');
+      onSuccess();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error saving reservation:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save reservation');
+    }
+  };
+
+  const availableAssets = assets.filter(a => a.status === 'active');
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {reservation ? 'Edit Reservation' : 'New Reservation'}
+          </DialogTitle>
+          <DialogDescription>
+            Create a new equipment reservation for your project
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Basic Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                {...register('title')}
+                placeholder="Commercial Shoot - Client ABC"
+              />
+              {errors.title && (
+                <p className="text-sm text-red-500 mt-1">{errors.title.message as string}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="project_name">Project Name</Label>
+              <Input
+                id="project_name"
+                {...register('project_name')}
+                placeholder="Optional project name"
+              />
+            </div>
+          </div>
+
+          {/* Dates */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="start_date">Start Date *</Label>
+              <Input
+                id="start_date"
+                type="date"
+                {...register('start_date')}
+              />
+              {errors.start_date && (
+                <p className="text-sm text-red-500 mt-1">{errors.start_date.message as string}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="end_date">End Date *</Label>
+              <Input
+                id="end_date"
+                type="date"
+                {...register('end_date')}
+              />
+              {errors.end_date && (
+                <p className="text-sm text-red-500 mt-1">{errors.end_date.message as string}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Times (Optional) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="start_time">Start Time (Optional)</Label>
+              <Input
+                id="start_time"
+                type="time"
+                {...register('start_time')}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="end_time">End Time (Optional)</Label>
+              <Input
+                id="end_time"
+                type="time"
+                {...register('end_time')}
+              />
+            </div>
+          </div>
+
+          {/* Location and Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                {...register('location')}
+                placeholder="Studio A, On-location, etc."
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={watch('status')}
+                  onValueChange={(value) => setValue('status', value as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="priority">Priority</Label>
+                <Select
+                  value={watch('priority')}
+                  onValueChange={(value) => setValue('priority', value as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Description and Notes */}
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              {...register('description')}
+              placeholder="Additional details about this reservation"
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              {...register('notes')}
+              placeholder="Internal notes (not visible to clients)"
+              rows={2}
+            />
+          </div>
+
+          {/* Asset Selection */}
+          <div>
+            <Label>Select Assets *</Label>
+            <div className="mt-2 border rounded-lg p-4 max-h-64 overflow-y-auto">
+              {availableAssets.length === 0 ? (
+                <p className="text-sm text-gray-500">No active assets available</p>
+              ) : (
+                <div className="space-y-2">
+                  {availableAssets.map((asset) => {
+                    const isSelected = selectedAssets.includes(asset.id);
+                    const availability = availabilityResults[asset.id];
+                    const hasConflict = availability && !availability.is_available;
+
+                    return (
+                      <div
+                        key={asset.id}
+                        className={`flex items-center justify-between p-2 rounded border ${
+                          isSelected
+                            ? hasConflict
+                              ? 'bg-red-50 border-red-300 dark:bg-red-900/20'
+                              : 'bg-blue-50 border-blue-300 dark:bg-blue-900/20'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleAsset(asset.id)}
+                            className="rounded"
+                          />
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{asset.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {asset.category} {asset.location && `• ${asset.location}`}
+                            </p>
+                          </div>
+                        </div>
+                        {isSelected && availability && (
+                          <div className="flex items-center gap-2">
+                            {availability.is_available ? (
+                              <Badge className="bg-green-100 text-green-800">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Available
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-red-100 text-red-800">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                Conflict
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            {selectedAssets.length === 0 && (
+              <p className="text-sm text-red-500 mt-1">Please select at least one asset</p>
+            )}
+          </div>
+
+          {/* Availability Warnings */}
+          {Object.values(availabilityResults).some(
+            (result: any) => !result.is_available && result.conflicts.length > 0
+          ) && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Some selected assets have scheduling conflicts. Please review the conflicts before
+                proceeding.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Actions */}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting || isCheckingAvailability}>
+              {isSubmitting ? 'Saving...' : reservation ? 'Update' : 'Create'} Reservation
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+

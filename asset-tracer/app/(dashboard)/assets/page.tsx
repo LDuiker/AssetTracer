@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { Plus, Upload, Search, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Upload, Search, Filter, X, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { AssetTable, AssetDialog, AssetListPanel, AssetViewPanel, AssetEditPanel, AssetImportDialog } from '@/components/assets';
+import { ReservationFormDialog } from '@/components/reservations';
 import { SubscriptionBadge, UsageBadge } from '@/components/subscription';
 import { useSubscription } from '@/lib/context/SubscriptionContext';
 import { toast } from 'sonner';
@@ -41,6 +42,7 @@ export default function AssetsPage() {
   const [isCloning, setIsCloning] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isReservationDialogOpen, setIsReservationDialogOpen] = useState(false);
   
   // Pagination constants
   const ITEMS_PER_PAGE = 100;
@@ -453,6 +455,15 @@ export default function AssetsPage() {
         </div>
         <div className="flex flex-col gap-2 w-full md:w-auto md:flex-row">
           <Button
+            onClick={() => setIsReservationDialogOpen(true)}
+            variant="outline"
+            className="w-full md:w-auto"
+            size="lg"
+          >
+            <Calendar className="mr-2 h-5 w-5" />
+            New Reservation
+          </Button>
+          <Button
             onClick={handleImport}
             variant="outline"
             className="w-full md:w-auto"
@@ -722,6 +733,16 @@ export default function AssetsPage() {
         onSave={handleSaveFromDialog}
         isCloning={isCloning}
       />
+      <ReservationFormDialog
+        open={isReservationDialogOpen}
+        onOpenChange={setIsReservationDialogOpen}
+        reservation={null}
+        onSuccess={() => {
+          setIsReservationDialogOpen(false);
+          toast.success('Reservation created successfully');
+        }}
+      />
+
       <AssetImportDialog
         open={isImportDialogOpen}
         onOpenChange={setIsImportDialogOpen}

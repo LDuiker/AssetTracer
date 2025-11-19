@@ -1,0 +1,27 @@
+# =====================================================
+# YEARLY SUBSCRIPTION PRICE IDs FOR STAGING
+# =====================================================
+# Add these to your .env.staging file
+# =====================================================
+
+# Yearly Subscription Price IDs
+# Get these from Polar Dashboard:
+# 1. Go to https://sandbox.polar.sh/dashboard (for staging)
+# 2. Products → Find the yearly products
+# 3. Click on each product → Look at "Prices" section
+# 4. Copy the Price ID for the yearly price (interval = "year")
+#
+# Product IDs (for reference):
+# - Pro Yearly Product ID: 6b702adf-253f-48b1-bd2b-66d5ed8e6fbe
+# - Business Yearly Product ID: 2fc222e8-0e50-4eb7-beb3-ca28c4010d52
+
+POLAR_PRO_YEARLY_PRICE_ID=your_pro_yearly_price_id_here
+POLAR_BUSINESS_YEARLY_PRICE_ID=your_business_yearly_price_id_here
+
+# =====================================================
+# NOTE: These are PRICE IDs, not Product IDs!
+# =====================================================
+# Product IDs start with UUID format (like above)
+# Price IDs usually start with "price_" or are UUIDs
+# =====================================================
+

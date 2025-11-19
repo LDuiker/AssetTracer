@@ -1,0 +1,208 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { getReservations, createReservation } from '@/lib/db/reservations';
+import { z } from 'zod';
+import type { CreateReservationInput } from '@/types/reservation';
+
+/**
+ * Zod schema for validating reservation creation input
+ */
+const createReservationSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  project_name: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
+  end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
+  start_time: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+  end_time: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+  location: z.string().nullable().optional(),
+  status: z.enum(['pending', 'confirmed', 'active', 'completed', 'cancelled']).optional(),
+  team_members: z.array(z.string().uuid()).nullable().optional(),
+  priority: z.enum(['low', 'normal', 'high', 'critical']).optional(),
+  notes: z.string().nullable().optional(),
+  asset_ids: z.array(z.string().uuid()).min(1, 'At least one asset is required'),
+  quantities: z.record(z.string().uuid(), z.number().int().min(1)).optional(),
+}).refine(
+  (data) => {
+    const start = new Date(data.start_date);
+    const end = new Date(data.end_date);
+    return end >= start;
+  },
+  {
+    message: 'End date must be on or after start date',
+    path: ['end_date'],
+  }
+);
+
+/**
+ * GET /api/reservations
+ * Fetch all reservations for the authenticated user's organization
+ */
+export async function GET() {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Please sign in.' },
+        { status: 401 }
+      );
+    }
+
+    // Get user's organization_id
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users')
+      .select('organization_id')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profileError || !userProfile?.organization_id) {
+      console.error('Error fetching user profile:', profileError);
+      const organizationId = session.user.user_metadata?.organization_id;
+
+      if (!organizationId) {
+        return NextResponse.json(
+          { error: 'User is not associated with an organization.' },
+          { status: 403 }
+        );
+      }
+
+      const reservations = await getReservations(organizationId);
+      return NextResponse.json({ reservations }, { status: 200 });
+    }
+
+    // Fetch reservations for the user's organization
+    const reservations = await getReservations(userProfile.organization_id);
+
+    return NextResponse.json({ reservations }, { status: 200 });
+  } catch (error) {
+    console.error('Error in GET /api/reservations:', error);
+    return NextResponse.json(
+      { error: 'Internal server error. Please try again later.' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/reservations
+ * Create a new reservation for the authenticated user's organization
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Please sign in.' },
+        { status: 401 }
+      );
+    }
+
+    // Parse request body
+    const body = await request.json();
+
+    // Validate request body with Zod
+    const validationResult = createReservationSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.map((err) => ({
+        field: err.path.join('.'),
+        message: err.message,
+      }));
+
+      return NextResponse.json(
+        { error: 'Validation failed', details: errors },
+        { status: 400 }
+      );
+    }
+
+    const validated = validationResult.data;
+
+    // Get user's organization_id
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users')
+      .select('organization_id')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profileError || !userProfile?.organization_id) {
+      console.error('Error fetching user profile:', profileError);
+      const organizationId = session.user.user_metadata?.organization_id;
+
+      if (!organizationId) {
+        return NextResponse.json(
+          { error: 'User is not associated with an organization.' },
+          { status: 403 }
+        );
+      }
+
+      const reservationData: CreateReservationInput = {
+        title: validated.title,
+        project_name: validated.project_name ?? null,
+        description: validated.description ?? null,
+        start_date: validated.start_date,
+        end_date: validated.end_date,
+        start_time: validated.start_time ?? null,
+        end_time: validated.end_time ?? null,
+        location: validated.location ?? null,
+        status: validated.status,
+        team_members: validated.team_members ?? null,
+        priority: validated.priority,
+        notes: validated.notes ?? null,
+        asset_ids: validated.asset_ids,
+        quantities: validated.quantities,
+      };
+
+      const reservation = await createReservation(
+        reservationData,
+        organizationId,
+        session.user.id
+      );
+
+      return NextResponse.json({ reservation }, { status: 201 });
+    }
+
+    // Create reservation
+    const reservationData: CreateReservationInput = {
+      title: validated.title,
+      project_name: validated.project_name ?? null,
+      description: validated.description ?? null,
+      start_date: validated.start_date,
+      end_date: validated.end_date,
+      start_time: validated.start_time ?? null,
+      end_time: validated.end_time ?? null,
+      location: validated.location ?? null,
+      status: validated.status,
+      team_members: validated.team_members ?? null,
+      priority: validated.priority,
+      notes: validated.notes ?? null,
+      asset_ids: validated.asset_ids,
+      quantities: validated.quantities,
+    };
+
+    const reservation = await createReservation(
+      reservationData,
+      userProfile.organization_id,
+      session.user.id
+    );
+
+    return NextResponse.json({ reservation }, { status: 201 });
+  } catch (error) {
+    console.error('Error in POST /api/reservations:', error);
+    const message = error instanceof Error ? error.message : 'Failed to create reservation';
+    return NextResponse.json(
+      { error: message },
+      { status: 500 }
+    );
+  }
+}
+
