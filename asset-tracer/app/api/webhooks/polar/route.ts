@@ -124,6 +124,18 @@ async function handleSubscriptionCreated(event: PolarWebhookEvent, supabase: Sup
     determined_tier: subscriptionTier,
   });
 
+  // Extract billing interval from subscription price
+  // Polar subscription has a price object with recurring_interval
+  const billingInterval = (subscription as any).price?.recurring_interval === 'year' 
+    ? 'yearly' 
+    : 'monthly';
+  
+  // Merge metadata with billing_interval
+  const updatedMetadata = {
+    ...(subscription.metadata ?? {}),
+    billing_interval: billingInterval,
+  };
+
   // Update organization with subscription details
   await supabase
     .from('organizations')
@@ -137,7 +149,8 @@ async function handleSubscriptionCreated(event: PolarWebhookEvent, supabase: Sup
       subscription_end_date: subscription.current_period_end,
       polar_current_period_start: subscription.current_period_start,
       polar_current_period_end: subscription.current_period_end,
-      polar_metadata: subscription.metadata ?? {},
+      polar_metadata: updatedMetadata,
+      metadata: updatedMetadata, // Also store in metadata for easy access
       updated_at: new Date().toISOString(),
     })
     .eq('id', org.id);
@@ -178,6 +191,17 @@ async function handleSubscriptionUpdated(event: PolarWebhookEvent, supabase: Sup
     determined_tier: subscriptionTier,
   });
 
+  // Extract billing interval from subscription price
+  const billingInterval = (subscription as any).price?.recurring_interval === 'year' 
+    ? 'yearly' 
+    : 'monthly';
+  
+  // Merge metadata with billing_interval
+  const updatedMetadata = {
+    ...(subscription.metadata ?? {}),
+    billing_interval: billingInterval,
+  };
+
   // Update organization with new subscription details
   await supabase
     .from('organizations')
@@ -190,7 +214,8 @@ async function handleSubscriptionUpdated(event: PolarWebhookEvent, supabase: Sup
       subscription_end_date: subscription.current_period_end,
       polar_current_period_start: subscription.current_period_start,
       polar_current_period_end: subscription.current_period_end,
-      polar_metadata: subscription.metadata ?? {},
+      polar_metadata: updatedMetadata,
+      metadata: updatedMetadata, // Also store in metadata for easy access
       updated_at: new Date().toISOString(),
     })
     .eq('id', org.id);

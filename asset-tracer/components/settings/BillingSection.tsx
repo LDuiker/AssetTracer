@@ -65,10 +65,15 @@ export function BillingSection() {
   const { tier } = useSubscription();
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
 
   const currentTier = tier || 'free';
   const tierInfo = TIER_DETAILS[currentTier];
   const TierIcon = tierInfo.icon;
+  
+  // Determine current billing interval from organization metadata or default to monthly
+  // TODO: Store billing_interval in database when subscription is created
+  const currentBillingInterval = (organization?.metadata as { billing_interval?: 'monthly' | 'yearly' })?.billing_interval || 'monthly';
 
   // Format date helper
   const formatDate = (dateString: string | null | undefined) => {
@@ -85,18 +90,20 @@ export function BillingSection() {
     ? formatDate(organization.polar_current_period_end)
     : null;
   
+  // Calculate next payment amount based on billing interval
   const nextPaymentAmount = currentTier === 'pro' 
-    ? '$19.00' 
+    ? (currentBillingInterval === 'yearly' ? '$182.00' : '$19.00')
     : currentTier === 'business' 
-    ? '$39.00' 
+    ? (currentBillingInterval === 'yearly' ? '$374.00' : '$39.00')
     : null;
 
   const subscriptionStartDate = organization?.subscription_start_date
     ? formatDate(organization.subscription_start_date)
     : null;
 
-  const handleUpgrade = async (targetTier: 'pro' | 'business') => {
+  const handleUpgrade = async (targetTier: 'pro' | 'business', interval?: 'monthly' | 'yearly') => {
     const isReactivation = organization?.subscription_status === 'cancelled' && targetTier === currentTier;
+    const selectedInterval = interval || billingInterval;
     
     try {
       setIsUpgrading(true);
@@ -109,7 +116,7 @@ export function BillingSection() {
         },
         body: JSON.stringify({
           tier: targetTier,
-          billing_cycle: 'monthly',
+          interval: selectedInterval, // Use 'interval' not 'billing_cycle'
         }),
       });
 
@@ -299,8 +306,36 @@ export function BillingSection() {
           {currentTier === 'free' && (
             <>
               <Separator />
+              {/* Billing Interval Toggle */}
+              <div className="flex items-center justify-center gap-4 py-2">
+                <span className={`text-sm font-medium ${billingInterval === 'monthly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
+                  Monthly
+                </span>
+                <button
+                  onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    billingInterval === 'yearly' ? 'bg-[#2563EB]' : 'bg-gray-300'
+                  }`}
+                  role="switch"
+                  aria-checked={billingInterval === 'yearly'}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      billingInterval === 'yearly' ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className={`text-sm font-medium ${billingInterval === 'yearly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
+                  Yearly
+                </span>
+                {billingInterval === 'yearly' && (
+                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 ml-2">
+                    Save 20%
+                  </Badge>
+                )}
+              </div>
               <div className="flex justify-end gap-2">
-                <Button onClick={() => handleUpgrade('pro')} disabled={isUpgrading} className="gap-2">
+                <Button onClick={() => handleUpgrade('pro', billingInterval)} disabled={isUpgrading} className="gap-2">
                   {isUpgrading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -309,11 +344,11 @@ export function BillingSection() {
                   ) : (
                     <>
                       <Crown className="h-4 w-4" />
-                      Upgrade to Pro ($19/mo)
+                      Upgrade to Pro ({billingInterval === 'yearly' ? '$182/year' : '$19/month'})
                     </>
                   )}
                 </Button>
-                <Button onClick={() => handleUpgrade('business')} disabled={isUpgrading} variant="outline" className="gap-2">
+                <Button onClick={() => handleUpgrade('business', billingInterval)} disabled={isUpgrading} variant="outline" className="gap-2">
                   {isUpgrading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -322,7 +357,7 @@ export function BillingSection() {
                   ) : (
                     <>
                       <Crown className="h-4 w-4" />
-                      Upgrade to Business ($39/mo)
+                      Upgrade to Business ({billingInterval === 'yearly' ? '$374/year' : '$39/month'})
                     </>
                   )}
                 </Button>
@@ -333,8 +368,38 @@ export function BillingSection() {
           {currentTier === 'pro' && (
             <>
               <Separator />
+              {/* Switch to Yearly Option */}
+              {currentBillingInterval === 'monthly' && (
+                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-blue-900 dark:text-blue-100 text-sm mb-1">
+                        Switch to Yearly and Save 20%
+                      </h4>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        Pay $182/year instead of $228/year (save $46)
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => handleUpgrade('pro', 'yearly')} 
+                      disabled={isUpgrading} 
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {isUpgrading ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                          Processing...
+                        </>
+                      ) : (
+                        'Switch to Yearly'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
               <div className="flex justify-between items-center">
-                <Button onClick={() => handleUpgrade('business')} disabled={isUpgrading} className="gap-2">
+                <Button onClick={() => handleUpgrade('business', billingInterval)} disabled={isUpgrading} className="gap-2">
                   {isUpgrading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -343,7 +408,7 @@ export function BillingSection() {
                   ) : (
                     <>
                       <Crown className="h-4 w-4" />
-                      Upgrade to Business ($39/mo)
+                      Upgrade to Business ({billingInterval === 'yearly' ? '$374/year' : '$39/month'})
                     </>
                   )}
                 </Button>
@@ -364,6 +429,36 @@ export function BillingSection() {
           {currentTier === 'business' && (
             <>
               <Separator />
+              {/* Switch to Yearly Option */}
+              {currentBillingInterval === 'monthly' && (
+                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-blue-900 dark:text-blue-100 text-sm mb-1">
+                        Switch to Yearly and Save 20%
+                      </h4>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        Pay $374/year instead of $468/year (save $94)
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => handleUpgrade('business', 'yearly')} 
+                      disabled={isUpgrading} 
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {isUpgrading ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                          Processing...
+                        </>
+                      ) : (
+                        'Switch to Yearly'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Need to change your plan?
@@ -496,7 +591,9 @@ export function BillingSection() {
               </div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Billing</p>
-                <p className="font-medium text-gray-900 dark:text-gray-100">Monthly</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100 capitalize">
+                  {currentBillingInterval === 'yearly' ? 'Yearly' : 'Monthly'}
+                </p>
               </div>
               {subscriptionStartDate && (
                 <div>
@@ -620,8 +717,36 @@ export function BillingSection() {
               </div>
             </div>
 
+            {/* Billing Interval Toggle */}
+            <div className="flex items-center justify-center gap-4 py-2">
+              <span className={`text-sm font-medium ${billingInterval === 'monthly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
+                Monthly
+              </span>
+              <button
+                onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  billingInterval === 'yearly' ? 'bg-[#2563EB]' : 'bg-gray-300'
+                }`}
+                role="switch"
+                aria-checked={billingInterval === 'yearly'}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    billingInterval === 'yearly' ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className={`text-sm font-medium ${billingInterval === 'yearly' ? 'text-[#0B1226]' : 'text-gray-500'}`}>
+                Yearly
+              </span>
+              {billingInterval === 'yearly' && (
+                <Badge className="bg-green-100 text-green-700 hover:bg-green-100 ml-2">
+                  Save 20%
+                </Badge>
+              )}
+            </div>
             <div className="flex justify-center gap-3 pt-2">
-              <Button onClick={() => handleUpgrade('pro')} disabled={isUpgrading} className="gap-2">
+              <Button onClick={() => handleUpgrade('pro', billingInterval)} disabled={isUpgrading} className="gap-2">
                 {isUpgrading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -630,11 +755,11 @@ export function BillingSection() {
                 ) : (
                   <>
                     <Crown className="h-4 w-4" />
-                    Upgrade to Pro
+                    Upgrade to Pro ({billingInterval === 'yearly' ? '$182/year' : '$19/month'})
                   </>
                 )}
               </Button>
-              <Button onClick={() => handleUpgrade('business')} disabled={isUpgrading} variant="outline" className="gap-2">
+              <Button onClick={() => handleUpgrade('business', billingInterval)} disabled={isUpgrading} variant="outline" className="gap-2">
                 {isUpgrading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -643,7 +768,7 @@ export function BillingSection() {
                 ) : (
                   <>
                     <Crown className="h-4 w-4" />
-                    Upgrade to Business
+                    Upgrade to Business ({billingInterval === 'yearly' ? '$374/year' : '$39/month'})
                   </>
                 )}
               </Button>
@@ -700,7 +825,7 @@ export function BillingSection() {
             )}
 
             <div className="flex justify-center pt-2">
-              <Button onClick={() => handleUpgrade('business')} disabled={isUpgrading} className="gap-2">
+              <Button onClick={() => handleUpgrade('business', billingInterval)} disabled={isUpgrading} className="gap-2">
                 {isUpgrading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -709,7 +834,7 @@ export function BillingSection() {
                 ) : (
                   <>
                     <Crown className="h-4 w-4" />
-                    Switch to Business
+                    Switch to Business ({billingInterval === 'yearly' ? '$374/year' : '$39/month'})
                   </>
                 )}
               </Button>
