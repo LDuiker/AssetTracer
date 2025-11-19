@@ -109,6 +109,55 @@ export function ReservationFormDialog({
     );
   }, [assets, categoryFilter]);
 
+  const toggleCategory = (category: string) => {
+    const categoryAssets = assetsByCategory[category] || [];
+    const activeCategoryAssets = categoryAssets
+      .filter((asset) => asset.status === 'active')
+      .map((asset) => asset.id);
+
+    if (activeCategoryAssets.length === 0) return;
+
+    // Check if all assets in category are selected
+    const allSelected = activeCategoryAssets.every((id) => selectedAssets.includes(id));
+
+    if (allSelected) {
+      // Deselect all assets in this category
+      setSelectedAssets((prev) => prev.filter((id) => !activeCategoryAssets.includes(id)));
+    } else {
+      // Select all assets in this category
+      setSelectedAssets((prev) => {
+        const newSelection = [...prev];
+        activeCategoryAssets.forEach((id) => {
+          if (!newSelection.includes(id)) {
+            newSelection.push(id);
+          }
+        });
+        return newSelection;
+      });
+    }
+  };
+
+  const isCategorySelected = (category: string) => {
+    const categoryAssets = assetsByCategory[category] || [];
+    const activeCategoryAssets = categoryAssets
+      .filter((asset) => asset.status === 'active')
+      .map((asset) => asset.id);
+
+    if (activeCategoryAssets.length === 0) return false;
+    return activeCategoryAssets.every((id) => selectedAssets.includes(id));
+  };
+
+  const isCategoryPartiallySelected = (category: string) => {
+    const categoryAssets = assetsByCategory[category] || [];
+    const activeCategoryAssets = categoryAssets
+      .filter((asset) => asset.status === 'active')
+      .map((asset) => asset.id);
+
+    if (activeCategoryAssets.length === 0) return false;
+    const selectedCount = activeCategoryAssets.filter((id) => selectedAssets.includes(id)).length;
+    return selectedCount > 0 && selectedCount < activeCategoryAssets.length;
+  };
+
   // Render asset list based on view mode
   const renderAssetList = () => {
     if (availableAssets.length === 0) {
