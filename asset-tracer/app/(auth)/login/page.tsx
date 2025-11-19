@@ -37,13 +37,23 @@ function LoginForm() {
         timestamp: new Date().toISOString(),
       }));
       
-      // Preserve plan parameter for direct checkout after login
+      // Preserve plan and interval parameters for direct checkout after login
       const plan = searchParams.get('plan');
+      const interval = searchParams.get('interval');
       
       let callbackUrl = `${window.location.origin}/auth/callback`;
       
+      // Build query string with both plan and interval if present
+      const queryParams = new URLSearchParams();
       if (plan) {
-        callbackUrl += `?plan=${plan}`;
+        queryParams.append('plan', plan);
+      }
+      if (interval) {
+        queryParams.append('interval', interval);
+      }
+      
+      if (queryParams.toString()) {
+        callbackUrl += `?${queryParams.toString()}`;
       }
       
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
