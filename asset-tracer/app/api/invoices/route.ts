@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient } from '@/lib/supabase/server';
 import { getInvoices, createInvoice } from '@/lib/db';
 import { z } from 'zod';
 import { sanitizeObject } from '@/lib/utils/sanitize';
+import { handleCorsPreflight, withCors } from '@/lib/utils/cors';
 
 /**
  * Zod schema for line item validation
@@ -54,10 +55,18 @@ async function getOrganizationId(userId: string) {
 }
 
 /**
+ * OPTIONS /api/invoices
+ * Handle CORS preflight requests
+ */
+export async function OPTIONS(request: NextRequest) {
+  return handleCorsPreflight(request);
+}
+
+/**
  * GET /api/invoices
  * Fetch all invoices for the authenticated user's organization
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseClient();
     const {
@@ -66,28 +75,32 @@ export async function GET() {
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
       );
+      return withCors(request, response);
     }
 
     const organizationId = await getOrganizationId(user.id);
     if (!organizationId) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'User is not associated with an organization.' },
         { status: 403 }
       );
+      return withCors(request, response);
     }
 
     const invoices = await getInvoices(organizationId);
-    return NextResponse.json({ invoices }, { status: 200 });
+    const response = NextResponse.json({ invoices }, { status: 200 });
+    return withCors(request, response);
   } catch (error) {
     console.error('Error in GET /api/invoices:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Internal server error. Please try again later.' },
       { status: 500 }
     );
+    return withCors(request, response);
   }
 }
 
@@ -104,10 +117,11 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
       );
+      return withCors(request, response);
     }
 
     const body = await request.json();
@@ -119,10 +133,11 @@ export async function POST(request: NextRequest) {
         message: err.message,
       }));
 
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Validation failed', details: errors },
         { status: 400 }
       );
+      return withCors(request, response);
     }
 
     const validated = validationResult.data;
@@ -137,10 +152,11 @@ export async function POST(request: NextRequest) {
 
     const organizationId = await getOrganizationId(user.id);
     if (!organizationId) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'User is not associated with an organization.' },
         { status: 403 }
       );
+      return withCors(request, response);
     }
 
     // Check subscription limits - free plan: 5 invoices per month
@@ -182,13 +198,14 @@ export async function POST(request: NextRequest) {
       if (fetchError) {
         console.error('Error fetching monthly invoices:', fetchError);
         // If fetch fails, be safe and block creation
-        return NextResponse.json(
+        const response = NextResponse.json(
           { 
             error: 'Unable to verify subscription limits',
             message: 'Please try again or contact support if the issue persists.'
           },
           { status: 500 }
         );
+        return withCors(request, response);
       }
 
       // Use the actual fetched count as the source of truth
@@ -210,13 +227,14 @@ export async function POST(request: NextRequest) {
       // Use >= to ensure we block at exactly the limit
       if (verifiedCount >= maxAllowed) {
         console.log(`[Invoice Limit Check] BLOCKED - Count ${verifiedCount} >= Limit ${maxAllowed}`);
-        return NextResponse.json(
+        const response = NextResponse.json(
           { 
             error: 'Monthly invoice limit reached',
             message: `Free plan allows ${maxAllowed} invoices per month. You've created ${verifiedCount} this month. Upgrade to Pro for unlimited invoices.`
           },
           { status: 403 }
         );
+        return withCors(request, response);
       }
 
       console.log(`[Invoice Limit Check] ALLOWED - Count ${verifiedCount} < Limit ${maxAllowed} (will allow creation of ${verifiedCount + 1}th invoice)`);
@@ -228,29 +246,33 @@ export async function POST(request: NextRequest) {
       user.id
     );
 
-    return NextResponse.json({ invoice: newInvoice }, { status: 201 });
+    const response = NextResponse.json({ invoice: newInvoice }, { status: 201 });
+    return withCors(request, response);
   } catch (error) {
     console.error('Error in POST /api/invoices:', error);
     
     if (error instanceof Error) {
       if (error.message.includes('Client not found')) {
-        return NextResponse.json(
+        const response = NextResponse.json(
           { error: 'Client not found or access denied' },
           { status: 404 }
         );
+        return withCors(request, response);
       }
       if (error.message.includes('Failed to create invoice')) {
-        return NextResponse.json(
+        const response = NextResponse.json(
           { error: error.message },
           { status: 500 }
         );
+        return withCors(request, response);
       }
     }
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Internal server error. Please try again later.' },
       { status: 500 }
     );
+    return withCors(request, response);
   }
 }
 
