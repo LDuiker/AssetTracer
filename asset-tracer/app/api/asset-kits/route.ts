@@ -28,18 +28,18 @@ export async function GET() {
   try {
     const supabase = await createClient();
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized. Please sign in.' }, { status: 401 });
     }
 
     const { data: userProfile, error: profileError } = await supabase
       .from('users')
       .select('organization_id')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profileError || !userProfile?.organization_id) {
@@ -87,18 +87,18 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized. Please sign in.' }, { status: 401 });
     }
 
     const { data: userProfile, error: profileError } = await supabase
       .from('users')
       .select('organization_id')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profileError || !userProfile?.organization_id) {
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     const kit = await createAssetKit(
       validatedData,
       userProfile.organization_id,
-      session.user.id
+      user.id
     );
 
     return NextResponse.json({ kit }, { status: 201 });
