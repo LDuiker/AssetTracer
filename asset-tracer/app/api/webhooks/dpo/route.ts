@@ -53,13 +53,13 @@ export async function POST(request: NextRequest) {
    * To re-enable webhooks:
    * 1. Set up DPO webhook configuration in DPO dashboard
    * 2. Configure DPO_WEBHOOK_SECRET in environment variables
-   * 3. Uncomment the code below
-   * 4. Remove the early return above
+   * 3. Uncomment all code between this comment and the closing comment
+   * 4. Remove the early return above (lines 36-47)
    * 
    * ============================================
    */
   
-  /*
+  /* DISABLED CODE START
   const startTime = Date.now();
   const startTime = Date.now();
   
