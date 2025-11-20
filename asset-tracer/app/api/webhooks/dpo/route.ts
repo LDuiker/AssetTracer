@@ -25,10 +25,42 @@ function parseXMLWebhook(xml: string): Record<string, string> {
  * POST /api/webhooks/dpo
  * Handle payment notifications from DPO
  * 
+ * ⚠️ WEBHOOKS CURRENTLY DISABLED
+ * This endpoint is disabled until DPO webhook configuration is complete.
+ * Payment verification is handled via the redirect flow instead.
+ * 
  * IMPORTANT: This endpoint must be excluded from authentication middleware
  * as it's called by DPO's servers, not authenticated users.
  */
 export async function POST(request: NextRequest) {
+  // Webhooks are currently disabled - return success to prevent DPO retries
+  console.log('[DPO Webhook] Webhook received but webhooks are currently disabled');
+  console.log('[DPO Webhook] Payment verification is handled via redirect flow instead');
+  
+  return NextResponse.json(
+    { 
+      received: true,
+      processed: false,
+      message: 'Webhooks are currently disabled. Payment verification handled via redirect flow.'
+    },
+    { status: 200 }
+  );
+
+  /* ============================================
+   * DISABLED - Uncomment when DPO webhooks are configured
+   * ============================================
+   * 
+   * To re-enable webhooks:
+   * 1. Set up DPO webhook configuration in DPO dashboard
+   * 2. Configure DPO_WEBHOOK_SECRET in environment variables
+   * 3. Uncomment the code below
+   * 4. Remove the early return above
+   * 
+   * ============================================
+   */
+  
+  /*
+  const startTime = Date.now();
   const startTime = Date.now();
   
   console.log('='.repeat(80));
