@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
 
     if (profileError || !userProfile?.organization_id) {
       console.error('Error fetching user profile:', profileError);
-      const organizationId = session.user.user_metadata?.organization_id;
+      const organizationId = user.user_metadata?.organization_id;
 
       if (!organizationId) {
         return NextResponse.json(
@@ -301,7 +301,7 @@ export async function POST(request: NextRequest) {
     const reservation = await createReservation(
       reservationData,
       userProfile.organization_id,
-      session.user.id
+      user.id
     );
 
     return NextResponse.json({ reservation }, { status: 201 });
