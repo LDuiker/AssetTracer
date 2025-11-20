@@ -33,3 +33,52 @@ export function sanitizeText(text: string): string {
   return DOMPurify.sanitize(text, { ALLOWED_TAGS: [] });
 }
 
+/**
+ * Sanitize an object's string fields to prevent XSS attacks
+ * Recursively sanitizes all string values in an object
+ * @param data - The data object to sanitize
+ * @param fieldsToSanitize - Array of field names to sanitize (optional, sanitizes all strings if not provided)
+ * @returns Sanitized object with the same structure
+ */
+export function sanitizeObject<T extends Record<string, any>>(
+  data: T,
+  fieldsToSanitize?: string[]
+): T {
+  if (!data || typeof data !== 'object') return data;
+
+  const sanitized = { ...data };
+
+  for (const key in sanitized) {
+    if (Object.prototype.hasOwnProperty.call(sanitized, key)) {
+      const value = sanitized[key];
+
+      // If field list is provided, only sanitize those fields
+      if (fieldsToSanitize && !fieldsToSanitize.includes(key)) {
+        continue;
+      }
+
+      // Sanitize string values
+      if (typeof value === 'string') {
+        sanitized[key] = sanitizeText(value);
+      }
+      // Recursively sanitize nested objects
+      else if (value && typeof value === 'object' && !Array.isArray(value)) {
+        sanitized[key] = sanitizeObject(value, fieldsToSanitize);
+      }
+      // Sanitize string values in arrays
+      else if (Array.isArray(value)) {
+        sanitized[key] = value.map((item) => {
+          if (typeof item === 'string') {
+            return sanitizeText(item);
+          } else if (item && typeof item === 'object') {
+            return sanitizeObject(item, fieldsToSanitize);
+          }
+          return item;
+        });
+      }
+    }
+  }
+
+  return sanitized;
+}
+

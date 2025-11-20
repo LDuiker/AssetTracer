@@ -156,18 +156,27 @@ export async function POST(request: NextRequest) {
 
     const validated = validationResult.data;
 
+    // Sanitize user-generated text fields to prevent XSS
+    const sanitized = sanitizeObject(validated, [
+      'name',
+      'description',
+      'category',
+      'location',
+      'serial_number',
+    ]);
+
     const assetData: CreateAssetInput = {
-      ...validated,
-      purchase_date: validated.purchase_date ? validated.purchase_date : null,
+      ...sanitized,
+      purchase_date: sanitized.purchase_date ? sanitized.purchase_date : null,
       quantity:
-        validated.asset_type === 'group'
-          ? validated.quantity ?? 1
+        sanitized.asset_type === 'group'
+          ? sanitized.quantity ?? 1
           : 1,
       parent_group_id:
-        validated.asset_type === 'group'
-          ? validated.parent_group_id ?? null
+        sanitized.asset_type === 'group'
+          ? sanitized.parent_group_id ?? null
           : null,
-      image_url: validated.image_url ?? null,
+      image_url: sanitized.image_url ?? null,
     };
 
     // Get user's organization_id from user metadata or profile

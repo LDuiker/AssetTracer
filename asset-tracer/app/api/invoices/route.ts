@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@/lib/supabase/server';
 import { getInvoices, createInvoice } from '@/lib/db';
 import { z } from 'zod';
+import { sanitizeObject } from '@/lib/utils/sanitize';
 
 /**
  * Zod schema for line item validation
@@ -124,7 +125,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const invoiceData = validationResult.data;
+    const validated = validationResult.data;
+
+    // Sanitize user-generated text fields to prevent XSS
+    const invoiceData = sanitizeObject(validated, [
+      'subject',
+      'notes',
+      'terms',
+      'items', // Will sanitize description in items
+    ]);
 
     const organizationId = await getOrganizationId(user.id);
     if (!organizationId) {
