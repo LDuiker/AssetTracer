@@ -1,11 +1,12 @@
 -- =====================================================
--- PRODUCTION MIGRATION: Reservations & Asset Kits
+-- MIGRATION: Reservations & Asset Kits
 -- =====================================================
 -- This script adds the reservations and asset kits features
--- to the PRODUCTION database
+-- to the database (works for both STAGING and PRODUCTION)
 -- 
--- ⚠️ IMPORTANT: Run this in PRODUCTION Supabase SQL Editor
--- Project: ftelnmursmitpjwjbyrw
+-- ⚠️ IMPORTANT: Run this in Supabase SQL Editor
+-- Staging Project: ougntjrrskfsuognjmcw
+-- Production Project: ftelnmursmitpjwjbyrw
 -- =====================================================
 
 -- =====================================================
