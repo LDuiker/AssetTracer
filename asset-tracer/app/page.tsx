@@ -614,6 +614,14 @@ function LandingPageContent() {
                     <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
                     <span className="text-sm text-gray-600">Community email support</span>
                   </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-600">Up to 10 reservations per month</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-600">Calendar view</span>
+                  </li>
                 </ul>
                 <Button 
                   className="w-full bg-[#2563EB] hover:bg-[#1e40af] rounded-2xl" 
@@ -670,11 +678,23 @@ function LandingPageContent() {
                   </li>
                   <li className="flex items-start">
                     <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-gray-600">Branded PDF quotations & invoices</span>
+                    <span className="text-sm text-gray-600">Up to 200 reservations per month</span>
                   </li>
                   <li className="flex items-start">
                     <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-gray-600">Priority email support</span>
+                    <span className="text-sm text-gray-600">Kit reservations</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-600">Calendar + list view</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-600">Reserve by item & category</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-600">Printable reservation schedules</span>
                   </li>
                 </ul>
                 <Button 
@@ -729,11 +749,31 @@ function LandingPageContent() {
                   </li>
                   <li className="flex items-start">
                     <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-gray-600">Role-based permissions (Admin/Staff)</span>
+                    <span className="text-sm text-gray-600">Unlimited reservations</span>
                   </li>
                   <li className="flex items-start">
                     <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-gray-600">Premium support (chat & email)</span>
+                    <span className="text-sm text-gray-600">Kit reservations</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-600">Calendar + list view</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-600">Reserve by item & category</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-600">Printable reservation schedules</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-600">Conflict override</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-[#2563EB] mr-2 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-600">Location-level reservations</span>
                   </li>
                 </ul>
                 <Button 
