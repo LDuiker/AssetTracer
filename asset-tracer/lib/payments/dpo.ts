@@ -465,8 +465,8 @@ export function verifyWebhookSignature(
     const webhookSecret = process.env.DPO_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
-      console.warn('[DPO] Webhook secret not configured, skipping signature verification');
-      return true; // In production, you may want to return false here
+      console.error('[DPO] Webhook secret not configured - rejecting webhook for security');
+      return false; // CRITICAL: Reject webhooks when secret is missing to prevent security bypass
     }
 
     if (!signature) {

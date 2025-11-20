@@ -83,9 +83,19 @@ export async function POST(request: NextRequest) {
 
     console.log('[DPO Webhook] Signature present:', !!signature);
 
-    // Verify webhook signature (if configured)
+    // Verify webhook signature (REQUIRED for security)
     const webhookSecret = process.env.DPO_WEBHOOK_SECRET;
-    if (webhookSecret && signature) {
+    
+    // Always attempt verification - reject if secret is missing or signature is invalid
+    if (webhookSecret) {
+      if (!signature) {
+        console.error('[DPO Webhook] ❌ Webhook secret configured but no signature provided');
+        return NextResponse.json(
+          { error: 'Signature required' },
+          { status: 401 }
+        );
+      }
+      
       const isValid = verifyWebhookSignature(rawBody, signature);
       
       if (!isValid) {
@@ -97,10 +107,14 @@ export async function POST(request: NextRequest) {
       }
       
       console.log('[DPO Webhook] ✓ Signature verified successfully');
-    } else if (webhookSecret) {
-      console.warn('[DPO Webhook] ⚠️ Webhook secret configured but no signature provided');
     } else {
-      console.warn('[DPO Webhook] ⚠️ Webhook secret not configured, skipping signature verification');
+      // CRITICAL: Reject webhooks when secret is not configured
+      // This prevents accepting forged webhooks in production
+      console.error('[DPO Webhook] ❌ Webhook secret not configured - rejecting webhook for security');
+      return NextResponse.json(
+        { error: 'Webhook verification not configured' },
+        { status: 503 } // Service Unavailable - indicates misconfiguration
+      );
     }
 
     // Extract transaction details from payload
