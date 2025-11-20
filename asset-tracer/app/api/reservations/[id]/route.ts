@@ -70,11 +70,11 @@ export async function GET(
   try {
     const supabase = await createClient();
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
@@ -87,11 +87,11 @@ export async function GET(
     const { data: userProfile, error: profileError } = await supabase
       .from('users')
       .select('organization_id')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profileError || !userProfile?.organization_id) {
-      const organizationId = session.user.user_metadata?.organization_id;
+      const organizationId = user.user_metadata?.organization_id;
       if (!organizationId) {
         return NextResponse.json(
           { error: 'User is not associated with an organization.' },
@@ -139,11 +139,11 @@ export async function PATCH(
   try {
     const supabase = await createClient();
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
@@ -184,11 +184,11 @@ export async function PATCH(
     const { data: userProfile, error: profileError } = await supabase
       .from('users')
       .select('organization_id')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profileError || !userProfile?.organization_id) {
-      const organizationId = session.user.user_metadata?.organization_id;
+      const organizationId = user.user_metadata?.organization_id;
       if (!organizationId) {
         return NextResponse.json(
           { error: 'User is not associated with an organization.' },
@@ -231,11 +231,11 @@ export async function DELETE(
   try {
     const supabase = await createClient();
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
@@ -248,11 +248,11 @@ export async function DELETE(
     const { data: userProfile, error: profileError } = await supabase
       .from('users')
       .select('organization_id')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profileError || !userProfile?.organization_id) {
-      const organizationId = session.user.user_metadata?.organization_id;
+      const organizationId = user.user_metadata?.organization_id;
       if (!organizationId) {
         return NextResponse.json(
           { error: 'User is not associated with an organization.' },
