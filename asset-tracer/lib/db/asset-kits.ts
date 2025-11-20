@@ -30,13 +30,35 @@ export async function getAssetKits(organizationId: string): Promise<AssetKit[]> 
     const kitIds = kits.map((kit) => kit.id);
     const { data: kitItems, error: itemsError } = await supabase
       .from('asset_kit_items')
-      .select('*, asset:assets(*)')
+      .select('kit_id, asset_id, quantity')
       .in('kit_id', kitIds);
 
     if (itemsError) {
       console.error('Error fetching kit items:', itemsError);
+      // Check if it's a table not found error
+      if (itemsError.code === 'PGRST205' || itemsError.message?.includes('schema cache')) {
+        throw new Error('Asset kits tables not found. Please run the database migration script.');
+      }
       // Return kits without items rather than failing completely
       return kits.map((kit) => ({ ...kit, items: [] }));
+    }
+
+    // Fetch asset details for all unique asset IDs
+    const assetIds = kitItems ? [...new Set(kitItems.map((item: any) => item.asset_id))] : [];
+    let assetsMap: Record<string, any> = {};
+    
+    if (assetIds.length > 0) {
+      const { data: assets, error: assetsError } = await supabase
+        .from('assets')
+        .select('id, name, category, location, status')
+        .in('id', assetIds);
+
+      if (!assetsError && assets) {
+        assetsMap = assets.reduce((acc: Record<string, any>, asset: any) => {
+          acc[asset.id] = asset;
+          return acc;
+        }, {});
+      }
     }
 
     // Group items by kit_id
@@ -50,7 +72,7 @@ export async function getAssetKits(organizationId: string): Promise<AssetKit[]> 
           kit_id: item.kit_id,
           asset_id: item.asset_id,
           quantity: item.quantity,
-          asset: item.asset || undefined,
+          asset: assetsMap[item.asset_id] || undefined,
         });
       });
     }
@@ -103,13 +125,35 @@ export async function getAssetKitById(
     // Fetch kit items
     const { data: kitItems, error: itemsError } = await supabase
       .from('asset_kit_items')
-      .select('*, asset:assets(*)')
+      .select('kit_id, asset_id, quantity')
       .eq('kit_id', id);
 
     if (itemsError) {
       console.error('Error fetching kit items:', itemsError);
+      // Check if it's a table not found error
+      if (itemsError.code === 'PGRST205' || itemsError.message?.includes('schema cache')) {
+        throw new Error('Asset kits tables not found. Please run the database migration script.');
+      }
       // Return kit without items rather than failing
       return { ...kit, items: [] };
+    }
+
+    // Fetch asset details
+    const assetIds = kitItems ? kitItems.map((item: any) => item.asset_id) : [];
+    let assetsMap: Record<string, any> = {};
+    
+    if (assetIds.length > 0) {
+      const { data: assets, error: assetsError } = await supabase
+        .from('assets')
+        .select('id, name, category, location, status')
+        .in('id', assetIds);
+
+      if (!assetsError && assets) {
+        assetsMap = assets.reduce((acc: Record<string, any>, asset: any) => {
+          acc[asset.id] = asset;
+          return acc;
+        }, {});
+      }
     }
 
     const items: AssetKitItem[] =
@@ -117,7 +161,7 @@ export async function getAssetKitById(
         kit_id: item.kit_id,
         asset_id: item.asset_id,
         quantity: item.quantity,
-        asset: item.asset || undefined,
+        asset: assetsMap[item.asset_id] || undefined,
       })) || [];
 
     return {
