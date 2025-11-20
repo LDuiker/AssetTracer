@@ -12,6 +12,18 @@ const nextConfig: NextConfig = {
     // TODO: Fix TypeScript errors and re-enable
     ignoreBuildErrors: true,
   },
+  webpack: (config, { isServer }) => {
+    // Fix for jsdom/parse5 ES module compatibility issue
+    // isomorphic-dompurify uses jsdom which depends on parse5 (ESM-only)
+    if (isServer) {
+      // Resolve parse5 to use dynamic import instead of require
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'parse5': false, // Disable parse5 bundling, let it be loaded at runtime
+      };
+    }
+    return config;
+  },
   async headers() {
     return [
       {
