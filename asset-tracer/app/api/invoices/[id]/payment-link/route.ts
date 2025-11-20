@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createPaymentToken } from '@/lib/payments/dpo';
+import { createErrorResponse } from '@/lib/utils/error-handler';
 
 /**
  * POST /api/invoices/[id]/payment-link
