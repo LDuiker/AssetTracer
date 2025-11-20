@@ -130,6 +130,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const validated = validationResult.data;
+
+    // Sanitize user-generated text fields to prevent XSS
+    const quotationData = sanitizeObject(validated, [
+      'subject',
+      'notes',
+      'terms',
+      'items', // Will sanitize description in items
+    ]);
+
     // Check subscription limits - free plan: 5 quotations per month
     const { data: organization } = await supabase
       .from('organizations')
@@ -217,7 +227,7 @@ export async function POST(request: NextRequest) {
 
     // Create quotation
     const quotation = await createQuotation(
-      validationResult.data,
+      quotationData,
       userData.organization_id,
       user.id
     );
