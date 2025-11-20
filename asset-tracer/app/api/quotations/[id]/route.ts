@@ -150,13 +150,28 @@ export async function PATCH(
       }));
     }
     
-    // Ensure subject is preserved (sanitizeObject already sanitized it, but ensure it's in the update)
-    // This handles the case where subject might be explicitly set to empty string or null
+    // Explicitly ensure subject is included and properly sanitized
+    // sanitizeObject should have already sanitized it, but we ensure it's preserved
     if ('subject' in validationResult.data) {
-      sanitizedData.subject = validationResult.data.subject !== undefined 
-        ? (validationResult.data.subject ? sanitizeText(validationResult.data.subject) : null)
-        : undefined;
+      const subjectValue = validationResult.data.subject;
+      if (subjectValue !== undefined && subjectValue !== null && subjectValue !== '') {
+        // Sanitize non-empty subject
+        sanitizedData.subject = sanitizeText(subjectValue);
+      } else if (subjectValue === null) {
+        // Preserve explicit null
+        sanitizedData.subject = null;
+      } else if (subjectValue === '') {
+        // Preserve empty string
+        sanitizedData.subject = '';
+      }
     }
+
+    // Debug logging to verify subject is included
+    console.log('[PATCH /api/quotations/[id]] Subject in sanitizedData:', {
+      hasSubject: 'subject' in sanitizedData,
+      subjectValue: sanitizedData.subject,
+      originalSubject: validationResult.data.subject,
+    });
 
     // Update quotation
     const quotation = await updateQuotation(
