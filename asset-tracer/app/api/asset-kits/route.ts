@@ -54,8 +54,26 @@ export async function GET() {
     return NextResponse.json({ kits }, { status: 200 });
   } catch (error) {
     console.error('Error in GET /api/asset-kits:', error);
+    
+    // Check if it's a table not found error
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch asset kits';
+    if (errorMessage.includes('schema cache') || errorMessage.includes('not found')) {
+      return NextResponse.json(
+        { 
+          error: 'Asset kits tables not found',
+          message: 'Please run the database migration script to create the asset_kits and asset_kit_items tables.',
+          details: errorMessage
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to fetch asset kits' },
+      { 
+        error: 'Failed to fetch asset kits',
+        message: errorMessage,
+        details: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }

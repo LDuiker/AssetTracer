@@ -19,6 +19,10 @@ export async function getAssetKits(organizationId: string): Promise<AssetKit[]> 
 
     if (kitsError) {
       console.error('Error fetching asset kits:', kitsError);
+      // Check if it's a table not found error
+      if (kitsError.code === 'PGRST205' || kitsError.message?.includes('schema cache') || kitsError.message?.includes('not found')) {
+        throw new Error('Asset kits tables not found. Please run the database migration script: ADD-RESERVATIONS-AND-KITS-TO-PRODUCTION.sql');
+      }
       throw new Error(`Failed to fetch asset kits: ${kitsError.message}`);
     }
 

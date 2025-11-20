@@ -101,8 +101,15 @@ export function ReservationFormDialog({
   }, [reservations]);
 
   // Fetch kits
-  const { data: kitsData, mutate: mutateKits } = useSWR<{ kits: AssetKit[] }>('/api/asset-kits');
+  const { data: kitsData, error: kitsError, mutate: mutateKits } = useSWR<{ kits: AssetKit[] }>('/api/asset-kits');
   const kits = kitsData?.kits || [];
+  
+  // Log kits error for debugging
+  useEffect(() => {
+    if (kitsError) {
+      console.error('Error fetching asset kits:', kitsError);
+    }
+  }, [kitsError]);
 
   // Group assets by category
   const assetsByCategory = useMemo(() => {
