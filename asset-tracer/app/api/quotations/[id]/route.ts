@@ -142,21 +142,20 @@ export async function PATCH(
       'items',
     ]);
     
-    // Explicitly sanitize optional fields and item descriptions
-    if (sanitizedData.subject) {
-      sanitizedData.subject = sanitizeText(sanitizedData.subject);
-    }
-    if (sanitizedData.notes) {
-      sanitizedData.notes = sanitizeText(sanitizedData.notes);
-    }
-    if (sanitizedData.terms) {
-      sanitizedData.terms = sanitizeText(sanitizedData.terms);
-    }
+    // Explicitly sanitize item descriptions to ensure XSS prevention
     if (sanitizedData.items && Array.isArray(sanitizedData.items)) {
       sanitizedData.items = sanitizedData.items.map((item: any) => ({
         ...item,
         description: item.description ? sanitizeText(item.description) : item.description,
       }));
+    }
+    
+    // Ensure subject is preserved (sanitizeObject already sanitized it, but ensure it's in the update)
+    // This handles the case where subject might be explicitly set to empty string or null
+    if ('subject' in validationResult.data) {
+      sanitizedData.subject = validationResult.data.subject !== undefined 
+        ? (validationResult.data.subject ? sanitizeText(validationResult.data.subject) : null)
+        : undefined;
     }
 
     // Update quotation

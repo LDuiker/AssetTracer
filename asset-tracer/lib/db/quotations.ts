@@ -221,6 +221,7 @@ export async function createQuotation(
           organization_id: organizationId,
           client_id: data.client_id,
           quotation_number: quotationNumber,
+          subject: data.subject || null,
           issue_date: data.issue_date,
           valid_until: data.valid_until,
           status: data.status || 'draft',
