@@ -5,6 +5,7 @@ import { randomBytes } from 'crypto';
 import { resend, isResendConfigured, EMAIL_FROM } from '@/lib/resend';
 import { render } from '@react-email/render';
 import TeamInvitationEmail from '@/emails/TeamInvitationEmail';
+import { createErrorResponse, handleApiError } from '@/lib/utils/error-handler';
 
 const inviteSchema = z.object({
   email: z.string().email(),
@@ -235,16 +236,12 @@ export async function POST(request: NextRequest) {
         errorMessage = 'An invitation has already been sent to this email address';
       } else if (inviteError.code === '23503') { // Foreign key violation
         errorMessage = 'Invalid organization or user reference';
-      } else if (inviteError.message) {
-        errorMessage = inviteError.message;
       }
       
-      return NextResponse.json(
-        { 
-          error: errorMessage,
-          details: process.env.NODE_ENV === 'development' ? inviteError : undefined
-        },
-        { status: 500 }
+      return createErrorResponse(
+        inviteError,
+        errorMessage,
+        500
       );
     }
 
@@ -333,19 +330,17 @@ export async function POST(request: NextRequest) {
       invitation,
       inviteLink,
       emailSent,
-      emailError: emailError ? (emailError instanceof Error ? emailError.message : String(emailError)) : null,
+      emailError: emailError ? (process.env.NODE_ENV === 'development' 
+        ? (emailError instanceof Error ? emailError.message : String(emailError))
+        : 'Email service unavailable') : null,
       message: emailSent 
         ? 'Invitation sent successfully' 
         : emailError
-          ? `Invitation created, but email failed: ${emailError instanceof Error ? emailError.message : String(emailError)}`
+          ? 'Invitation created, but email could not be sent. Please share the invitation link manually.'
           : 'Invitation created, but email could not be sent. Please share the invitation link manually.',
     });
   } catch (error) {
-    console.error('Invite error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'create team invitation');
   }
 }
 

@@ -241,21 +241,17 @@ export async function POST(
         );
       }
 
-      return NextResponse.json(
-        {
-          error: 'Internal server error',
-          message: error.message,
-        },
-        { status: 500 }
+      return createErrorResponse(
+        error,
+        'Internal server error',
+        500
       );
     }
 
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: 'An unexpected error occurred while generating the payment link.',
-      },
-      { status: 500 }
+    return createErrorResponse(
+      error,
+      'An unexpected error occurred while generating the payment link.',
+      500
     );
   }
 }

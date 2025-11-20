@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { polar } from '@/lib/polar';
 import { z } from 'zod';
+import { createErrorResponse, handleApiError } from '@/lib/utils/error-handler';
 
 const upgradeSchema = z.object({
   tier: z.enum(['pro', 'business']),
@@ -243,31 +244,14 @@ export async function POST(request: NextRequest) {
         userFriendlyError = 'Payment service authentication failed. Please contact support.';
       }
       
-      return NextResponse.json(
-        { 
-          error: userFriendlyError, 
-          details: process.env.NODE_ENV === 'development' ? polarErrorMessage : undefined
-        },
-        { status: 500 }
+      return createErrorResponse(
+        polarError,
+        userFriendlyError,
+        500
       );
     }
   } catch (error: unknown) {
-    console.error('Upgrade error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    
-    console.error('Unexpected error in upgrade route:', {
-      message: errorMessage,
-      stack: errorStack,
-    });
-    
-    return NextResponse.json(
-      { 
-        error: 'An unexpected error occurred',
-        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'upgrade subscription');
   }
 }
 

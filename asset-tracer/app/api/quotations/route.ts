@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getQuotations, createQuotation } from '@/lib/db/quotations';
 import { z } from 'zod';
+import { handleApiError } from '@/lib/utils/error-handler';
 
 // Validation schema for quotation items
 const QuotationItemSchema = z.object({
@@ -86,21 +87,7 @@ export async function GET() {
 
     return NextResponse.json({ quotations }, { status: 200 });
   } catch (error) {
-    console.error('❌ Error in GET /api/quotations:', error);
-    
-    // Enhanced error logging
-    if (error instanceof Error) {
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
-    
-    return NextResponse.json(
-      { 
-        error: 'Failed to fetch quotations',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'fetch quotations');
   }
 }
 
@@ -237,32 +224,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ quotation }, { status: 201 });
   } catch (error) {
-    console.error('[POST /api/quotations] Error creating quotation:', error);
-    
-    // Enhanced error logging
-    if (error instanceof Error) {
-      console.error('[POST /api/quotations] Error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-      });
-    } else {
-      console.error('[POST /api/quotations] Unknown error type:', typeof error, error);
-    }
-    
-    // Return detailed error message to help with debugging
-    const errorMessage = error instanceof Error ? error.message : 'Failed to create quotation';
-    
-    return NextResponse.json(
-      { 
-        error: errorMessage,
-        // Include more details in development/debugging
-        ...(process.env.NODE_ENV === 'development' && error instanceof Error ? {
-          details: error.stack,
-        } : {}),
-      },                                                                         
-      { status: 500 }
-    );
+    return handleApiError(error, 'create quotation');
   }
 }
 
