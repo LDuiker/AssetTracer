@@ -71,6 +71,12 @@ export function sanitizeObject<T extends Record<string, any>>(
           if (typeof item === 'string') {
             return sanitizeText(item);
           } else if (item && typeof item === 'object') {
+            // For nested objects in arrays, sanitize all string fields if no specific fields are provided
+            // or if the key matches a field in fieldsToSanitize (like 'items')
+            if (fieldsToSanitize && fieldsToSanitize.includes(key)) {
+              // If this array field is in the sanitize list, sanitize all string fields in nested objects
+              return sanitizeObject(item); // No field list = sanitize all strings
+            }
             return sanitizeObject(item, fieldsToSanitize);
           }
           return item;

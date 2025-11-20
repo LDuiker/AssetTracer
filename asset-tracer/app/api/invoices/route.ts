@@ -149,6 +149,14 @@ export async function POST(request: NextRequest) {
       'terms',
       'items', // Will sanitize description in items
     ]);
+    
+    // Explicitly sanitize item descriptions to ensure XSS prevention
+    if (invoiceData.items && Array.isArray(invoiceData.items)) {
+      invoiceData.items = invoiceData.items.map((item: any) => ({
+        ...item,
+        description: item.description ? sanitizeText(item.description) : item.description,
+      }));
+    }
 
     const organizationId = await getOrganizationId(user.id);
     if (!organizationId) {

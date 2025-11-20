@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getQuotations, createQuotation } from '@/lib/db/quotations';
 import { z } from 'zod';
 import { handleApiError } from '@/lib/utils/error-handler';
+import { sanitizeObject, sanitizeText } from '@/lib/utils/sanitize';
 
 // Validation schema for quotation items
 const QuotationItemSchema = z.object({
@@ -139,6 +140,14 @@ export async function POST(request: NextRequest) {
       'terms',
       'items', // Will sanitize description in items
     ]);
+    
+    // Explicitly sanitize item descriptions to ensure XSS prevention
+    if (quotationData.items && Array.isArray(quotationData.items)) {
+      quotationData.items = quotationData.items.map((item: any) => ({
+        ...item,
+        description: item.description ? sanitizeText(item.description) : item.description,
+      }));
+    }
 
     // Check subscription limits - free plan: 5 quotations per month
     const { data: organization } = await supabase
