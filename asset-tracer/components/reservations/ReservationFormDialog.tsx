@@ -404,12 +404,17 @@ export function ReservationFormDialog({
         });
         setSelectedAssets([]);
         setSelectedKits([]);
-        // Force assets mode if kits not allowed
-        setSelectionMode(limits.hasKitReservations ? 'assets' : 'assets');
+        // Force assets mode if kits not allowed (free tier)
+        setSelectionMode('assets');
       }
       setAvailabilityResults({});
+      
+      // Ensure selection mode is valid for current tier
+      if (selectionMode === 'kits' && (tier === 'free' || !limits.hasKitReservations)) {
+        setSelectionMode('assets');
+      }
     }
-  }, [open, reservation, initialDate, reset, limits.hasKitReservations]);
+  }, [open, reservation, initialDate, reset, limits.hasKitReservations, tier, selectionMode]);
 
   // Check availability when dates or selected assets/kits change
   useEffect(() => {
@@ -789,7 +794,8 @@ export function ReservationFormDialog({
                   variant={selectionMode === 'kits' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => {
-                    if (!limits.hasKitReservations) {
+                    // Double-check limits to prevent any edge cases
+                    if (tier === 'free' || !limits.hasKitReservations) {
                       toast.error('Kit reservations not available', {
                         description: 'Kit reservations require Pro plan or higher. Upgrade to reserve complete equipment bundles.',
                         action: {
@@ -803,11 +809,11 @@ export function ReservationFormDialog({
                     }
                     setSelectionMode('kits');
                   }}
-                  disabled={!limits.hasKitReservations}
-                  title={!limits.hasKitReservations ? 'Kit reservations require Pro plan or higher' : ''}
+                  disabled={tier === 'free' || !limits.hasKitReservations}
+                  title={tier === 'free' || !limits.hasKitReservations ? 'Kit reservations require Pro plan or higher' : ''}
                 >
                   Kits
-                  {!limits.hasKitReservations && (
+                  {(tier === 'free' || !limits.hasKitReservations) && (
                     <Badge variant="outline" className="ml-2 text-xs">Pro+</Badge>
                   )}
                 </Button>
@@ -826,7 +832,7 @@ export function ReservationFormDialog({
             )}
 
             {/* Kit Selection */}
-            {selectionMode === 'kits' && (
+            {selectionMode === 'kits' && limits.hasKitReservations && tier !== 'free' && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm text-gray-600">Available Kits</Label>
@@ -969,7 +975,7 @@ export function ReservationFormDialog({
                 {selectionMode === 'assets' && selectedAssets.length === 0 && (
                   <p className="text-sm text-red-500">Please select at least one asset</p>
                 )}
-                {selectionMode === 'kits' && selectedKits.length === 0 && (
+                {selectionMode === 'kits' && limits.hasKitReservations && tier !== 'free' && selectedKits.length === 0 && (
                   <p className="text-sm text-red-500">Please select at least one kit</p>
                 )}
                 {(selectedAssets.length > 0 || selectedKits.length > 0) && (
