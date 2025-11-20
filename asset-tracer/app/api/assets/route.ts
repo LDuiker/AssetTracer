@@ -5,7 +5,7 @@ import { z } from 'zod';
 import type { CreateAssetInput } from '@/types';
 import { handleCorsPreflight, withCors } from '@/lib/utils/cors';
 import { sanitizeObject } from '@/lib/utils/sanitize';
-import { checkRateLimit, createRateLimitResponse, getRateLimitHeaders } from '@/lib/utils/rate-limit';
+// Rate limiting is handled in middleware - no need to import here
 
 /**
  * Zod schema for validating asset creation input
@@ -61,12 +61,7 @@ export async function OPTIONS(request: NextRequest) {
  * Fetch all assets for the authenticated user's organization
  */
 export async function GET(request: NextRequest) {
-  // Apply rate limiting
-  const rateLimit = checkRateLimit(request, 'api');
-  if (!rateLimit.isAllowed) {
-    return createRateLimitResponse(rateLimit);
-  }
-
+  // Rate limiting is handled in middleware - no need to check again here
   try {
     // Get authenticated user
     const supabase = await createClient();
@@ -104,13 +99,6 @@ export async function GET(request: NextRequest) {
       
       const assets = await getAssets(organizationId);
       const response = NextResponse.json({ assets }, { status: 200 });
-      
-      // Add rate limit headers
-      const rateLimitHeaders = getRateLimitHeaders(rateLimit);
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      
       return withCors(request, response);
     }
 
@@ -118,13 +106,6 @@ export async function GET(request: NextRequest) {
     const assets = await getAssets(userProfile.organization_id);
 
     const response = NextResponse.json({ assets }, { status: 200 });
-    
-    // Add rate limit headers
-    const rateLimitHeaders = getRateLimitHeaders(rateLimit);
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return withCors(request, response);
   } catch (error) {
     console.error('Error in GET /api/assets:', error);
@@ -141,12 +122,7 @@ export async function GET(request: NextRequest) {
  * Create a new asset for the authenticated user's organization
  */
 export async function POST(request: NextRequest) {
-  // Apply rate limiting
-  const rateLimit = checkRateLimit(request, 'api');
-  if (!rateLimit.isAllowed) {
-    return createRateLimitResponse(rateLimit);
-  }
-
+  // Rate limiting is handled in middleware - no need to check again here
   try {
     // Get authenticated user
     const supabase = await createClient();
@@ -233,13 +209,6 @@ export async function POST(request: NextRequest) {
       );
 
       const response = NextResponse.json({ asset: newAsset }, { status: 201 });
-      
-      // Add rate limit headers
-      const rateLimitHeaders = getRateLimitHeaders(rateLimit);
-      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-        response.headers.set(key, value);
-      });
-      
       return withCors(request, response);
     }
 
@@ -251,13 +220,6 @@ export async function POST(request: NextRequest) {
     );
 
     const response = NextResponse.json({ asset: newAsset }, { status: 201 });
-    
-    // Add rate limit headers
-    const rateLimitHeaders = getRateLimitHeaders(rateLimit);
-    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-    
     return withCors(request, response);
   } catch (error) {
     console.error('Error in POST /api/assets:', error);

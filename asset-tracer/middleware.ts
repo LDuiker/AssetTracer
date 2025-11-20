@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { checkRateLimit, createRateLimitResponse } from '@/lib/utils/rate-limit'
+import { checkRateLimit, createRateLimitResponse, getRateLimitHeaders } from '@/lib/utils/rate-limit'
 
 /**
  * Middleware to handle authentication and route protection
@@ -66,22 +66,34 @@ export async function middleware(request: NextRequest) {
 
   // Apply rate limiting to API routes
   if (pathname.startsWith('/api/')) {
-    // Determine rate limit type based on route
-    let rateLimitType: 'auth' | 'public' | 'api' | 'webhook' = 'api';
-    
-    if (pathname.startsWith('/api/auth')) {
-      rateLimitType = 'auth';
-    } else if (pathname.startsWith('/api/webhooks')) {
-      rateLimitType = 'webhook';
-    } else if (pathname.startsWith('/api/')) {
-      // Check if route requires authentication by checking for user
-      // For now, treat all /api routes as authenticated (they check auth internally)
-      rateLimitType = 'api';
-    }
+    try {
+      // Determine rate limit type based on route
+      let rateLimitType: 'auth' | 'public' | 'api' | 'webhook' = 'api';
+      
+      if (pathname.startsWith('/api/auth')) {
+        rateLimitType = 'auth';
+      } else if (pathname.startsWith('/api/webhooks')) {
+        rateLimitType = 'webhook';
+      } else if (pathname.startsWith('/api/')) {
+        // Check if route requires authentication by checking for user
+        // For now, treat all /api routes as authenticated (they check auth internally)
+        rateLimitType = 'api';
+      }
 
-    const rateLimit = checkRateLimit(request, rateLimitType);
-    if (!rateLimit.isAllowed) {
-      return createRateLimitResponse(rateLimit);
+      const rateLimit = checkRateLimit(request, rateLimitType);
+      if (!rateLimit.isAllowed) {
+        return createRateLimitResponse(rateLimit);
+      }
+      
+      // Add rate limit headers to response
+      const rateLimitHeaders = getRateLimitHeaders(rateLimit);
+      Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+        supabaseResponse.headers.set(key, value);
+      });
+    } catch (error) {
+      // Rate limiting check failed - log but don't block request
+      console.error('[Middleware] Rate limiting check failed:', error);
+      // Continue with request - rate limiting failure shouldn't break the app
     }
   }
 
