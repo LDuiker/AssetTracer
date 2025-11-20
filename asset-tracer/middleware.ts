@@ -43,10 +43,14 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired - required for Server Components
+  // Verify user authentication - use getUser() for security (validates with Supabase Auth server)
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+  
+  // Check if user is authenticated (user exists and no error)
+  const isAuthenticated = !!user && !userError
 
   // Define public routes (no authentication required)
   const publicRoutes = [
@@ -87,14 +91,14 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Redirect to login if accessing protected route without session
-  if (isProtectedRoute && !session) {
+  // Redirect to login if accessing protected route without authentication
+  if (isProtectedRoute && !isAuthenticated) {
     const redirectUrl = new URL('/login', request.url)
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Redirect to dashboard if accessing login with active session
-  if (pathname === '/login' && session) {
+  // Redirect to dashboard if accessing login with active authentication
+  if (pathname === '/login' && isAuthenticated) {
     const redirectUrl = new URL('/dashboard', request.url)
     return NextResponse.redirect(redirectUrl)
   }
