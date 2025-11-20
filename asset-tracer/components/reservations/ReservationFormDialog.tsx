@@ -983,7 +983,7 @@ export function ReservationFormDialog({
                 {selectionMode === 'assets' && selectedAssets.length === 0 && (
                   <p className="text-sm text-red-500">Please select at least one asset</p>
                 )}
-                {selectionMode === 'kits' && limits.hasKitReservations && tier !== 'free' && selectedKits.length === 0 && (
+                {selectionMode === 'kits' && selectedKits.length === 0 && (
                   <p className="text-sm text-red-500">Please select at least one kit</p>
                 )}
                 {(selectedAssets.length > 0 || selectedKits.length > 0) && (
