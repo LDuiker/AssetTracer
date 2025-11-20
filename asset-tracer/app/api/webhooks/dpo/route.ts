@@ -390,6 +390,7 @@ export async function POST(request: NextRequest) {
       error: error instanceof Error ? error.message : 'Internal server error',
     });
   }
+  DISABLED CODE END */
 }
 
 /**
