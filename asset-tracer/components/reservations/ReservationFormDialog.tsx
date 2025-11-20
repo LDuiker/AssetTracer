@@ -814,16 +814,17 @@ export function ReservationFormDialog({
                       });
                       return;
                     }
-                    console.log('Setting selection mode to kits', { tier, hasKitReservations: limits.hasKitReservations });
                     setSelectionMode('kits');
                   }}
                   disabled={tier === 'free' || !limits.hasKitReservations}
                   title={tier === 'free' || !limits.hasKitReservations ? 'Kit reservations require Pro plan or higher' : ''}
                 >
-                  Kits
-                  {(tier === 'free' || !limits.hasKitReservations) && (
-                    <Badge variant="outline" className="ml-2 text-xs">Pro+</Badge>
-                  )}
+                  <span className="flex items-center gap-2">
+                    Kits
+                    {(tier === 'free' || !limits.hasKitReservations) && (
+                      <Badge variant="outline" className="text-xs">Pro+</Badge>
+                    )}
+                  </span>
                 </Button>
               </div>
             </div>
