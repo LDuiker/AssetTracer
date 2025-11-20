@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimit, createRateLimitResponse, getRateLimitHeaders } from '@/lib/utils/rate-limit';
 
 interface ConsentData {
   termsAccepted: boolean;
@@ -15,6 +16,12 @@ interface ConsentData {
  * Called after OAuth callback when a new user is created
  */
 export async function POST(request: NextRequest) {
+  // Apply rate limiting for authentication endpoints
+  const rateLimit = checkRateLimit(request, 'auth');
+  if (!rateLimit.isAllowed) {
+    return createRateLimitResponse(rateLimit);
+  }
+
   try {
     const cookieStore = await cookies();
     const body = await request.json();
@@ -104,10 +111,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Consent data saved successfully.',
     });
+
+    // Add rate limit headers
+    const rateLimitHeaders = getRateLimitHeaders(rateLimit);
+    Object.entries(rateLimitHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    return response;
   } catch (error) {
     console.error('Error in consent API:', error);
     return NextResponse.json(
