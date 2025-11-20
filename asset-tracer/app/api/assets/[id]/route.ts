@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getAssetById, updateAsset, deleteAsset } from '@/lib/db';
 import { z } from 'zod';
 import type { UpdateAssetInput } from '@/types';
+import { sanitizeText } from '@/lib/utils/sanitize';
 
 /**
  * Zod schema for validating asset update input
@@ -159,19 +160,30 @@ export async function PATCH(
 
     const validated = validationResult.data;
 
+    // Sanitize user-generated text fields to prevent XSS
     const updateData: UpdateAssetInput = {};
 
-    if (validated.name !== undefined) updateData.name = validated.name;
-    if (validated.description !== undefined) updateData.description = validated.description;
-    if (validated.category !== undefined) updateData.category = validated.category;
+    if (validated.name !== undefined) {
+      updateData.name = validated.name ? sanitizeText(validated.name) : validated.name;
+    }
+    if (validated.description !== undefined) {
+      updateData.description = validated.description ? sanitizeText(validated.description) : validated.description;
+    }
+    if (validated.category !== undefined) {
+      updateData.category = validated.category ? sanitizeText(validated.category) : validated.category;
+    }
     if (validated.purchase_date !== undefined) {
       updateData.purchase_date = validated.purchase_date === '' ? null : validated.purchase_date;
     }
     if (validated.purchase_cost !== undefined) updateData.purchase_cost = validated.purchase_cost;
     if (validated.current_value !== undefined) updateData.current_value = validated.current_value;
     if (validated.status !== undefined) updateData.status = validated.status;
-    if (validated.location !== undefined) updateData.location = validated.location;
-    if (validated.serial_number !== undefined) updateData.serial_number = validated.serial_number;
+    if (validated.location !== undefined) {
+      updateData.location = validated.location ? sanitizeText(validated.location) : validated.location;
+    }
+    if (validated.serial_number !== undefined) {
+      updateData.serial_number = validated.serial_number ? sanitizeText(validated.serial_number) : validated.serial_number;
+    }
     if (validated.asset_type !== undefined) updateData.asset_type = validated.asset_type;
 
     if (validated.quantity !== undefined || validated.asset_type !== undefined) {
