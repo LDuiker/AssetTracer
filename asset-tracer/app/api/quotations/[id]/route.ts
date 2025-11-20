@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getQuotationById, updateQuotation, deleteQuotation } from '@/lib/db/quotations';
 import { z } from 'zod';
+import { sanitizeObject, sanitizeText } from '@/lib/utils/sanitize';
 
 // Validation schema for quotation items
 const QuotationItemSchema = z.object({
@@ -133,10 +134,35 @@ export async function PATCH(
       );
     }
 
+    // Sanitize user-generated text fields to prevent XSS
+    const sanitizedData = sanitizeObject(validationResult.data, [
+      'subject',
+      'notes',
+      'terms',
+      'items',
+    ]);
+    
+    // Explicitly sanitize optional fields and item descriptions
+    if (sanitizedData.subject) {
+      sanitizedData.subject = sanitizeText(sanitizedData.subject);
+    }
+    if (sanitizedData.notes) {
+      sanitizedData.notes = sanitizeText(sanitizedData.notes);
+    }
+    if (sanitizedData.terms) {
+      sanitizedData.terms = sanitizeText(sanitizedData.terms);
+    }
+    if (sanitizedData.items && Array.isArray(sanitizedData.items)) {
+      sanitizedData.items = sanitizedData.items.map((item: any) => ({
+        ...item,
+        description: item.description ? sanitizeText(item.description) : item.description,
+      }));
+    }
+
     // Update quotation
     const quotation = await updateQuotation(
       id,
-      validationResult.data,
+      sanitizedData,
       userData.organization_id
     );
 

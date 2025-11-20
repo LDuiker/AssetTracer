@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@/lib/supabase/server';
 import { getInvoiceById, updateInvoice, deleteInvoice } from '@/lib/db';
 import { z } from 'zod';
+import { sanitizeObject, sanitizeText } from '@/lib/utils/sanitize';
 
 /**
  * Zod schema for line item validation
@@ -173,7 +174,32 @@ export async function PATCH(
       );
     }
 
-    const updatedInvoice = await updateInvoice(id, updateData, organizationId);
+    // Sanitize user-generated text fields to prevent XSS
+    const sanitizedData = sanitizeObject(updateData, [
+      'subject',
+      'notes',
+      'terms',
+      'items',
+    ]);
+    
+    // Explicitly sanitize optional fields and item descriptions
+    if (sanitizedData.subject) {
+      sanitizedData.subject = sanitizeText(sanitizedData.subject);
+    }
+    if (sanitizedData.notes) {
+      sanitizedData.notes = sanitizeText(sanitizedData.notes);
+    }
+    if (sanitizedData.terms) {
+      sanitizedData.terms = sanitizeText(sanitizedData.terms);
+    }
+    if (sanitizedData.items && Array.isArray(sanitizedData.items)) {
+      sanitizedData.items = sanitizedData.items.map((item: any) => ({
+        ...item,
+        description: item.description ? sanitizeText(item.description) : item.description,
+      }));
+    }
+
+    const updatedInvoice = await updateInvoice(id, sanitizedData, organizationId);
     return NextResponse.json({ invoice: updatedInvoice }, { status: 200 });
   } catch (error) {
     console.error('Error in PATCH /api/invoices/[id]:', error);
