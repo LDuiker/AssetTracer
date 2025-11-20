@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@/lib/supabase/server';
 import { getInvoices, createInvoice } from '@/lib/db';
 import { z } from 'zod';
-import { sanitizeObject } from '@/lib/utils/sanitize';
+import { sanitizeObject, sanitizeText } from '@/lib/utils/sanitize';
 import { handleCorsPreflight, withCors } from '@/lib/utils/cors';
 
 /**
@@ -150,7 +150,16 @@ export async function POST(request: NextRequest) {
       'items', // Will sanitize description in items
     ]);
     
-    // Explicitly sanitize item descriptions to ensure XSS prevention
+    // Explicitly sanitize optional fields and item descriptions to ensure XSS prevention
+    if (invoiceData.subject) {
+      invoiceData.subject = sanitizeText(invoiceData.subject);
+    }
+    if (invoiceData.notes) {
+      invoiceData.notes = sanitizeText(invoiceData.notes);
+    }
+    if (invoiceData.terms) {
+      invoiceData.terms = sanitizeText(invoiceData.terms);
+    }
     if (invoiceData.items && Array.isArray(invoiceData.items)) {
       invoiceData.items = invoiceData.items.map((item: any) => ({
         ...item,

@@ -141,7 +141,16 @@ export async function POST(request: NextRequest) {
       'items', // Will sanitize description in items
     ]);
     
-    // Explicitly sanitize item descriptions to ensure XSS prevention
+    // Explicitly sanitize optional fields and item descriptions to ensure XSS prevention
+    if (quotationData.subject) {
+      quotationData.subject = sanitizeText(quotationData.subject);
+    }
+    if (quotationData.notes) {
+      quotationData.notes = sanitizeText(quotationData.notes);
+    }
+    if (quotationData.terms) {
+      quotationData.terms = sanitizeText(quotationData.terms);
+    }
     if (quotationData.items && Array.isArray(quotationData.items)) {
       quotationData.items = quotationData.items.map((item: any) => ({
         ...item,
