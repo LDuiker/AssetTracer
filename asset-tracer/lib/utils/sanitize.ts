@@ -30,7 +30,13 @@ export function sanitizeHTML(html: string): string {
  */
 export function sanitizeText(text: string): string {
   if (!text) return '';
-  return DOMPurify.sanitize(text, { ALLOWED_TAGS: [] });
+  // Use KEEP_CONTENT to preserve text content even when all tags are removed
+  // This ensures that text like "Quote Subject" in <svg>Quote Subject</svg> is preserved
+  const sanitized = DOMPurify.sanitize(text, { 
+    ALLOWED_TAGS: [],
+    KEEP_CONTENT: true,
+  });
+  return sanitized;
 }
 
 /**

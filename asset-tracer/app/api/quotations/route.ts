@@ -133,24 +133,28 @@ export async function POST(request: NextRequest) {
 
     const validated = validationResult.data;
 
-    // Sanitize user-generated text fields to prevent XSS
-    const quotationData = sanitizeObject(validated, [
-      'subject',
+    // Sanitize subject separately first to avoid double-processing issues
+    const originalSubject = validated.subject;
+    const sanitizedSubject = originalSubject !== undefined && originalSubject !== null && originalSubject !== ''
+      ? sanitizeText(originalSubject)
+      : (originalSubject === null ? null : (originalSubject === '' ? '' : undefined));
+    
+    // Create sanitized data, but exclude subject from sanitizeObject to avoid double processing
+    const dataWithoutSubject = { ...validated };
+    delete dataWithoutSubject.subject;
+    
+    const quotationData = sanitizeObject(dataWithoutSubject, [
       'notes',
       'terms',
       'items', // Will sanitize description in items
     ]);
     
-    // Explicitly sanitize optional fields and item descriptions to ensure XSS prevention
-    if (quotationData.subject) {
-      quotationData.subject = sanitizeText(quotationData.subject);
+    // Add the separately sanitized subject back
+    if ('subject' in validated) {
+      quotationData.subject = sanitizedSubject;
     }
-    if (quotationData.notes) {
-      quotationData.notes = sanitizeText(quotationData.notes);
-    }
-    if (quotationData.terms) {
-      quotationData.terms = sanitizeText(quotationData.terms);
-    }
+    
+    // Explicitly sanitize item descriptions to ensure XSS prevention
     if (quotationData.items && Array.isArray(quotationData.items)) {
       quotationData.items = quotationData.items.map((item: any) => ({
         ...item,
