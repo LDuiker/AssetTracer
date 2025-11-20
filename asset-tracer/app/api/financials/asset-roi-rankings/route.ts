@@ -34,18 +34,18 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseClient();
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
       );
     }
 
-    const organizationId = await getOrganizationId(session.user.id);
+    const organizationId = await getOrganizationId(user.id);
     if (!organizationId) {
       return NextResponse.json(
         { error: 'User is not associated with an organization.' },

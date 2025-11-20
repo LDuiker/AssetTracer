@@ -71,14 +71,14 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // Get authenticated user session
+    // Get authenticated user
     const supabase = await createClient();
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
@@ -86,7 +86,7 @@ export async function GET(
     }
 
     // Get organization ID
-    const organizationId = await getOrganizationId(session.user.id);
+    const organizationId = await getOrganizationId(user.id);
     if (!organizationId) {
       return NextResponse.json(
         { error: 'User is not associated with an organization.' },
@@ -125,14 +125,14 @@ export async function PATCH(
   try {
     const { id } = await params;
 
-    // Get authenticated user session
+    // Get authenticated user
     const supabase = await createClient();
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
@@ -201,7 +201,7 @@ export async function PATCH(
     }
 
     // Get organization ID
-    const organizationId = await getOrganizationId(session.user.id);
+    const organizationId = await getOrganizationId(user.id);
     if (!organizationId) {
       return NextResponse.json(
         { error: 'User is not associated with an organization.' },
@@ -249,14 +249,14 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // Get authenticated user session
+    // Get authenticated user
     const supabase = await createClient();
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
@@ -264,7 +264,7 @@ export async function DELETE(
     }
 
     // Get organization ID
-    const organizationId = await getOrganizationId(session.user.id);
+    const organizationId = await getOrganizationId(user.id);
     if (!organizationId) {
       return NextResponse.json(
         { error: 'User is not associated with an organization.' },

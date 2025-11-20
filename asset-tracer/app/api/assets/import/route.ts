@@ -316,11 +316,11 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 },
@@ -383,7 +383,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { organizationId, subscriptionTier } = await getOrganizationContext(supabase, session.user);
+    const { organizationId, subscriptionTier } = await getOrganizationContext(supabase, user);
 
     if (!organizationId) {
       return NextResponse.json(
@@ -406,7 +406,7 @@ export async function POST(request: NextRequest) {
     const preparedRows = validRows.map((row) => ({
       ...row,
       organization_id: organizationId,
-      created_by: session.user.id,
+      created_by: user.id,
       quantity: row.asset_type === 'group' ? row.quantity : 1,
       parent_group_id: row.asset_type === 'group' ? row.parent_group_id : null,
     }));
