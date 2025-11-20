@@ -135,12 +135,26 @@ export async function PATCH(
     }
 
     // Sanitize user-generated text fields to prevent XSS
-    const sanitizedData = sanitizeObject(validationResult.data, [
-      'subject',
+    // IMPORTANT: Sanitize subject separately first to avoid double-sanitization issues
+    const originalSubject = validationResult.data.subject;
+    const sanitizedSubject = originalSubject !== undefined && originalSubject !== null && originalSubject !== ''
+      ? sanitizeText(originalSubject)
+      : (originalSubject === null ? null : (originalSubject === '' ? '' : undefined));
+    
+    // Create sanitized data, but exclude subject from sanitizeObject to avoid double processing
+    const dataWithoutSubject = { ...validationResult.data };
+    delete dataWithoutSubject.subject;
+    
+    const sanitizedData = sanitizeObject(dataWithoutSubject, [
       'notes',
       'terms',
       'items',
     ]);
+    
+    // Add the separately sanitized subject back
+    if ('subject' in validationResult.data) {
+      sanitizedData.subject = sanitizedSubject;
+    }
     
     // Explicitly sanitize item descriptions to ensure XSS prevention
     if (sanitizedData.items && Array.isArray(sanitizedData.items)) {
@@ -149,28 +163,14 @@ export async function PATCH(
         description: item.description ? sanitizeText(item.description) : item.description,
       }));
     }
-    
-    // Explicitly ensure subject is included and properly sanitized
-    // sanitizeObject should have already sanitized it, but we ensure it's preserved
-    if ('subject' in validationResult.data) {
-      const subjectValue = validationResult.data.subject;
-      if (subjectValue !== undefined && subjectValue !== null && subjectValue !== '') {
-        // Sanitize non-empty subject
-        sanitizedData.subject = sanitizeText(subjectValue);
-      } else if (subjectValue === null) {
-        // Preserve explicit null
-        sanitizedData.subject = null;
-      } else if (subjectValue === '') {
-        // Preserve empty string
-        sanitizedData.subject = '';
-      }
-    }
 
     // Debug logging to verify subject is included
-    console.log('[PATCH /api/quotations/[id]] Subject in sanitizedData:', {
-      hasSubject: 'subject' in sanitizedData,
-      subjectValue: sanitizedData.subject,
+    console.log('[PATCH /api/quotations/[id]] Subject processing:', {
       originalSubject: validationResult.data.subject,
+      sanitizedSubject: sanitizedSubject,
+      finalSubject: sanitizedData.subject,
+      hasSubject: 'subject' in sanitizedData,
+      subjectType: typeof sanitizedData.subject,
     });
 
     // Update quotation
