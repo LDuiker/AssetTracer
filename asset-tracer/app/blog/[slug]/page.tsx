@@ -5,6 +5,7 @@ import { ArrowLeft, Calendar, Clock, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getPostBySlug, getAllPosts } from '@/lib/blog-posts';
 import { Badge } from '@/components/ui/badge';
+import { sanitizeHTML } from '@/lib/utils/sanitize';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -207,11 +208,14 @@ export default async function BlogPostPage({ params }: Props) {
                   .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                   .replace(/\*(.*?)\*/g, '<em>$1</em>');
                 
+                // Sanitize HTML to prevent XSS attacks
+                const sanitizedText = sanitizeHTML(processedText);
+                
                 return (
                   <p 
                     key={index} 
                     className="text-gray-700 mb-4 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: processedText }}
+                    dangerouslySetInnerHTML={{ __html: sanitizedText }}
                   />
                 );
               })}
