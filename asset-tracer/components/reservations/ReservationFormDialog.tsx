@@ -416,12 +416,12 @@ export function ReservationFormDialog({
       }
       setAvailabilityResults({});
       
-      // Ensure selection mode is valid for current tier
+      // Ensure selection mode is valid for current tier (only check on dialog open/reservation change, not on selectionMode change)
       if (selectionMode === 'kits' && (tier === 'free' || !limits.hasKitReservations)) {
         setSelectionMode('assets');
       }
     }
-  }, [open, reservation, initialDate, reset, limits.hasKitReservations, tier, selectionMode]);
+  }, [open, reservation, initialDate, reset, limits.hasKitReservations, tier]); // Removed selectionMode from deps to prevent reset loop
 
   // Check availability when dates or selected assets/kits change
   useEffect(() => {
@@ -814,6 +814,7 @@ export function ReservationFormDialog({
                       });
                       return;
                     }
+                    console.log('Setting selection mode to kits', { tier, hasKitReservations: limits.hasKitReservations });
                     setSelectionMode('kits');
                   }}
                   disabled={tier === 'free' || !limits.hasKitReservations}
@@ -839,7 +840,7 @@ export function ReservationFormDialog({
             )}
 
             {/* Kit Selection */}
-            {selectionMode === 'kits' && limits.hasKitReservations && tier !== 'free' && (
+            {selectionMode === 'kits' && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm text-gray-600">Available Kits</Label>
