@@ -215,8 +215,17 @@ export async function createQuotation(
       console.log(`[createQuotation] Attempt ${attempts}/${maxAttempts}: Trying quotation number: ${quotationNumber}`);
 
       // Create quotation
-      // Handle subject: preserve empty strings, use null only if undefined
-      const subjectValue = data.subject !== undefined ? (data.subject || null) : null;
+      // Handle subject: preserve empty strings and null, use null only if undefined
+      const subjectValue = data.subject !== undefined ? data.subject : null;
+      
+      console.log('[createQuotation] Subject value being inserted:', {
+        originalSubject: data.subject,
+        subjectValue: subjectValue,
+        subjectType: typeof subjectValue,
+        isUndefined: data.subject === undefined,
+        isNull: data.subject === null,
+        isEmptyString: data.subject === '',
+      });
       
       const { data: newQuotation, error: quotationError } = await supabase
         .from('quotations')
