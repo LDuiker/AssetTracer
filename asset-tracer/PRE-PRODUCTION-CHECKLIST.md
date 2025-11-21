@@ -338,7 +338,7 @@ GROUP BY tc.constraint_name;
 
 ---
 
-## ⏳ **6. Code Deployment**
+## ✅ **6. Code Deployment** - IN PROGRESS
 
 ### Step 6.1: Verify Latest Code is on Main Branch
 
