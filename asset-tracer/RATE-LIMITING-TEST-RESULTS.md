@@ -110,7 +110,10 @@ To properly test rate limiting, you need **authenticated requests**. Here's how:
 - [x] Rate limit headers added to responses
 - [x] 429 response returned when limit exceeded
 - [x] `Retry-After` header included in 429 responses
-- [ ] **Manual testing with authenticated requests** (required to verify)
+- [x] **Test 3: Rate Limit Headers - VERIFIED ✅**
+  - ✅ `X-RateLimit-Limit: 200` (API endpoint limit)
+  - ✅ `X-RateLimit-Remaining: 199` (decrements correctly)
+  - ✅ `X-RateLimit-Reset: 60` (seconds until reset)
 
 ## Notes
 
