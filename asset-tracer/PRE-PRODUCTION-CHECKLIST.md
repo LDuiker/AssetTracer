@@ -267,17 +267,20 @@ GROUP BY tc.constraint_name;
 
 ### Step 4.5: Verify OAuth Flow (Production)
 
-**Test Steps:**
-1. [ ] Visit `https://www.asset-tracer.com/login`
+**Test Guide:** See `TEST-PRODUCTION-OAUTH.md` for detailed test steps
+
+**Quick Test Steps:**
+1. [ ] Visit `https://www.asset-tracer.com/login` (in incognito window)
 2. [ ] Click "Sign in with Google"
 3. [ ] Complete OAuth flow
 4. [ ] Verify redirect to dashboard
-5. [ ] Verify user profile is created
-6. [ ] Verify organization is created
+5. [ ] Verify user profile is created (check Supabase)
+6. [ ] Verify organization is created (check Supabase)
+7. [ ] Test logout and re-login
 
 **Status:** ⏳ **PENDING - Test in Production Environment**
 
-**Note:** OAuth is configured (Step 3.2), but needs to be tested in production
+**Action Required:** Follow `TEST-PRODUCTION-OAUTH.md` to complete OAuth verification
 
 ---
 
