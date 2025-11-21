@@ -222,23 +222,9 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ asset: newAsset }, { status: 201 });
     return withCors(request, response);
   } catch (error) {
-    console.error('Error in POST /api/assets:', error);
-    
-    // Check for specific error types
-    if (error instanceof Error) {
-      if (error.message.includes('Failed to create asset')) {
-        const response = NextResponse.json(
-          { error: error.message },
-          { status: 500 }
-        );
-        return withCors(request, response);
-      }
-    }
-
-    const response = NextResponse.json(
-      { error: 'Internal server error. Please try again later.' },
-      { status: 500 }
-    );
+    // Use error handler to sanitize error messages in production
+    const { handleApiError } = await import('@/lib/utils/error-handler');
+    const response = handleApiError(error, 'create asset');
     return withCors(request, response);
   }
 }

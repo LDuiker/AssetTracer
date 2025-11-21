@@ -246,23 +246,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json(report, { status: 200 });
   } catch (error) {
-    console.error('Error in GET /api/reports/financials:', error);
-    
-    // Provide more specific error messages
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { 
-          error: 'Failed to generate financial report',
-          details: error.message,
-        },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    // Use error handler to sanitize error messages in production
+    const { handleApiError } = await import('@/lib/utils/error-handler');
+    return handleApiError(error, 'generate financial report');
   }
 }
 

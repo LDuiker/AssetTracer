@@ -127,21 +127,9 @@ export async function POST(request: NextRequest) {
     const newClient = await createClient(clientData, organizationId);
     return NextResponse.json({ client: newClient }, { status: 201 });
   } catch (error) {
-    console.error('Error in POST /api/clients:', error);
-    
-    if (error instanceof Error) {
-      if (error.message.includes('Failed to create client')) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 500 }
-        );
-      }
-    }
-
-    return NextResponse.json(
-      { error: 'Internal server error. Please try again later.' },
-      { status: 500 }
-    );
+    // Use error handler to sanitize error messages in production
+    const { handleApiError } = await import('@/lib/utils/error-handler');
+    return handleApiError(error, 'create client');
   }
 }
 
