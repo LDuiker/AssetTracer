@@ -30,12 +30,26 @@ export function sanitizeHTML(html: string): string {
  */
 export function sanitizeText(text: string): string {
   if (!text) return '';
-  // Use KEEP_CONTENT to preserve text content even when all tags are removed
-  // This ensures that text like "Quote Subject" in <svg>Quote Subject</svg> is preserved
-  const sanitized = DOMPurify.sanitize(text, { 
+  
+  // First, try DOMPurify with KEEP_CONTENT
+  let sanitized = DOMPurify.sanitize(text, { 
     ALLOWED_TAGS: [],
     KEEP_CONTENT: true,
   });
+  
+  // If DOMPurify returns empty but original had content, extract text manually
+  // This handles cases where DOMPurify might not preserve content in server environments
+  if (!sanitized || sanitized.trim() === '') {
+    // Extract text content by removing HTML tags
+    // This regex removes all HTML tags while preserving text content
+    sanitized = text
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags and content
+      .replace(/<[^>]+>/g, '') // Remove all remaining HTML tags
+      .replace(/&nbsp;/g, ' ') // Replace &nbsp; with space
+      .replace(/&[a-z0-9#]+;/gi, ' ') // Replace HTML entities with space
+      .trim();
+  }
+  
   return sanitized;
 }
 
