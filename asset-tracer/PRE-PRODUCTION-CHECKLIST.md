@@ -404,20 +404,23 @@ git push origin main
 
 ### Step 7.1: Smoke Tests
 
+**Test Guide:** See `POST-DEPLOYMENT-TEST-GUIDE.md` for detailed test steps
+
 **Environment:** Production (`https://www.asset-tracer.com`)
 
-**Test each feature to ensure everything works after deployment:**
-
+**Quick Checklist:**
 - [ ] Homepage loads correctly
 - [ ] Login page accessible
-- [ ] OAuth flow works
+- [x] OAuth flow works ✅ (Already verified in Step 4.5)
 - [ ] Dashboard loads after login
 - [ ] Can create an asset
 - [ ] Can create a client
 - [ ] Can create an invoice
 - [ ] Can create a quotation
 
-**Status:** ⏳ Pending
+**Status:** ⏳ **PENDING - Run smoke tests**
+
+**Action Required:** Follow `POST-DEPLOYMENT-TEST-GUIDE.md` to complete smoke tests
 
 ### Step 7.2: Security Tests
 
