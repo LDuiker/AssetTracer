@@ -400,9 +400,13 @@ git push origin main
 
 ---
 
-## ⏳ **7. Post-Deployment Testing**
+## ⏳ **7. Post-Deployment Testing** - READY TO START
 
 ### Step 7.1: Smoke Tests
+
+**Environment:** Production (`https://www.asset-tracer.com`)
+
+**Test each feature to ensure everything works after deployment:**
 
 - [ ] Homepage loads correctly
 - [ ] Login page accessible
