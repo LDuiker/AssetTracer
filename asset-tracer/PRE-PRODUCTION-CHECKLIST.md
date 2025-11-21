@@ -95,81 +95,119 @@ npm audit fix
 
 **Location:** Supabase Dashboard → Authentication → URL Configuration
 
-- [ ] **Site URL:** `https://www.asset-tracer.com`
-- [ ] **Redirect URLs:**
-  - [ ] `https://www.asset-tracer.com/auth/callback`
-  - [ ] `https://www.asset-tracer.com/dashboard`
-  - [ ] `https://www.asset-tracer.com/*`
+- [x] **Site URL:** `https://www.asset-tracer.com` ✅
+- [x] **Redirect URLs:**
+  - [x] `https://www.asset-tracer.com/auth/callback` ✅
+  - [x] `https://www.asset-tracer.com/dashboard` ✅
+  - [x] `https://www.asset-tracer.com/checkout` ✅
 
-**Status:** ⏳ Pending
+**Status:** ✅ **VERIFIED**
+
+**Date Completed:** 2025-11-21
 
 ### Step 3.2: Verify OAuth Provider Settings
 
 **Location:** Supabase Dashboard → Authentication → Providers → Google
 
-- [ ] Google OAuth is **Enabled**
-- [ ] Client ID and Client Secret are configured
-- [ ] Redirect URL matches production domain
+- [x] Google OAuth is **Enabled** ✅
+- [x] Client ID and Client Secret are configured ✅
+- [x] Redirect URL matches production domain ✅
 
-**Status:** ⏳ Pending
+**Status:** ✅ **VERIFIED**
+
+**Date Completed:** 2025-11-21
 
 ### Step 3.3: Verify Database RLS Policies
 
 **Location:** Supabase Dashboard → SQL Editor
 
-Run this query to verify RLS is enabled:
+**Instructions:**
+1. Go to Supabase Dashboard → SQL Editor
+2. Copy the queries from `VERIFY-PRODUCTION-DATABASE.sql`
+3. Run Query #1: "CHECK ROW LEVEL SECURITY (RLS) STATUS"
 
+**Expected Result:** All tables should show `✅ ENABLED`
+
+**Quick Check Query:**
 ```sql
-SELECT tablename, rowsecurity 
+SELECT 
+  tablename,
+  CASE 
+    WHEN rowsecurity THEN '✅ ENABLED' 
+    ELSE '❌ DISABLED - SECURITY RISK!' 
+  END as "Status"
 FROM pg_tables 
 WHERE schemaname = 'public' 
   AND tablename IN (
-    'users', 
-    'organizations', 
-    'assets', 
-    'invoices', 
-    'quotations', 
-    'clients',
-    'quotation_items',
-    'invoice_items',
-    'transactions',
-    'subscriptions',
-    'organization_members',
-    'team_invitations',
-    'inventory_items'
+    'users', 'organizations', 'assets', 'invoices', 
+    'quotations', 'clients', 'quotation_items', 'invoice_items',
+    'transactions', 'subscriptions', 'organization_members', 
+    'team_invitations', 'inventory_items'
   )
 ORDER BY tablename;
 ```
 
-**Expected:** All tables should show `rowsecurity = true`
+**Status:** ⏳ **PENDING - Run SQL query to verify**
 
-**Status:** ⏳ Pending
+**Action Required:** Run the query above and verify all tables show "✅ ENABLED"
 
 ### Step 3.4: Verify Database Constraints
 
 **Location:** Supabase Dashboard → SQL Editor
 
-Run this query to verify unique constraints:
+**Instructions:**
+1. Go to Supabase Dashboard → SQL Editor
+2. Copy queries #3 and #4 from `VERIFY-PRODUCTION-DATABASE.sql`
+3. Run Query #3: "VERIFY UNIQUE CONSTRAINTS FOR QUOTATIONS"
+4. Run Query #4: "VERIFY UNIQUE CONSTRAINTS FOR INVOICES"
 
+**Expected Results:**
+- **Quotations:** Should have constraint with BOTH `organization_id` AND `quotation_number`
+  - ✅ Correct: `quotations_organization_id_quotation_number_key`
+  - ❌ Wrong: `quotations_quotation_number_key` (global uniqueness - causes conflicts!)
+
+- **Invoices:** Should have constraint with BOTH `organization_id` AND `invoice_number`
+  - ✅ Correct: `invoices_organization_id_invoice_number_key`
+  - ❌ Wrong: `invoices_invoice_number_key` (global uniqueness - causes conflicts!)
+
+**Quick Check Query:**
 ```sql
+-- Check Quotations Constraint
 SELECT 
-  tc.table_name,
   tc.constraint_name,
-  kcu.column_name
+  STRING_AGG(kcu.column_name, ', ' ORDER BY kcu.ordinal_position) as "Columns",
+  CASE 
+    WHEN tc.constraint_name LIKE '%organization_id%' AND tc.constraint_name LIKE '%quotation_number%' 
+      THEN '✅ CORRECT'
+    ELSE '❌ WRONG - Needs organization_id'
+  END as "Status"
 FROM information_schema.table_constraints tc
 JOIN information_schema.key_column_usage kcu 
   ON tc.constraint_name = kcu.constraint_name
 WHERE tc.constraint_type = 'UNIQUE'
-  AND tc.table_schema = 'public'
-  AND tc.table_name IN ('quotations', 'invoices')
-ORDER BY tc.table_name, tc.constraint_name;
+  AND tc.table_name = 'quotations'
+GROUP BY tc.constraint_name;
+
+-- Check Invoices Constraint
+SELECT 
+  tc.constraint_name,
+  STRING_AGG(kcu.column_name, ', ' ORDER BY kcu.ordinal_position) as "Columns",
+  CASE 
+    WHEN tc.constraint_name LIKE '%organization_id%' AND tc.constraint_name LIKE '%invoice_number%' 
+      THEN '✅ CORRECT'
+    ELSE '❌ WRONG - Needs organization_id'
+  END as "Status"
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu 
+  ON tc.constraint_name = kcu.constraint_name
+WHERE tc.constraint_type = 'UNIQUE'
+  AND tc.table_name = 'invoices'
+GROUP BY tc.constraint_name;
 ```
 
-**Expected:** 
-- `quotations` should have constraint on `(organization_id, quotation_number)`
-- `invoices` should have constraint on `(organization_id, invoice_number)`
+**Status:** ⏳ **PENDING - Run SQL queries to verify**
 
-**Status:** ⏳ Pending
+**Action Required:** Run the queries above and verify both show "✅ CORRECT"
 
 ---
 
@@ -319,7 +357,7 @@ git push origin main
 |----------|--------|-------|
 | Dependency Audit | ✅ **COMPLETE** | 0 vulnerabilities found |
 | Environment Variables | ✅ **VERIFIED** | All required variables present |
-| Supabase Configuration | ⏳ Pending | |
+| Supabase Configuration | ⏳ **IN PROGRESS** | URLs & OAuth verified, RLS & constraints pending |
 | Security Verification | ⏳ Pending | |
 | Database Schema | ⏳ Pending | |
 | Code Deployment | ⏳ Pending | |
