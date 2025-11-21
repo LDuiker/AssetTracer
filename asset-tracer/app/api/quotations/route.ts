@@ -162,6 +162,16 @@ export async function POST(request: NextRequest) {
       }));
     }
 
+    // Debug logging to verify subject is included
+    console.log('[POST /api/quotations] Subject processing:', {
+      originalSubject: validated.subject,
+      sanitizedSubject: sanitizedSubject,
+      finalSubject: quotationData.subject,
+      hasSubject: 'subject' in quotationData,
+      subjectType: typeof quotationData.subject,
+      quotationDataKeys: Object.keys(quotationData),
+    });
+
     // Check subscription limits - free plan: 5 quotations per month
     const { data: organization } = await supabase
       .from('organizations')

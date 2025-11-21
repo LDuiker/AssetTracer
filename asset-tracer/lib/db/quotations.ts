@@ -215,13 +215,16 @@ export async function createQuotation(
       console.log(`[createQuotation] Attempt ${attempts}/${maxAttempts}: Trying quotation number: ${quotationNumber}`);
 
       // Create quotation
+      // Handle subject: preserve empty strings, use null only if undefined
+      const subjectValue = data.subject !== undefined ? (data.subject || null) : null;
+      
       const { data: newQuotation, error: quotationError } = await supabase
         .from('quotations')
         .insert({
           organization_id: organizationId,
           client_id: data.client_id,
           quotation_number: quotationNumber,
-          subject: data.subject || null,
+          subject: subjectValue,
           issue_date: data.issue_date,
           valid_until: data.valid_until,
           status: data.status || 'draft',
