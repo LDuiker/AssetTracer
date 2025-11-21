@@ -43,32 +43,34 @@
 ## ✅ Security Headers Tests
 
 ### Test 6: Security Headers
-- [ ] Visit any page on the site
-- [ ] Check response headers include:
-  - `X-Frame-Options: DENY`
-  - `X-Content-Type-Options: nosniff`
-  - `X-XSS-Protection: 1; mode=block`
-  - `Referrer-Policy: strict-origin-when-cross-origin`
-  - `Content-Security-Policy` (with proper directives)
+- [x] Visit any page on the site
+- [x] Check response headers include:
+  - `X-Frame-Options: DENY` ✅
+  - `X-Content-Type-Options: nosniff` ✅
+  - `X-XSS-Protection: 1; mode=block` ✅
+  - `Referrer-Policy: strict-origin-when-cross-origin` ✅
+  - `Content-Security-Policy` (with proper directives) ✅ (includes vercel.live)
 
 ## ✅ Input Sanitization Tests
 
 ### Test 7: XSS Prevention in Assets
-- [ ] Create asset with name: `<script>alert('XSS')</script>`
-- [ ] Verify script tags are stripped
-- [ ] Create asset with description containing HTML
-- [ ] Verify HTML is sanitized
+- [x] Create asset with name: `<script>alert('XSS')</script>` ✅
+- [x] Verify script tags are stripped ✅
+- [x] Create asset with description containing HTML ✅
+- [x] Verify HTML is sanitized ✅
 
 ### Test 8: XSS Prevention in Invoices
-- [ ] Create invoice with notes: `<img src=x onerror=alert('XSS')>`
-- [ ] Verify malicious HTML is removed
-- [ ] Create invoice with terms containing script tags
-- [ ] Verify sanitization works
+- [x] Create invoice with notes: `<img src=x onerror=alert('XSS')>` ✅
+- [x] Verify malicious HTML is removed ✅
+- [x] Create invoice with terms containing script tags ✅
+- [x] Verify sanitization works ✅
+- [x] Test line item descriptions with iframe tags ✅
 
 ### Test 9: XSS Prevention in Quotations
-- [ ] Create quotation with subject containing XSS payload
-- [ ] Verify payload is sanitized
-- [ ] Check item descriptions are sanitized
+- [x] Create quotation with subject containing XSS payload ✅
+- [x] Verify payload is sanitized ✅
+- [x] Check item descriptions are sanitized ✅
+- [x] Test quotation subject on edit ✅
 
 ## ✅ Authentication Tests
 
@@ -82,10 +84,10 @@
 ## ✅ Error Handling Tests
 
 ### Test 11: Error Message Sanitization
-- [ ] Trigger an API error in production mode
-- [ ] Verify error message is generic (no sensitive details)
-- [ ] Check error response doesn't expose stack traces
-- [ ] Verify error code is present but details are hidden
+- [x] Trigger an API error in production mode ✅
+- [x] Verify error message is generic (no sensitive details) ✅
+- [x] Check error response doesn't expose stack traces ✅
+- [x] Verify error code is present but details are hidden ✅
 
 ## Manual Testing Instructions
 
