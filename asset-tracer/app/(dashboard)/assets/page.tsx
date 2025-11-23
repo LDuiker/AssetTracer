@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { Plus, Upload, Search, Filter, X, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { Plus, Upload, Search, Filter, X, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { AssetTable, AssetDialog, AssetListPanel, AssetViewPanel, AssetEditPanel, AssetImportDialog } from '@/components/assets';
-import { ReservationFormDialog } from '@/components/reservations';
 import { SubscriptionBadge, UsageBadge } from '@/components/subscription';
 import { useSubscription } from '@/lib/context/SubscriptionContext';
 import { toast } from 'sonner';
@@ -42,7 +41,7 @@ export default function AssetsPage() {
   const [isCloning, setIsCloning] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [isReservationDialogOpen, setIsReservationDialogOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Pagination constants
   const ITEMS_PER_PAGE = 100;
@@ -288,6 +287,70 @@ export default function AssetsPage() {
   };
 
   /**
+   * Handle CSV export
+   * Exports all filtered assets to CSV format
+   */
+  const handleExportCSV = () => {
+    if (filteredAssets.length === 0) {
+      toast.error('No assets to export');
+      return;
+    }
+
+    setIsExporting(true);
+
+    try {
+      // Create CSV content
+      const csvRows: string[] = [];
+
+      // Header
+      csvRows.push('Assets Export');
+      csvRows.push(`Export Date: ${new Date().toLocaleDateString()}`);
+      csvRows.push(`Total Assets: ${filteredAssets.length}`);
+      csvRows.push('');
+
+      // Column headers
+      csvRows.push('Name,Description,Category,Status,Location,Serial Number,Purchase Date,Purchase Cost,Current Value,Asset Type,Quantity');
+
+      // Data rows
+      filteredAssets.forEach((asset) => {
+        const row = [
+          `"${asset.name.replace(/"/g, '""')}"`, // Escape quotes in CSV
+          asset.description ? `"${asset.description.replace(/"/g, '""')}"` : '',
+          asset.category ? `"${asset.category.replace(/"/g, '""')}"` : '',
+          asset.status,
+          asset.location ? `"${asset.location.replace(/"/g, '""')}"` : '',
+          asset.serial_number ? `"${asset.serial_number.replace(/"/g, '""')}"` : '',
+          asset.purchase_date || '',
+          asset.purchase_cost.toString(),
+          asset.current_value.toString(),
+          asset.asset_type || 'individual',
+          asset.quantity?.toString() || '1',
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      // Create and download file
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `assets-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Exported ${filteredAssets.length} asset(s) to CSV`);
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      toast.error('Failed to export assets to CSV');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  /**
    * Handle save asset action from dialog (legacy for create/clone)
    * Creates or updates asset via API
    */
@@ -455,13 +518,14 @@ export default function AssetsPage() {
         </div>
         <div className="flex flex-col gap-2 w-full md:w-auto md:flex-row">
           <Button
-            onClick={() => setIsReservationDialogOpen(true)}
+            onClick={handleExportCSV}
             variant="outline"
             className="w-full md:w-auto"
             size="lg"
+            disabled={isLoading || filteredAssets.length === 0 || isExporting}
           >
-            <Calendar className="mr-2 h-5 w-5" />
-            New Reservation
+            <Download className="mr-2 h-5 w-5" />
+            {isExporting ? 'Exporting...' : 'Export CSV'}
           </Button>
           <Button
             onClick={handleImport}
@@ -732,15 +796,6 @@ export default function AssetsPage() {
         asset={selectedAsset}
         onSave={handleSaveFromDialog}
         isCloning={isCloning}
-      />
-      <ReservationFormDialog
-        open={isReservationDialogOpen}
-        onOpenChange={setIsReservationDialogOpen}
-        reservation={null}
-        onSuccess={() => {
-          setIsReservationDialogOpen(false);
-          toast.success('Reservation created successfully');
-        }}
       />
 
       <AssetImportDialog
