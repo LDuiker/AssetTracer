@@ -387,9 +387,23 @@ export function QuotationForm({ quotation, onSubmit, onCancel }: QuotationFormPr
                             if (value !== 'none') {
                               const asset = assets.find(a => a.id === value);
                               if (asset) {
-                                form.setValue(`items.${index}.description`, asset.name);
-                                form.setValue(`items.${index}.unit_price`, asset.current_value || asset.purchase_cost);
+                                // Use asset description if available, otherwise use asset name
+                                const description = asset.description || asset.name;
+                                form.setValue(`items.${index}.description`, description, {
+                                  shouldValidate: true,
+                                  shouldDirty: true,
+                                });
+                                form.setValue(`items.${index}.unit_price`, asset.current_value || asset.purchase_cost, {
+                                  shouldValidate: true,
+                                  shouldDirty: true,
+                                });
                               }
+                            } else {
+                              // Clear description when "none" is selected
+                              form.setValue(`items.${index}.description`, '', {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
                             }
                           }} 
                           value={field.value || 'none'}
