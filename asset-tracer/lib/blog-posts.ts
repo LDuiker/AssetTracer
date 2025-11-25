@@ -23,6 +23,190 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
+    id: 'how-to-calculate-tco-total-cost-of-ownership',
+    slug: 'how-to-calculate-tco-total-cost-of-ownership',
+    title: 'How to Calculate the Total Cost of Ownership (TCO) for Your Assets',
+    description: 'Most businesses look at the price tag of an asset and stop there. That\'s a mistake. The real cost isn\'t what you pay upfront — it\'s what the asset costs over its entire life. Learn how to calculate TCO and make smarter asset decisions.',
+    content: `
+# How to Calculate the Total Cost of Ownership (TCO) for Your Assets
+
+Most businesses look at the price tag of an asset and stop there.
+
+That's a mistake.
+
+The real cost isn't what you pay upfront — it's what the asset costs over its entire life.
+
+This is where Total Cost of Ownership (TCO) becomes powerful.
+
+TCO shows you the true financial impact of an asset.
+
+It reveals hidden costs.
+
+It exposes expensive decisions.
+
+And it helps you buy and manage equipment with confidence.
+
+Here's how to calculate it.
+
+---
+
+## 1. Start With the Purchase Cost
+
+This is the easiest part.
+
+It includes:
+
+* Purchase price
+
+* Delivery
+
+* Installation
+
+* Initial setup
+
+This is the "visible" cost. But it's only the beginning.
+
+---
+
+## 2. Add Operating Costs
+
+These are the costs of using the asset day-to-day.
+
+Examples include:
+
+* Fuel or electricity
+
+* Software licenses
+
+* Consumables
+
+* Operator time
+
+If it keeps the asset running, it belongs here.
+
+---
+
+## 3. Include Maintenance Costs
+
+Maintenance is often underestimated.
+
+It includes:
+
+* Routine servicing
+
+* Spare parts
+
+* Repairs
+
+* Calibration
+
+* Downtime costs
+
+The older an asset gets, the more this number grows.
+
+---
+
+## 4. Factor in Depreciation
+
+Assets lose value over time.
+
+You need to include:
+
+* Annual depreciation
+
+* Residual value
+
+* Replacement cycle estimates
+
+This helps you plan for replacements and long-term budgeting.
+
+---
+
+## 5. Add Risk & Failure Costs
+
+Most businesses ignore this category, but it can be the most expensive.
+
+Think about:
+
+* Breakdowns
+
+* Unexpected outages
+
+* Emergency repairs
+
+* Lost revenue
+
+* Project delays
+
+A single failure can cost more than a year of maintenance.
+
+---
+
+## 6. List End-of-Life Costs
+
+Every asset eventually retires.
+
+Include:
+
+* Disposal fees
+
+* Recycling
+
+* Decommissioning
+
+* Penalties for improper disposal
+
+Small costs — but they add up across a fleet.
+
+---
+
+## Your TCO Formula
+
+A simple calculation you can use:
+
+**TCO = Purchase Costs + Operating Costs + Maintenance Costs + Depreciation + Risk/Failure Costs + End-of-Life Costs**
+
+If you calculate this yearly, you can compare:
+
+* Vendors
+
+* Brands
+
+* Models
+
+* Replacement timelines
+
+* Repair vs replace decisions
+
+TCO gives you clarity you can trust.
+
+---
+
+## Why TCO Matters
+
+Because the cheapest option today is usually the most expensive tomorrow.
+
+Understanding TCO helps you:
+
+* Buy smarter
+
+* Maintain better
+
+* Reduce waste
+
+* Improve budgeting
+
+* Predict long-term asset performance
+
+If your business relies on tools, equipment, staging gear, IT hardware, or vehicles — TCO is one number you can't afford to ignore.
+    `,
+    date: '2025-11-25',
+    readTime: '8 min read',
+    category: 'Guide',
+    author: 'Asset Tracer Team',
+    tags: ['TCO', 'asset management', 'cost analysis', 'financial planning', 'asset tracking'],
+  },
+  {
     id: '5-signs-outgrown-spreadsheets',
     slug: '5-signs-outgrown-spreadsheets',
     title: '5 Signs Your Business Has Outgrown Spreadsheets for Asset Tracking',
