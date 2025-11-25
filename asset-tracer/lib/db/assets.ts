@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import type { Asset, CreateAssetInput, UpdateAssetInput } from '@/types';
+import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Fetch all assets for an organization
@@ -179,6 +180,9 @@ export async function deleteAsset(
       throw new Error('Asset not found or access denied');
     }
 
+    // Clean up any references before deleting the asset itself
+    await cleanupAssetReferences(supabase, id, organizationId);
+
     const { error } = await supabase
       .from('assets')
       .delete()
@@ -193,5 +197,122 @@ export async function deleteAsset(
     console.error('Unexpected error in deleteAsset:', error);
     throw error;
   }
+}
+
+type CleanupAction = {
+  description: string;
+  action: () => Promise<PostgrestError | null>;
+};
+
+/**
+ * Remove or nullify references to an asset across related tables before deletion.
+ * This avoids foreign key errors when invoices, quotations, reservations, or kits
+ * still point to the asset being removed.
+ */
+async function cleanupAssetReferences(
+  supabase: SupabaseClient,
+  assetId: string,
+  organizationId: string
+) {
+  const cleanupSteps: CleanupAction[] = [
+    {
+      description: 'reservation assets',
+      action: async () => {
+        const { error } = await supabase
+          .from('reservation_assets')
+          .delete()
+          .eq('asset_id', assetId);
+
+        return error;
+      },
+    },
+    {
+      description: 'asset kit items',
+      action: async () => {
+        const { error } = await supabase
+          .from('asset_kit_items')
+          .delete()
+          .eq('asset_id', assetId);
+
+        return error;
+      },
+    },
+    {
+      description: 'quotation items',
+      action: async () => {
+        const { error } = await supabase
+          .from('quotation_items')
+          .update({ asset_id: null })
+          .eq('asset_id', assetId);
+
+        return error;
+      },
+    },
+    {
+      description: 'invoice items',
+      action: async () => {
+        const { error } = await supabase
+          .from('invoice_items')
+          .update({ asset_id: null })
+          .eq('asset_id', assetId);
+
+        return error;
+      },
+    },
+    {
+      description: 'transactions',
+      action: async () => {
+        const { error } = await supabase
+          .from('transactions')
+          .update({ asset_id: null })
+          .eq('asset_id', assetId)
+          .eq('organization_id', organizationId);
+
+        return error;
+      },
+    },
+    {
+      description: 'expenses',
+      action: async () => {
+        const { error } = await supabase
+          .from('expenses')
+          .update({ asset_id: null })
+          .eq('asset_id', assetId)
+          .eq('organization_id', organizationId);
+
+        return error;
+      },
+    },
+  ];
+
+  for (const step of cleanupSteps) {
+    const error = await step.action();
+    if (error) {
+      if (isIgnorableCleanupError(error)) {
+        console.warn(
+          `[deleteAsset] Skipping optional cleanup for ${step.description}: ${error.message}`
+        );
+        continue;
+      }
+
+      console.error(
+        `[deleteAsset] Failed to clean up ${step.description}:`,
+        error
+      );
+      throw new Error(
+        `Failed to clean up ${step.description}: ${error.message}`
+      );
+    }
+  }
+}
+
+/**
+ * Ignore cleanup errors caused by optional tables/columns not being present yet.
+ */
+function isIgnorableCleanupError(error: PostgrestError | null) {
+  if (!error) return false;
+
+  // 42P01: undefined table, 42703: undefined column
+  return error.code === '42P01' || error.code === '42703';
 }
 
