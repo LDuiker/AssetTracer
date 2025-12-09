@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     description: 'Read AssetTracer\'s terms and conditions for using our asset management and invoicing platform.',
     images: [
       {
-        url: '/opengraph-image',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'AssetTracer Terms of Service',

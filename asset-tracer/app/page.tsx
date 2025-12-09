@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     description: 'Professional asset management and invoicing software for growing businesses. Track assets, manage inventory, create quotations, and monitor profitability. Start free today.',
     images: [
       {
-        url: '/opengraph-image',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'AssetTracer - Professional Asset Management & Invoicing Software',
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Asset Management Software | Track Assets & Send Invoices',
     description: 'Professional asset management and invoicing software for growing businesses. Simple, powerful, and easy to use.',
-    images: ['/opengraph-image'],
+    images: ['/og-image.jpg'],
   },
   alternates: {
     canonical: 'https://www.asset-tracer.com',
