@@ -124,7 +124,7 @@ export default function RootLayout({
         <Toaster position="top-right" richColors />
         
         {/* Google Analytics */}
-        {process.env.NEXT_PUBLIC_GA_TRACKING_ID && (
+        {process.env.NEXT_PUBLIC_GA_TRACKING_ID ? (
           <>
             <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_TRACKING_ID}`}
@@ -141,6 +141,13 @@ export default function RootLayout({
               `}
             </Script>
           </>
+        ) : (
+          // Debug: Only show in development
+          process.env.NODE_ENV === 'development' && (
+            <Script id="ga-debug" strategy="afterInteractive">
+              {`console.warn('[GA Debug] NEXT_PUBLIC_GA_TRACKING_ID is not set');`}
+            </Script>
+          )
         )}
       </body>
     </html>
