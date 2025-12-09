@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import LandingPageClient from './LandingPageClient';
+import { StructuredData } from '@/components/seo/StructuredData';
 
 /**
  * Homepage Metadata - SEO Optimized
@@ -64,5 +65,41 @@ export const metadata: Metadata = {
 };
 
 export default function LandingPage() {
-  return <LandingPageClient />;
+  return (
+    <>
+      <StructuredData
+        organization={{
+          name: 'AssetTracer',
+          url: 'https://www.asset-tracer.com',
+          logo: 'https://www.asset-tracer.com/asset-tracer-logo.svg',
+          description: 'Professional asset management and invoicing software for growing businesses.',
+          sameAs: [
+            // Add social media profiles when available
+            // 'https://twitter.com/assettracer',
+            // 'https://linkedin.com/company/assettracer',
+          ],
+          contactPoint: {
+            contactType: 'Customer Service',
+            // email: 'support@asset-tracer.com', // Add when available
+          },
+        }}
+        softwareApplication={{
+          name: 'AssetTracer',
+          applicationCategory: 'BusinessApplication',
+          operatingSystem: 'Web',
+          description: 'Professional asset management and invoicing software for growing businesses. Track assets, manage inventory, create quotations, send invoices, and monitor profitability.',
+          offers: {
+            price: '0',
+            priceCurrency: 'USD',
+            availability: 'InStock',
+          },
+          // aggregateRating: {
+          //   ratingValue: '4.8',
+          //   ratingCount: '150',
+          // },
+        }}
+      />
+      <LandingPageClient />
+    </>
+  );
 }

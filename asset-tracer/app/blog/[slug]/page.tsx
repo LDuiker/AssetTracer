@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { getPostBySlug, getAllPosts } from '@/lib/blog-posts';
 import { Badge } from '@/components/ui/badge';
 import { sanitizeHTML } from '@/lib/utils/sanitize';
+import { StructuredData } from '@/components/seo/StructuredData';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -73,9 +74,34 @@ export default async function BlogPostPage({ params }: Props) {
     });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+    <>
+      <StructuredData
+        article={{
+          headline: post.title,
+          description: post.description,
+          image: post.image ? `https://www.asset-tracer.com${post.image}` : undefined,
+          datePublished: post.date,
+          dateModified: post.date, // Can be updated when post is modified
+          author: {
+            name: post.author || 'Asset Tracer Team',
+            url: 'https://www.asset-tracer.com',
+          },
+          publisher: {
+            name: 'AssetTracer',
+            logo: 'https://www.asset-tracer.com/asset-tracer-logo.svg',
+          },
+        }}
+        breadcrumbList={{
+          items: [
+            { name: 'Home', url: 'https://www.asset-tracer.com' },
+            { name: 'Blog', url: 'https://www.asset-tracer.com/blog' },
+            { name: post.title, url: `https://www.asset-tracer.com/blog/${post.slug}` },
+          ],
+        }}
+      />
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <Link href="/blog" className="flex items-center space-x-2 text-gray-900 hover:text-[#2563EB] transition-colors">
@@ -233,7 +259,8 @@ export default async function BlogPostPage({ params }: Props) {
           </Link>
         </div>
       </main>
-    </div>
+      </div>
+    </>
   );
 }
 
