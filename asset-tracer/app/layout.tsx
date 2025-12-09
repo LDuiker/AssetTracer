@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     description: 'Track assets, manage inventory, send quotes, and know your profit. Built for growing businesses.',
     images: [
       {
-        url: '/og-image.jpg', // You'll need to create this
+        url: '/opengraph-image',
         width: 1200,
         height: 630,
         alt: 'AssetTracer - Asset Management Software',
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
     title: 'AssetTracer - Track Assets, Send Quotes, Know Your Profit',
     description: 'Professional asset management and invoicing for growing businesses.',
     // creator: '@assettracer', // Add when you create Twitter account
-    images: ['/og-image.jpg'],
+    images: ['/opengraph-image'],
   },
   
   // Robots configuration (indexing rules)

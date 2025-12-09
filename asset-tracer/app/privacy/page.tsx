@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     description: 'Learn how AssetTracer collects, uses, and protects your personal information. GDPR compliant privacy policy.',
     images: [
       {
-        url: '/og-image.jpg',
+        url: '/opengraph-image',
         width: 1200,
         height: 630,
         alt: 'AssetTracer Privacy Policy',
