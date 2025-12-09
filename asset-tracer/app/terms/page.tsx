@@ -2,8 +2,54 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | Asset Tracer',
-  description: 'Terms of Service for Asset Tracer - Learn about the terms and conditions for using our platform.',
+  title: 'Terms of Service | AssetTracer - Legal Terms & Conditions',
+  description: 'AssetTracer Terms of Service - Read our terms and conditions for using our asset management platform. Last updated October 28, 2025.',
+  keywords: [
+    'terms of service',
+    'terms and conditions',
+    'user agreement',
+    'legal terms',
+    'service agreement',
+    'terms of use',
+    'legal policy',
+    'user terms',
+  ],
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://www.asset-tracer.com/terms',
+    siteName: 'AssetTracer',
+    title: 'Terms of Service | AssetTracer - Legal Terms & Conditions',
+    description: 'Read AssetTracer\'s terms and conditions for using our asset management and invoicing platform.',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'AssetTracer Terms of Service',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Terms of Service | AssetTracer - Legal Terms & Conditions',
+    description: 'Read AssetTracer\'s terms and conditions for using our asset management platform.',
+    images: ['/og-image.jpg'],
+  },
+  alternates: {
+    canonical: 'https://www.asset-tracer.com/terms',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function TermsPage() {

@@ -2,8 +2,55 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | Asset Tracer',
-  description: 'Privacy Policy for Asset Tracer - Learn how we collect, use, and protect your personal information.',
+  title: 'Privacy Policy | AssetTracer - Data Protection & Privacy',
+  description: 'AssetTracer Privacy Policy - Learn how we collect, use, and protect your personal information. GDPR compliant. Last updated October 28, 2025.',
+  keywords: [
+    'privacy policy',
+    'data protection',
+    'GDPR',
+    'privacy rights',
+    'data security',
+    'personal information',
+    'data privacy',
+    'user privacy',
+    'privacy rights',
+  ],
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://www.asset-tracer.com/privacy',
+    siteName: 'AssetTracer',
+    title: 'Privacy Policy | AssetTracer - Data Protection & Privacy',
+    description: 'Learn how AssetTracer collects, uses, and protects your personal information. GDPR compliant privacy policy.',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'AssetTracer Privacy Policy',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Privacy Policy | AssetTracer - Data Protection & Privacy',
+    description: 'Learn how AssetTracer collects, uses, and protects your personal information. GDPR compliant.',
+    images: ['/og-image.jpg'],
+  },
+  alternates: {
+    canonical: 'https://www.asset-tracer.com/privacy',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function PrivacyPage() {
