@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 
 // Route segment config
 export const runtime = 'edge';
-export const alt = 'AssetTracer - Professional Asset Management & Invoicing Software';
+export const alt = 'AssetTracer - Track Assets, Send Quotes, Know Your Profit';
 export const size = {
   width: 1200,
   height: 630,
@@ -15,7 +15,7 @@ export default async function Image() {
     (
       <div
         style={{
-          background: 'linear-gradient(135deg, #2563EB 0%, #1e40af 50%, #0F172A 100%)',
+          background: 'linear-gradient(to right, #2563EB 0%, #06B6D4 50%, #1d4ed8 100%)',
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -26,7 +26,7 @@ export default async function Image() {
           position: 'relative',
         }}
       >
-        {/* Background Pattern */}
+        {/* Background Pattern (matching hero section) */}
         <div
           style={{
             position: 'absolute',
@@ -35,8 +35,8 @@ export default async function Image() {
             right: 0,
             bottom: 0,
             opacity: 0.1,
-            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-            backgroundSize: '40px 40px',
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+            backgroundSize: '60px 60px',
           }}
         />
 
@@ -47,44 +47,31 @@ export default async function Image() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '24px',
+            gap: '20px',
             zIndex: 1,
             textAlign: 'center',
-            padding: '80px',
+            padding: '60px 80px',
+            maxWidth: '1000px',
           }}
         >
-          {/* Logo/Brand */}
+          {/* Badge - FOR SMEs & GROWING TEAMS */}
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '16px',
-              marginBottom: '20px',
+              fontSize: '14px',
+              fontWeight: 600,
+              color: '#A5F3FC',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              marginBottom: '8px',
             }}
           >
-            <div
-              style={{
-                width: '80px',
-                height: '80px',
-                background: 'white',
-                borderRadius: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '40px',
-                fontWeight: 'bold',
-                color: '#2563EB',
-              }}
-            >
-              AT
-            </div>
+            FOR SMEs & GROWING TEAMS
           </div>
 
-          {/* Main Title */}
+          {/* Main Heading - Track Assets. Send Quotes. Know Your Profit. */}
           <h1
             style={{
-              fontSize: '72px',
+              fontSize: '64px',
               fontWeight: 'bold',
               color: 'white',
               margin: 0,
@@ -93,81 +80,27 @@ export default async function Image() {
               maxWidth: '1000px',
             }}
           >
-            AssetTracer
+            Track Assets. Send Quotes.{' '}
+            <br />
+            Know Your Profit.
           </h1>
-
-          {/* Subtitle */}
-          <p
-            style={{
-              fontSize: '32px',
-              color: '#E0E7FF',
-              margin: 0,
-              lineHeight: '1.4',
-              textAlign: 'center',
-              maxWidth: '900px',
-              fontWeight: 500,
-            }}
-          >
-            Track Assets. Send Quotes. Know Your Profit.
-          </p>
 
           {/* Description */}
           <p
             style={{
-              fontSize: '24px',
-              color: '#C7D2FE',
+              fontSize: '22px',
+              color: '#DBEAFE',
               margin: 0,
-              marginTop: '16px',
+              marginTop: '12px',
               lineHeight: '1.5',
               textAlign: 'center',
-              maxWidth: '800px',
+              maxWidth: '900px',
               fontWeight: 400,
             }}
           >
-            Professional asset management and invoicing software for growing businesses
+            The simplest way to manage assets, create invoices, and understand ROI — all from one lean, powerful dashboard.
           </p>
-
-          {/* Feature Pills */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '16px',
-              marginTop: '32px',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-            }}
-          >
-            {['Asset Tracking', 'Invoicing', 'Profit Analytics'].map((feature) => (
-              <div
-                key={feature}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  backdropFilter: 'blur(10px)',
-                  padding: '12px 24px',
-                  borderRadius: '24px',
-                  fontSize: '20px',
-                  color: 'white',
-                  fontWeight: 500,
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                }}
-              >
-                {feature}
-              </div>
-            ))}
-          </div>
         </div>
-
-        {/* Bottom Accent */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '8px',
-            background: 'linear-gradient(90deg, #06B6D4 0%, #2563EB 50%, #F97316 100%)',
-          }}
-        />
       </div>
     ),
     {
