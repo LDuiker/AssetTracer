@@ -58,7 +58,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com data:",
               "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://*.supabase.co https://api.polar.sh https://secure.3gdirectpay.com",
+              "connect-src 'self' https://*.supabase.co https://api.polar.sh https://secure.3gdirectpay.com https://www.google-analytics.com https://www.googletagmanager.com",
               "frame-src 'self' https://checkout.polar.sh https://vercel.live",
               "object-src 'none'",
               "base-uri 'self'",
