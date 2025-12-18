@@ -165,8 +165,8 @@ function LandingPageContent() {
               <Link href="#features" className="text-gray-700 hover:text-[#2563EB] transition-colors font-medium">
                 Features
               </Link>
-              <Link href="#case-studies" className="text-gray-700 hover:text-[#2563EB] transition-colors font-medium">
-                Case Studies
+              <Link href="#why-choose" className="text-gray-700 hover:text-[#2563EB] transition-colors font-medium">
+                Why Us
               </Link>
               <Link href="#pricing" className="text-gray-700 hover:text-[#2563EB] transition-colors font-medium">
                 Pricing
@@ -204,11 +204,11 @@ function LandingPageContent() {
                 Features
               </Link>
               <Link
-                href="#case-studies"
+                href="#why-choose"
                 className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md font-medium"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Case Studies
+                Why Us
               </Link>
               <Link
                 href="#pricing"
@@ -1126,8 +1126,8 @@ function LandingPageContent() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="#case-studies" className="text-gray-400 hover:text-white transition-colors">
-                    Case Studies
+                  <Link href="#why-choose" className="text-gray-400 hover:text-white transition-colors">
+                    Why Us
                   </Link>
                 </li>
                 <li>
