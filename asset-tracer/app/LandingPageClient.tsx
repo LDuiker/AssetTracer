@@ -684,7 +684,7 @@ function LandingPageContent() {
                 size="lg"
                 className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-8 py-6 text-lg"
               >
-                <Link href="/signup">Start Free — No Credit Card Required</Link>
+                <Link href="/login">Start Free — No Credit Card Required</Link>
               </Button>
             </motion.div>
           </div>
