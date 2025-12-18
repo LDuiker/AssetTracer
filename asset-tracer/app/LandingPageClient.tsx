@@ -23,6 +23,11 @@ import {
   Settings,
   Briefcase,
   Globe,
+  Zap,
+  Shield,
+  Cloud,
+  Table2,
+  XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -445,93 +450,243 @@ function LandingPageContent() {
         </div>
       </section>
 
-      {/* Case Studies Section */}
-      <section id="case-studies" className="py-20 bg-[#F3F4F6]">
+      {/* Why Choose Asset Tracer Section */}
+      <section id="why-choose" className="py-20 bg-[#F3F4F6]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-[#0B1226] mb-4">
-              How Real Businesses Use Asset Tracer
+              Why Choose Asset Tracer?
             </h2>
             <p className="text-xl text-gray-600">
-              Success stories from SMEs across Africa
+              Stop wrestling with spreadsheets. Get a system built for asset management.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Case Study 1 */}
-            <Card className="border-2 hover:shadow-xl rounded-2xl bg-white">
-              <CardHeader>
-                <div className="h-12 w-12 bg-[#2563EB]/10 rounded-xl flex items-center justify-center mb-4">
-                  <Building2 className="h-6 w-6 text-[#2563EB]" />
-                </div>
-                <CardTitle className="text-xl">Construction Company</CardTitle>
-                <p className="text-sm text-[#2563EB] font-semibold">Botswana Builders Ltd.</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-1">Problem:</p>
-                  <p className="text-sm text-gray-600">Assets scattered across multiple projects and missing invoices.</p>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-1">Solution:</p>
-                  <p className="text-sm text-gray-600">Track tools, trucks, and materials in real-time. Generate job-specific invoices instantly.</p>
-                </div>
-                <div className="pt-4 border-t">
-                  <p className="text-sm font-bold text-[#2563EB]">Result:</p>
-                  <p className="text-sm text-gray-900 font-semibold">30% reduction in asset losses + faster client billing</p>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Comparison Table */}
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-200">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-[#0B1226] text-white">
+                    <th className="px-6 py-4 text-left font-semibold">Feature</th>
+                    <th className="px-6 py-4 text-center font-semibold">
+                      <div className="flex items-center justify-center gap-2">
+                        <Table2 className="h-5 w-5" />
+                        <span>Spreadsheets / Manual</span>
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-center font-semibold bg-[#2563EB]">
+                      <div className="flex items-center justify-center gap-2">
+                        <Zap className="h-5 w-5" />
+                        <span>Asset Tracer</span>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {/* Row 1: Setup Time */}
+                  <tr className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                        Setup Time
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center text-gray-600">
+                      Hours to days creating templates and formulas
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-[#2563EB] font-semibold">
+                        <Check className="h-5 w-5" />
+                        <span>60 seconds to start</span>
+                      </div>
+                    </td>
+                  </tr>
 
-            {/* Case Study 2 */}
-            <Card className="border-2 hover:shadow-xl rounded-2xl bg-white">
-              <CardHeader>
-                <div className="h-12 w-12 bg-[#06B6D4]/10 rounded-xl flex items-center justify-center mb-4">
-                  <Laptop className="h-6 w-6 text-[#06B6D4]" />
-                </div>
-                <CardTitle className="text-xl">IT Services Provider</CardTitle>
-                <p className="text-sm text-[#06B6D4] font-semibold">TechPro Solutions</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-1">Problem:</p>
-                  <p className="text-sm text-gray-600">Couldn&apos;t track equipment loans or calculate ROI on rented devices.</p>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-1">Solution:</p>
-                  <p className="text-sm text-gray-600">Check in/out assets, set maintenance reminders, and compare spend vs. earnings.</p>
-                </div>
-                <div className="pt-4 border-t">
-                  <p className="text-sm font-bold text-[#06B6D4]">Result:</p>
-                  <p className="text-sm text-gray-900 font-semibold">Improved billing accuracy and better asset utilization</p>
-                </div>
-              </CardContent>
-            </Card>
+                  {/* Row 2: Invoice Generation */}
+                  <tr className="hover:bg-gray-50 transition-colors bg-gray-50/50">
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-gray-500" />
+                        Generate Invoices
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center text-gray-600">
+                      <div className="flex items-center justify-center gap-2">
+                        <XCircle className="h-5 w-5 text-red-500" />
+                        <span>Manual copy-paste, error-prone</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-[#2563EB] font-semibold">
+                        <Check className="h-5 w-5" />
+                        <span>Professional PDFs in seconds</span>
+                      </div>
+                    </td>
+                  </tr>
 
-            {/* Case Study 3 */}
-            <Card className="border-2 hover:shadow-xl rounded-2xl bg-white">
-              <CardHeader>
-                <div className="h-12 w-12 bg-[#F97316]/10 rounded-xl flex items-center justify-center mb-4">
-                  <Tv className="h-6 w-6 text-[#F97316]" />
-                </div>
-                <CardTitle className="text-xl">Events Company</CardTitle>
-                <p className="text-sm text-[#F97316] font-semibold">StageOne Productions</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-1">Problem:</p>
-                  <p className="text-sm text-gray-600">Needed to track stage equipment and issue client quotes fast.</p>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-1">Solution:</p>
-                  <p className="text-sm text-gray-600">Manage inventory, send quotations, and record expenses per event.</p>
-                </div>
-                <div className="pt-4 border-t">
-                  <p className="text-sm font-bold text-[#F97316]">Result:</p>
-                  <p className="text-sm text-gray-900 font-semibold">5+ hours saved weekly + 40% less missed maintenance</p>
-                </div>
-              </CardContent>
-            </Card>
+                  {/* Row 3: Asset Tracking */}
+                  <tr className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4 text-gray-500" />
+                        Track Asset Location
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center text-gray-600">
+                      Update cells manually, easy to forget
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-[#2563EB] font-semibold">
+                        <Check className="h-5 w-5" />
+                        <span>Real-time status updates</span>
+                      </div>
+                    </td>
+                  </tr>
+
+                  {/* Row 4: ROI Calculations */}
+                  <tr className="hover:bg-gray-50 transition-colors bg-gray-50/50">
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-gray-500" />
+                        Calculate ROI & Profitability
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center text-gray-600">
+                      <div className="flex items-center justify-center gap-2">
+                        <XCircle className="h-5 w-5 text-red-500" />
+                        <span>Complex formulas, often broken</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-[#2563EB] font-semibold">
+                        <Check className="h-5 w-5" />
+                        <span>Automatic calculations, visual charts</span>
+                      </div>
+                    </td>
+                  </tr>
+
+                  {/* Row 5: Team Collaboration */}
+                  <tr className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-gray-500" />
+                        Team Access
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center text-gray-600">
+                      Share files, risk of conflicts and overwrites
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-[#2563EB] font-semibold">
+                        <Check className="h-5 w-5" />
+                        <span>Multi-user with role permissions</span>
+                      </div>
+                    </td>
+                  </tr>
+
+                  {/* Row 6: Maintenance Reminders */}
+                  <tr className="hover:bg-gray-50 transition-colors bg-gray-50/50">
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4 text-gray-500" />
+                        Maintenance Reminders
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center text-gray-600">
+                      <div className="flex items-center justify-center gap-2">
+                        <XCircle className="h-5 w-5 text-red-500" />
+                        <span>Manual calendar entries, easy to miss</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-[#2563EB] font-semibold">
+                        <Check className="h-5 w-5" />
+                        <span>Automatic alerts and notifications</span>
+                      </div>
+                    </td>
+                  </tr>
+
+                  {/* Row 7: Data Security */}
+                  <tr className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-gray-500" />
+                        Data Security & Backup
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center text-gray-600">
+                      Risk of file loss, no automatic backups
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-[#2563EB] font-semibold">
+                        <Check className="h-5 w-5" />
+                        <span>Cloud-backed, always safe</span>
+                      </div>
+                    </td>
+                  </tr>
+
+                  {/* Row 8: Mobile Access */}
+                  <tr className="hover:bg-gray-50 transition-colors bg-gray-50/50">
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <Cloud className="h-4 w-4 text-gray-500" />
+                        Access from Anywhere
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center text-gray-600">
+                      Need desktop app or email files to yourself
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-[#2563EB] font-semibold">
+                        <Check className="h-5 w-5" />
+                        <span>Works on phone, tablet, or computer</span>
+                      </div>
+                    </td>
+                  </tr>
+
+                  {/* Row 9: Cost */}
+                  <tr className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-gray-500" />
+                        Cost
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center text-gray-600">
+                      Free (but costs you time and errors)
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-[#2563EB] font-semibold">
+                        <Check className="h-5 w-5" />
+                        <span>Free plan available, Pro from $19/month</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Bottom CTA */}
+          <div className="mt-12 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              <p className="text-lg text-gray-700 mb-6">
+                Ready to upgrade from spreadsheets?
+              </p>
+              <Button
+                asChild
+                size="lg"
+                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-8 py-6 text-lg"
+              >
+                <Link href="/signup">Start Free — No Credit Card Required</Link>
+              </Button>
+            </motion.div>
           </div>
         </div>
       </section>
